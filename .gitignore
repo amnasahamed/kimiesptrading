@@ -48,3 +48,6 @@ wheels/
 # OS
 .DS_Store
 Thumbs.db
+
+# Git Push Script (contains PAT token)
+git-push.sh
