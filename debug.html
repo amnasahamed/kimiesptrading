@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard Debug</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+        pre { background: #000; padding: 10px; overflow: auto; max-height: 400px; }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+    </style>
+</head>
+<body>
+    <h1>Dashboard Debug</h1>
+    <div id="status">Loading...</div>
+    <h2>API Response:</h2>
+    <pre id="output"></pre>
+    
+    <script>
+        async function test() {
+            const status = document.getElementById('status');
+            const output = document.getElementById('output');
+            
+            try {
+                const cacheBuster = Date.now();
+                status.innerHTML = 'Fetching trades...';
+                
+                const resp = await fetch(`/api/trades?_=${cacheBuster}`);
+                status.innerHTML += `<br>Status: ${resp.status}`;
+                
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}`);
+                }
+                
+                const trades = await resp.json();
+                status.innerHTML += `<br><span class="success">Got ${trades.length} trades</span>`;
+                output.textContent = JSON.stringify(trades, null, 2);
+                
+            } catch (err) {
+                status.innerHTML += `<br><span class="error">Error: ${err.message}</span>`;
+                console.error(err);
+            }
+        }
+        
+        test();
+    </script>
+</body>
+</html>

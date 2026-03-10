@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Test</title>
+</head>
+<body>
+    <h1>CORS Test</h1>
+    <div id="result"></div>
+    <button onclick="testAPI()">Test API</button>
+    
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                const cacheBuster = Date.now();
+                
+                // Test config endpoint
+                result.innerHTML += '<br>Fetching config...';
+                const configResp = await fetch(`/api/config?_=${cacheBuster}`);
+                result.innerHTML += ` Status: ${configResp.status}`;
+                
+                if (!configResp.ok) {
+                    throw new Error(`Config failed: ${configResp.status}`);
+                }
+                
+                const config = await configResp.json();
+                result.innerHTML += `<br>✅ Config loaded: system_enabled=${config.system_enabled}`;
+                
+                // Test stats endpoint
+                result.innerHTML += '<br>Fetching stats...';
+                const statsResp = await fetch(`/api/stats?_=${cacheBuster}`);
+                result.innerHTML += ` Status: ${statsResp.status}`;
+                
+                if (!statsResp.ok) {
+                    throw new Error(`Stats failed: ${statsResp.status}`);
+                }
+                
+                const stats = await statsResp.json();
+                result.innerHTML += `<br>✅ Stats loaded: trades=${stats.today_trades}`;
+                
+                // Test trades endpoint
+                result.innerHTML += '<br>Fetching trades...';
+                const tradesResp = await fetch(`/api/trades?_=${cacheBuster}`);
+                result.innerHTML += ` Status: ${tradesResp.status}`;
+                
+                if (!tradesResp.ok) {
+                    throw new Error(`Trades failed: ${tradesResp.status}`);
+                }
+                
+                const trades = await tradesResp.json();
+                result.innerHTML += `<br>✅ Trades loaded: count=${trades.length}`;
+                
+                result.innerHTML += '<br><br>✅ ALL TESTS PASSED!';
+                
+            } catch (error) {
+                result.innerHTML += `<br><br>❌ ERROR: ${error.message}`;
+                console.error('Full error:', error);
+            }
+        }
+        
+        // Auto-run on page load
+        window.onload = testAPI;
+    </script>
+</body>
+</html>

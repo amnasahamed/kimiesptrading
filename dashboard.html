@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melon Trading Bot | Professional Trading Dashboard</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        danger: {
+                            500: '#ef4444',
+                            600: '#dc2626',
+                        },
+                        warning: {
+                            500: '#f59e0b',
+                        },
+                        dark: {
+                            900: '#0a0a0f',
+                            800: '#12121a',
+                            700: '#1a1a25',
+                            600: '#252536',
+                            500: '#32324a',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 5px rgba(34, 197, 94, 0.2)' },
+                            '100%': { boxShadow: '0 0 20px rgba(34, 197, 94, 0.6)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #12121a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #32324a;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a4a6a;
+        }
+        
+        /* Glass effect */
+        .glass {
+            background: rgba(26, 26, 37, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-hover:hover {
+            background: rgba(37, 37, 54, 0.9);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+        
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Animated border */
+        .animated-border {
+            position: relative;
+        }
+        .animated-border::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.5), transparent, rgba(34, 197, 94, 0.3));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        
+        /* Number counter animation */
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-number {
+            animation: countUp 0.5s ease-out;
+        }
+        
+        /* Status indicators */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            position: relative;
+        }
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        .status-dot.active {
+            background: #22c55e;
+        }
+        .status-dot.active::after {
+            background: rgba(34, 197, 94, 0.4);
+        }
+        .status-dot.inactive {
+            background: #ef4444;
+        }
+        .status-dot.inactive::after {
+            background: rgba(239, 68, 68, 0.4);
+        }
+        .status-dot.warning {
+            background: #f59e0b;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        /* Table styles */
+        .trades-table tr {
+            transition: all 0.2s;
+        }
+        .trades-table tr:hover {
+            background: rgba(34, 197, 94, 0.05);
+        }
+        
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #1a1a25 25%, #252536 50%, #1a1a25 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Toast notifications */
+        .toast {
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="bg-dark-900 text-gray-100 font-sans antialiased">
+    
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-dark-900 z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div class="text-xl font-semibold gradient-text">Melon Trading Bot</div>
+            <div class="text-sm text-gray-500 mt-2">Loading dashboard...</div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 bg-dark-800 border-r border-dark-600 flex flex-col">
+            <!-- Logo -->
+            <div class="p-6 border-b border-dark-600">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <i class="fas fa-robot text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight">Melon Bot</h1>
+                        <p class="text-xs text-gray-500">Pro Trading</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-primary-500/10 text-primary-400 border border-primary-500/20 transition-all">
+                    <i class="fas fa-chart-line w-5"></i>
+                    <span class="font-medium">Dashboard</span>
+                </button>
+                
+                <button onclick="switchTab('positions')" id="nav-positions" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-dark-700 hover:text-gray-200 transition-all">
+                    <i class="fas fa-briefcase w-5"></i>
+                    <span class="font-medium">Positions</span>
+                    <span id="position-count" class="ml-auto bg-primary-500 text-white text-xs px-2 py-0.5 rounded-full hidden">0</span>
+                </button>
+                
+                <button onclick="switchTab('trades')" id="nav-trades" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-dark-700 hover:text-gray-200 transition-all">
+                    <i class="fas fa-list-alt w-5"></i>
+                    <span class="font-medium">Trade History</span>
+                </button>
+                
+                <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-dark-700 hover:text-gray-200 transition-all">
+                    <i class="fas fa-chart-pie w-5"></i>
+                    <span class="font-medium">Analytics</span>
+                </button>
+                
+                <div class="pt-4 mt-4 border-t border-dark-600">
+                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Settings</p>
+                    
+                    <button onclick="switchTab('config')" id="nav-config" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-dark-700 hover:text-gray-200 transition-all">
+                        <i class="fas fa-cog w-5"></i>
+                        <span class="font-medium">Configuration</span>
+                    </button>
+                    
+                    <a href="/esp-setup" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-dark-700 hover:text-gray-200 transition-all">
+                        <i class="fas fa-microchip w-5"></i>
+                        <span class="font-medium">ESP Hardware</span>
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Bottom Status -->
+            <div class="p-4 border-t border-dark-600">
+                <div class="glass rounded-lg p-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div id="connection-status" class="status-dot active"></div>
+                            <span id="connection-text" class="text-sm text-gray-400">Connected</span>
+                        </div>
+                        <button onclick="refreshData()" class="text-gray-500 hover:text-primary-400 transition-colors">
+                            <i class="fas fa-sync-alt" id="refresh-icon"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-hidden flex flex-col">
+            
+            <!-- Header -->
+            <header class="h-16 bg-dark-800/50 backdrop-blur border-b border-dark-600 flex items-center justify-between px-6">
+                <div>
+                    <h2 id="page-title" class="text-xl font-semibold">Dashboard</h2>
+                    <p id="current-time" class="text-xs text-gray-500">--</p>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <!-- System Toggle -->
+                    <div class="flex items-center gap-3 glass rounded-lg px-4 py-2">
+                        <span class="text-sm text-gray-400">Trading</span>
+                        <button id="trading-toggle" onclick="toggleTrading()" class="relative w-12 h-6 rounded-full bg-gray-600 transition-colors duration-300">
+                            <span id="trading-toggle-dot" class="absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform duration-300"></span>
+                        </button>
+                    </div>
+                    
+                    <!-- Paper Trading Badge -->
+                    <div id="paper-badge" class="hidden px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm font-medium border border-yellow-500/30">
+                        <i class="fas fa-flask mr-1"></i> Paper Trading
+                    </div>
+                </div>
+            </header>
+
+            <!-- Scrollable Content -->
+            <div class="flex-1 overflow-y-auto p-6">
+                
+                <!-- Dashboard Tab -->
+                <div id="tab-dashboard" class="tab-content space-y-6">
+                    
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- P&L Card -->
+                        <div class="glass rounded-2xl p-5 animated-border">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <p class="text-sm text-gray-400">Today's P&L</p>
+                                    <h3 id="stat-pnl" class="text-2xl font-bold font-mono mt-1">₹0.00</h3>
+                                </div>
+                                <div id="pnl-icon" class="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center">
+                                    <i class="fas fa-wallet text-gray-400"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span id="pnl-change" class="text-sm text-gray-500">0 trades</span>
+                            </div>
+                        </div>
+
+                        <!-- Win Rate Card -->
+                        <div class="glass rounded-2xl p-5 animated-border">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <p class="text-sm text-gray-400">Win Rate</p>
+                                    <h3 id="stat-winrate" class="text-2xl font-bold font-mono mt-1">0%</h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center">
+                                    <i class="fas fa-trophy text-primary-400"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span id="win-stats" class="text-sm text-gray-500">0W / 0L</span>
+                            </div>
+                        </div>
+
+                        <!-- Open Positions Card -->
+                        <div class="glass rounded-2xl p-5 animated-border">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <p class="text-sm text-gray-400">Open Positions</p>
+                                    <h3 id="stat-positions" class="text-2xl font-bold font-mono mt-1">0</h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                                    <i class="fas fa-briefcase text-blue-400"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span id="position-pnl" class="text-sm text-gray-500">₹0 unrealized</span>
+                            </div>
+                        </div>
+
+                        <!-- Market Status Card -->
+                        <div class="glass rounded-2xl p-5 animated-border">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <p class="text-sm text-gray-400">Market Status</p>
+                                    <h3 id="market-status" class="text-2xl font-bold mt-1 text-gray-500">Closed</h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                                    <i class="fas fa-clock text-purple-400"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">09:15 - 15:30 IST</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <!-- P&L Chart -->
+                        <div class="lg:col-span-2 glass rounded-2xl p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-semibold">P&L Performance</h3>
+                                <select class="bg-dark-700 border border-dark-500 rounded-lg px-3 py-1 text-sm text-gray-400">
+                                    <option>Today</option>
+                                    <option>This Week</option>
+                                    <option>This Month</option>
+                                </select>
+                            </div>
+                            <div class="h-64">
+                                <canvas id="pnl-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div class="glass rounded-2xl p-5">
+                            <h3 class="font-semibold mb-4">Quick Stats</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-400">Total Trades</span>
+                                    <span id="quick-total-trades" class="font-mono font-semibold">0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-400">Avg Profit</span>
+                                    <span id="quick-avg-profit" class="font-mono font-semibold text-primary-400">₹0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-400">Avg Loss</span>
+                                    <span id="quick-avg-loss" class="font-mono font-semibold text-danger-500">₹0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-400">Risk:Reward</span>
+                                    <span class="font-mono font-semibold">1:2</span>
+                                </div>
+                                <div class="pt-4 border-t border-dark-600">
+                                    <div class="text-sm text-gray-400 mb-1">Daily Limit</div>
+                                    <div class="w-full bg-dark-700 rounded-full h-2">
+                                        <div id="daily-limit-bar" class="bg-primary-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+                                    </div>
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span id="daily-limit-used">0/10</span>
+                                        <span>trades</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Trades -->
+                    <div class="glass rounded-2xl overflow-hidden">
+                        <div class="p-5 border-b border-dark-600 flex items-center justify-between">
+                            <h3 class="font-semibold">Recent Trades</h3>
+                            <button onclick="switchTab('trades')" class="text-sm text-primary-400 hover:text-primary-300 transition-colors">
+                                View All <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full trades-table">
+                                <thead class="bg-dark-800/50">
+                                    <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        <th class="px-5 py-3">Time</th>
+                                        <th class="px-5 py-3">Symbol</th>
+                                        <th class="px-5 py-3">Side</th>
+                                        <th class="px-5 py-3">Entry</th>
+                                        <th class="px-5 py-3">SL / Target</th>
+                                        <th class="px-5 py-3">Qty</th>
+                                        <th class="px-5 py-3">Status</th>
+                                        <th class="px-5 py-3 text-right">P&L</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-trades-body" class="text-sm">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="no-trades-message" class="p-8 text-center text-gray-500 hidden">
+                            <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
+                            <p>No trades yet today</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Positions Tab -->
+                <div id="tab-positions" class="tab-content hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-semibold">Open Positions</h3>
+                        <button onclick="refreshPositions()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 rounded-lg text-sm font-medium transition-colors">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
+                    </div>
+                    
+                    <div id="positions-list" class="grid grid-cols-1 gap-4">
+                        <!-- Dynamic position cards -->
+                    </div>
+                    
+                    <div id="no-positions" class="glass rounded-2xl p-12 text-center text-gray-500 hidden">
+                        <i class="fas fa-briefcase text-5xl mb-4 opacity-30"></i>
+                        <h3 class="text-xl font-semibold mb-2">No Open Positions</h3>
+                        <p>Positions will appear here when trades are executed</p>
+                    </div>
+                </div>
+
+                <!-- Trades Tab -->
+                <div id="tab-trades" class="tab-content hidden">
+                    <div class="glass rounded-2xl overflow-hidden">
+                        <div class="p-5 border-b border-dark-600">
+                            <h3 class="font-semibold text-xl">Complete Trade History</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full trades-table">
+                                <thead class="bg-dark-800/50">
+                                    <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        <th class="px-5 py-3">Time</th>
+                                        <th class="px-5 py-3">Symbol</th>
+                                        <th class="px-5 py-3">Scan</th>
+                                        <th class="px-5 py-3">Entry</th>
+                                        <th class="px-5 py-3">Exit</th>
+                                        <th class="px-5 py-3">Qty</th>
+                                        <th class="px-5 py-3">Status</th>
+                                        <th class="px-5 py-3 text-right">P&L</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="all-trades-body" class="text-sm">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div id="tab-analytics" class="tab-content hidden space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div class="glass rounded-2xl p-5">
+                            <h3 class="font-semibold mb-4">Win/Loss Distribution</h3>
+                            <div class="h-64">
+                                <canvas id="winloss-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="glass rounded-2xl p-5">
+                            <h3 class="font-semibold mb-4">Trade Performance</h3>
+                            <div class="h-64">
+                                <canvas id="performance-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Config Tab -->
+                <div id="tab-config" class="tab-content hidden space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        
+                        <!-- Kite Authentication -->
+                        <div class="glass rounded-2xl p-6 space-y-6">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-xl flex items-center gap-2">
+                                    <i class="fas fa-key text-primary-400"></i>
+                                    Kite Authentication
+                                </h3>
+                                <span id="kite-status-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-400">
+                                    Not Connected
+                                </span>
+                            </div>
+                            
+                            <!-- Step 1: Login -->
+                            <div class="bg-dark-800/50 rounded-xl p-4 space-y-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-primary-500/20 flex items-center justify-center text-primary-400 text-sm font-bold">1</div>
+                                    <h4 class="font-medium">Login to Zerodha Kite</h4>
+                                </div>
+                                <p class="text-sm text-gray-400 pl-11">
+                                    Click below to login to your Kite account. This will redirect you to Zerodha.
+                                </p>
+                                <div class="pl-11">
+                                    <a href="https://kite.trade/connect/login?v=3&api_key=8zjbufhni9k0u2mx" 
+                                       target="_blank" 
+                                       class="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-semibold transition-all shadow-lg shadow-orange-500/20">
+                                        <i class="fas fa-external-link-alt"></i>
+                                        Login to Kite
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 2: Enter Token -->
+                            <div class="bg-dark-800/50 rounded-xl p-4 space-y-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-sm font-bold">2</div>
+                                    <h4 class="font-medium">Enter Access Token</h4>
+                                </div>
+                                <p class="text-sm text-gray-400 pl-11">
+                                    After login, copy the <code class="bg-dark-700 px-2 py-0.5 rounded text-xs">request_token</code> from the URL and paste it below.
+                                </p>
+                                <div class="pl-11 space-y-3">
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-2">API Key</label>
+                                        <input type="text" id="kite-api-key" readonly 
+                                               class="w-full bg-dark-900 border border-dark-500 rounded-lg px-4 py-2 text-gray-500 cursor-not-allowed font-mono text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-2">
+                                            Request Token / Access Token
+                                            <span class="text-xs text-gray-500 ml-1">(from URL after login)</span>
+                                        </label>
+                                        <input type="password" id="kite-access-token" placeholder="Paste token here..."
+                                               class="w-full bg-dark-700 border border-dark-500 rounded-lg px-4 py-2 focus:border-primary-500 focus:outline-none transition-colors font-mono text-sm">
+                                    </div>
+                                    <button onclick="saveKiteToken()" 
+                                            class="w-full bg-primary-500 hover:bg-primary-600 text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                                        <i class="fas fa-save"></i>
+                                        Save Token & Connect
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 3: Test -->
+                            <div class="bg-dark-800/50 rounded-xl p-4 space-y-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 text-sm font-bold">3</div>
+                                    <h4 class="font-medium">Test Connection</h4>
+                                </div>
+                                <div class="pl-11">
+                                    <button onclick="testKiteConnection()" 
+                                            class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                                        <i class="fas fa-plug"></i>
+                                        Test Kite Connection
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Instructions -->
+                            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                                <h5 class="text-sm font-medium text-blue-400 mb-2 flex items-center gap-2">
+                                    <i class="fas fa-info-circle"></i>
+                                    How to get your token:
+                                </h5>
+                                <ol class="text-xs text-gray-400 space-y-1.5 pl-4 list-decimal">
+                                    <li>Click "Login to Kite" button above</li>
+                                    <li>Enter your Zerodha credentials</li>
+                                    <li>After login, you'll be redirected to a URL like:
+                                        <code class="block mt-1 bg-dark-700 px-2 py-1 rounded break-all">http://localhost/?request_token=XYZ...</code>
+                                    </li>
+                                    <li>Copy the <strong>request_token</strong> value (the part after <code>request_token=</code>)</li>
+                                    <li>Paste it in the field above and click "Save Token"</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- Trading Settings -->
+                        <div class="glass rounded-2xl p-6 space-y-6">
+                            <h3 class="font-semibold text-xl flex items-center gap-2">
+                                <i class="fas fa-sliders-h text-primary-400"></i>
+                                Trading Settings
+                            </h3>
+                            
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-2">Capital (₹)</label>
+                                        <input type="number" id="config-capital" 
+                                               class="w-full bg-dark-700 border border-dark-500 rounded-lg px-4 py-2 focus:border-primary-500 focus:outline-none transition-colors">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-2">Risk per Trade (%)</label>
+                                        <input type="number" id="config-risk" step="0.1" 
+                                               class="w-full bg-dark-700 border border-dark-500 rounded-lg px-4 py-2 focus:border-primary-500 focus:outline-none transition-colors">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-2">Max Trades/Day</label>
+                                        <input type="number" id="config-max-trades" 
+                                               class="w-full bg-dark-700 border border-dark-500 rounded-lg px-4 py-2 focus:border-primary-500 focus:outline-none transition-colors">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-2">Webhook Secret</label>
+                                        <input type="text" id="config-secret" 
+                                               class="w-full bg-dark-700 border border-dark-500 rounded-lg px-4 py-2 focus:border-primary-500 focus:outline-none transition-colors font-mono text-sm">
+                                    </div>
+                                </div>
+                                
+                                <!-- Paper Trading Toggle -->
+                                <div class="bg-dark-800/50 rounded-xl p-4 flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium flex items-center gap-2">
+                                            <i class="fas fa-flask text-yellow-400"></i>
+                                            Paper Trading Mode
+                                        </h4>
+                                        <p class="text-sm text-gray-400 mt-1">Test strategies without real money</p>
+                                    </div>
+                                    <button id="paper-trading-toggle" onclick="togglePaperTrading()" 
+                                            class="relative w-14 h-7 rounded-full bg-gray-600 transition-colors duration-300">
+                                        <span id="paper-trading-dot" class="absolute left-1 top-1 w-5 h-5 rounded-full bg-white transition-transform duration-300"></span>
+                                    </button>
+                                </div>
+                                
+                                <div class="flex gap-3 pt-4 border-t border-dark-600">
+                                    <button onclick="saveConfig()" 
+                                            class="flex-1 bg-primary-500 hover:bg-primary-600 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                                        <i class="fas fa-save"></i>
+                                        Save Settings
+                                    </button>
+                                    <button onclick="testConnections()" 
+                                            class="px-6 bg-dark-700 hover:bg-dark-600 text-gray-300 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2">
+                                        <i class="fas fa-vial"></i>
+                                        Test APIs
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Global state
+        let appData = {
+            config: null,
+            stats: null,
+            trades: [],
+            positions: []
+        };
+        
+        let charts = {};
+        let currentTab = 'dashboard';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            await loadData();
+            
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                }, 300);
+            }, 500);
+            
+            // Auto refresh every 10 seconds
+            setInterval(refreshData, 10000);
+        });
+
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleString('en-IN', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Load all data
+        async function loadData() {
+            try {
+                const [configRes, statsRes, tradesRes, positionsRes] = await Promise.all([
+                    fetch('/api/config?_=' + Date.now()),
+                    fetch('/api/stats?_=' + Date.now()),
+                    fetch('/api/trades?_=' + Date.now()),
+                    fetch('/api/positions?_=' + Date.now())
+                ]);
+
+                if (!configRes.ok || !statsRes.ok) throw new Error('API Error');
+
+                appData.config = await configRes.json();
+                appData.stats = await statsRes.json();
+                appData.trades = await tradesRes.json();
+                const positionsData = await positionsRes.json();
+                appData.positions = positionsData.positions || [];
+
+                updateUI();
+            } catch (err) {
+                showToast('Failed to load data', 'error');
+                console.error(err);
+            }
+        }
+
+        // Refresh data
+        async function refreshData() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('fa-spin');
+            await loadData();
+            setTimeout(() => icon.classList.remove('fa-spin'), 500);
+        }
+
+        // Update all UI
+        function updateUI() {
+            updateHeader();
+            updateStats();
+            updateCharts();
+            updateTradesTable();
+            updatePositions();
+            updateConfigForm();
+        }
+
+        // Update header
+        function updateHeader() {
+            if (!appData.config) return;
+            
+            const isEnabled = appData.config.system_enabled;
+            const toggle = document.getElementById('trading-toggle');
+            const dot = document.getElementById('trading-toggle-dot');
+            
+            if (isEnabled) {
+                toggle.classList.remove('bg-gray-600');
+                toggle.classList.add('bg-primary-500');
+                dot.style.transform = 'translateX(24px)';
+            } else {
+                toggle.classList.add('bg-gray-600');
+                toggle.classList.remove('bg-primary-500');
+                dot.style.transform = 'translateX(0)';
+            }
+            
+            // Show paper trading badge
+            if (appData.config.paper_trading) {
+                document.getElementById('paper-badge').classList.remove('hidden');
+            }
+        }
+
+        // Update stats cards
+        function updateStats() {
+            if (!appData.stats) return;
+            
+            const pnl = appData.stats.today_pnl || 0;
+            const trades = appData.stats.today_trades || 0;
+            const wins = appData.stats.winning_trades || 0;
+            const losses = appData.stats.losing_trades || 0;
+            const total = wins + losses;
+            const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+            const openPos = appData.positions.length;
+            const unrealized = appData.positions.reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0);
+            
+            // P&L
+            const pnlEl = document.getElementById('stat-pnl');
+            pnlEl.textContent = '₹' + pnl.toFixed(2);
+            pnlEl.className = 'text-2xl font-bold font-mono mt-1 ' + (pnl >= 0 ? 'text-primary-400' : 'text-danger-500');
+            
+            const pnlIcon = document.getElementById('pnl-icon');
+            pnlIcon.className = 'w-10 h-10 rounded-xl flex items-center justify-center ' + 
+                (pnl >= 0 ? 'bg-primary-500/20' : 'bg-danger-500/20');
+            pnlIcon.innerHTML = pnl >= 0 ? 
+                '<i class="fas fa-arrow-trend-up text-primary-400"></i>' : 
+                '<i class="fas fa-arrow-trend-down text-danger-500"></i>';
+            
+            document.getElementById('pnl-change').textContent = trades + ' trades today';
+            
+            // Win Rate
+            document.getElementById('stat-winrate').textContent = winRate + '%';
+            document.getElementById('win-stats').textContent = `${wins}W / ${losses}L`;
+            
+            // Positions
+            document.getElementById('stat-positions').textContent = openPos;
+            const posPnlEl = document.getElementById('position-pnl');
+            posPnlEl.textContent = '₹' + unrealized.toFixed(2) + ' unrealized';
+            posPnlEl.className = 'text-sm ' + (unrealized >= 0 ? 'text-primary-400' : 'text-danger-500');
+            
+            // Update position badge
+            const posBadge = document.getElementById('position-count');
+            if (openPos > 0) {
+                posBadge.textContent = openPos;
+                posBadge.classList.remove('hidden');
+            } else {
+                posBadge.classList.add('hidden');
+            }
+            
+            // Market Status
+            const marketStatus = document.getElementById('market-status');
+            if (appData.stats.within_trading_hours) {
+                marketStatus.textContent = 'Open';
+                marketStatus.className = 'text-2xl font-bold mt-1 text-primary-400';
+            } else {
+                marketStatus.textContent = 'Closed';
+                marketStatus.className = 'text-2xl font-bold mt-1 text-gray-500';
+            }
+            
+            // Daily limit bar
+            const maxTrades = appData.config?.max_trades_per_day || 10;
+            const pct = Math.min((trades / maxTrades) * 100, 100);
+            document.getElementById('daily-limit-bar').style.width = pct + '%';
+            document.getElementById('daily-limit-used').textContent = `${trades}/${maxTrades}`;
+            
+            // Quick stats
+            document.getElementById('quick-total-trades').textContent = trades;
+        }
+
+        // Update charts
+        function updateCharts() {
+            // P&L Chart
+            const pnlCtx = document.getElementById('pnl-chart');
+            if (pnlCtx && appData.trades.length > 0) {
+                if (charts.pnl) charts.pnl.destroy();
+                
+                const tradeData = [...appData.trades].reverse().slice(-20);
+                const labels = tradeData.map(t => new Date(t.date).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'}));
+                const data = tradeData.map((t, i) => {
+                    let sum = 0;
+                    for (let j = 0; j <= i; j++) sum += tradeData[j].pnl || 0;
+                    return sum;
+                });
+                
+                charts.pnl = new Chart(pnlCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Cumulative P&L',
+                            data: data,
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { color: '#6b7280', font: { size: 10 } }
+                            },
+                            y: {
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { 
+                                    color: '#6b7280', 
+                                    font: { size: 10 },
+                                    callback: v => '₹' + v.toFixed(0)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Win/Loss Chart
+            const winlossCtx = document.getElementById('winloss-chart');
+            if (winlossCtx) {
+                if (charts.winloss) charts.winloss.destroy();
+                
+                const wins = appData.stats?.winning_trades || 0;
+                const losses = appData.stats?.losing_trades || 0;
+                
+                charts.winloss = new Chart(winlossCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Wins', 'Losses'],
+                        datasets: [{
+                            data: [wins, losses],
+                            backgroundColor: ['#22c55e', '#ef4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#9ca3af', padding: 20 }
+                            }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+        }
+
+        // Update trades table
+        function updateTradesTable() {
+            const recentBody = document.getElementById('recent-trades-body');
+            const allBody = document.getElementById('all-trades-body');
+            const noMsg = document.getElementById('no-trades-message');
+            
+            const trades = [...(appData.trades || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (trades.length === 0) {
+                if (noMsg) noMsg.classList.remove('hidden');
+                recentBody.innerHTML = '';
+                allBody.innerHTML = '';
+                return;
+            }
+            
+            if (noMsg) noMsg.classList.add('hidden');
+            
+            const renderRow = (trade) => {
+                const time = trade.date ? new Date(trade.date).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+                const pnl = trade.pnl || 0;
+                const side = trade.action || 'BUY';
+                const status = trade.status || 'PENDING';
+                
+                let statusClass = 'bg-gray-500/20 text-gray-400';
+                if (status === 'OPEN') statusClass = 'bg-blue-500/20 text-blue-400';
+                if (status === 'CLOSED' && pnl > 0) statusClass = 'bg-primary-500/20 text-primary-400';
+                if (status === 'CLOSED' && pnl < 0) statusClass = 'bg-danger-500/20 text-danger-400';
+                
+                return `
+                    <tr class="border-b border-dark-600">
+                        <td class="px-5 py-3 text-gray-400">${time}</td>
+                        <td class="px-5 py-3 font-semibold">${trade.symbol}</td>
+                        <td class="px-5 py-3">
+                            <span class="px-2 py-1 rounded text-xs ${side === 'BUY' ? 'bg-primary-500/20 text-primary-400' : 'bg-danger-500/20 text-danger-400'}">
+                                ${side}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3 font-mono">₹${(trade.entry_price || 0).toFixed(2)}</td>
+                        <td class="px-5 py-3 text-xs text-gray-400">
+                            SL: ₹${(trade.stop_loss || 0).toFixed(2)}<br>
+                            TP: ₹${(trade.target || 0).toFixed(2)}
+                        </td>
+                        <td class="px-5 py-3">${trade.quantity || 0}</td>
+                        <td class="px-5 py-3">
+                            <span class="px-2 py-1 rounded text-xs ${statusClass}">${status}</span>
+                        </td>
+                        <td class="px-5 py-3 text-right font-mono ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}">
+                            ${pnl !== 0 ? (pnl >= 0 ? '+' : '') + '₹' + pnl.toFixed(2) : '-'}
+                        </td>
+                    </tr>
+                `;
+            };
+            
+            recentBody.innerHTML = trades.slice(0, 5).map(renderRow).join('');
+            allBody.innerHTML = trades.map(renderRow).join('');
+        }
+
+        // Update positions
+        function updatePositions() {
+            const container = document.getElementById('positions-list');
+            const noPos = document.getElementById('no-positions');
+            
+            if (!appData.positions || appData.positions.length === 0) {
+                container.innerHTML = '';
+                noPos.classList.remove('hidden');
+                return;
+            }
+            
+            noPos.classList.add('hidden');
+            
+            container.innerHTML = appData.positions.map(pos => {
+                const pnl = pos.unrealized_pnl || 0;
+                const pnlPct = pos.pnl_percent || 0;
+                const isProfit = pnl >= 0;
+                
+                return `
+                    <div class="glass rounded-xl p-5 animated-border">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold text-lg">
+                                    ${pos.symbol[0]}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-lg">${pos.symbol}</h4>
+                                    <p class="text-sm text-gray-400">${pos.quantity} shares @ ₹${pos.entry_price.toFixed(2)}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold font-mono ${isProfit ? 'text-primary-400' : 'text-danger-500'}">
+                                    ${isProfit ? '+' : ''}₹${pnl.toFixed(2)}
+                                </div>
+                                <div class="text-sm ${isProfit ? 'text-primary-400' : 'text-danger-500'}">
+                                    ${isProfit ? '+' : ''}${pnlPct.toFixed(2)}%
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-4 mb-4 text-sm">
+                            <div class="bg-dark-800/50 rounded-lg p-3">
+                                <div class="text-gray-400 mb-1">LTP</div>
+                                <div class="font-mono font-semibold">₹${(pos.ltp || 0).toFixed(2)}</div>
+                            </div>
+                            <div class="bg-dark-800/50 rounded-lg p-3">
+                                <div class="text-gray-400 mb-1">Stop Loss</div>
+                                <div class="font-mono font-semibold text-danger-500">₹${pos.sl_price.toFixed(2)}</div>
+                            </div>
+                            <div class="bg-dark-800/50 rounded-lg p-3">
+                                <div class="text-gray-400 mb-1">Target</div>
+                                <div class="font-mono font-semibold text-primary-400">₹${pos.tp_price.toFixed(2)}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button onclick="closePosition('${pos.symbol}')" class="flex-1 bg-danger-500/20 hover:bg-danger-500/30 text-danger-500 py-2 rounded-lg font-medium transition-colors text-sm">
+                                <i class="fas fa-times mr-2"></i>Close Position
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update config form
+        function updateConfigForm() {
+            if (!appData.config) return;
+            
+            document.getElementById('config-capital').value = appData.config.capital || 100000;
+            document.getElementById('config-risk').value = appData.config.risk_percent || 1;
+            document.getElementById('config-max-trades').value = appData.config.max_trades_per_day || 10;
+            document.getElementById('config-secret').value = appData.config.chartink?.webhook_secret || '';
+            
+            // Kite settings
+            const apiKey = appData.config.kite?.api_key || '8zjbufhni9k0u2mx';
+            document.getElementById('kite-api-key').value = apiKey;
+            
+            // Show/hide paper trading toggle
+            const isPaper = appData.config.paper_trading || false;
+            const paperToggle = document.getElementById('paper-trading-toggle');
+            const paperDot = document.getElementById('paper-trading-dot');
+            if (isPaper) {
+                paperToggle.classList.remove('bg-gray-600');
+                paperToggle.classList.add('bg-yellow-500');
+                paperDot.style.transform = 'translateX(28px)';
+            } else {
+                paperToggle.classList.add('bg-gray-600');
+                paperToggle.classList.remove('bg-yellow-500');
+                paperDot.style.transform = 'translateX(0)';
+            }
+            
+            // Update Kite status badge
+            const hasToken = appData.config.kite?.access_token && appData.config.kite.access_token.length > 10;
+            const badge = document.getElementById('kite-status-badge');
+            if (hasToken) {
+                badge.textContent = 'Connected';
+                badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-primary-500/20 text-primary-400';
+            } else {
+                badge.textContent = 'Not Connected';
+                badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-400';
+            }
+        }
+
+        // Save Kite Token
+        async function saveKiteToken() {
+            const token = document.getElementById('kite-access-token').value.trim();
+            if (!token) {
+                showToast('Please enter the access token', 'error');
+                return;
+            }
+            
+            showToast('Saving token...', 'success');
+            
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ kite_access_token: token })
+                });
+                
+                if (res.ok) {
+                    document.getElementById('kite-access-token').value = '';
+                    showToast('Token saved successfully!', 'success');
+                    await loadData(); // Refresh to get updated config
+                } else {
+                    const err = await res.json();
+                    showToast(err.detail || 'Failed to save token', 'error');
+                }
+            } catch (err) {
+                showToast('Network error - try again', 'error');
+            }
+        }
+
+        // Test Kite Connection
+        async function testKiteConnection() {
+            showToast('Testing Kite connection...', 'success');
+            
+            try {
+                const res = await fetch('/api/test-kite', { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (err) {
+                showToast('Connection test failed', 'error');
+            }
+        }
+
+        // Toggle Paper Trading
+        async function togglePaperTrading() {
+            const newState = !appData.config.paper_trading;
+            
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paper_trading: newState })
+                });
+                
+                if (res.ok) {
+                    appData.config.paper_trading = newState;
+                    updateConfigForm();
+                    showToast(newState ? 'Paper Trading Enabled' : 'Paper Trading Disabled', 'success');
+                }
+            } catch (err) {
+                showToast('Failed to toggle paper trading', 'error');
+            }
+        }
+
+        // Tab switching
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-primary-500/10', 'text-primary-400', 'border', 'border-primary-500/20');
+                el.classList.add('text-gray-400');
+            });
+            
+            // Show selected tab
+            document.getElementById('tab-' + tab).classList.remove('hidden');
+            const nav = document.getElementById('nav-' + tab);
+            nav.classList.remove('text-gray-400');
+            nav.classList.add('bg-primary-500/10', 'text-primary-400', 'border', 'border-primary-500/20');
+            
+            // Update title
+            const titles = {
+                dashboard: 'Dashboard',
+                positions: 'Open Positions',
+                trades: 'Trade History',
+                analytics: 'Analytics',
+                config: 'Configuration'
+            };
+            document.getElementById('page-title').textContent = titles[tab];
+        }
+
+        // Toggle trading
+        async function toggleTrading() {
+            const newState = !appData.config.system_enabled;
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ system_enabled: newState })
+                });
+                if (res.ok) {
+                    appData.config.system_enabled = newState;
+                    updateHeader();
+                    showToast(newState ? 'Trading Enabled' : 'Trading Disabled', 'success');
+                }
+            } catch (err) {
+                showToast('Failed to toggle', 'error');
+            }
+        }
+
+        // Close position
+        async function closePosition(symbol) {
+            try {
+                const res = await fetch(`/api/positions/${symbol}/close`, { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast(`Closed position: ${symbol}`, 'success');
+                    refreshData();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (err) {
+                showToast('Failed to close position', 'error');
+            }
+        }
+
+        // Refresh positions only
+        async function refreshPositions() {
+            try {
+                const res = await fetch('/api/positions?_=' + Date.now());
+                const data = await res.json();
+                appData.positions = data.positions || [];
+                updatePositions();
+                updateStats();
+            } catch (err) {
+                showToast('Failed to refresh positions', 'error');
+            }
+        }
+
+        // Save config
+        async function saveConfig() {
+            const settings = {
+                capital: parseFloat(document.getElementById('config-capital').value),
+                risk_percent: parseFloat(document.getElementById('config-risk').value),
+                max_trades_per_day: parseInt(document.getElementById('config-max-trades').value),
+                chartink: { webhook_secret: document.getElementById('config-secret').value }
+            };
+            
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+                if (res.ok) {
+                    showToast('Settings saved', 'success');
+                }
+            } catch (err) {
+                showToast('Failed to save', 'error');
+            }
+        }
+
+        // Test connections
+        async function testConnections() {
+            showToast('Testing APIs...', 'success');
+            try {
+                const [kiteRes, telegramRes] = await Promise.all([
+                    fetch('/api/test-kite', { method: 'POST' }),
+                    fetch('/api/test-telegram', { method: 'POST' })
+                ]);
+                
+                const kiteData = await kiteRes.json();
+                showToast(`Kite: ${kiteData.message}`, kiteData.status === 'success' ? 'success' : 'error');
+            } catch (err) {
+                showToast('API test failed', 'error');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-primary-500/20 border-primary-500/30 text-primary-400',
+                error: 'bg-danger-500/20 border-danger-500/30 text-danger-400'
+            };
+            
+            const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+            
+            toast.className = `toast glass ${colors[type]} border px-4 py-3 rounded-xl flex items-center gap-3 shadow-lg`;
+            toast.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <span class="font-medium">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Trigger animation
+            requestAnimationFrame(() => toast.classList.add('show'));
+            
+            // Remove after 3s
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+<!-- Cache buster: 1773139734 -->
+<!-- Production: 1773139940 -->
+<!-- ESP: 1773143289 -->
+<!-- ESP Subpage: 1773143769 -->

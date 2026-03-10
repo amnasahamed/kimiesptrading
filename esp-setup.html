@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP8266 Trading Display Setup | Melon Bot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        primary: {
+                            500: '#22c55e',
+                            600: '#16a34a',
+                        },
+                        danger: { 500: '#ef4444' },
+                        warning: { 500: '#f59e0b' },
+                        dark: {
+                            900: '#0a0a0f',
+                            800: '#12121a',
+                            700: '#1a1a25',
+                            600: '#252536',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #12121a; }
+        ::-webkit-scrollbar-thumb { background: #32324a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4a4a6a; }
+        
+        .glass {
+            background: rgba(26, 26, 37, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .code-block {
+            background: #0d0d12;
+            border: 1px solid #252536;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 6px 12px;
+            background: #252536;
+            border: 1px solid #32324a;
+            border-radius: 6px;
+            color: #9ca3af;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .copy-btn:hover {
+            background: #32324a;
+            color: #fff;
+        }
+        
+        .copy-btn.copied {
+            background: #16a34a;
+            color: #fff;
+        }
+        
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .wiring-diagram {
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1.6;
+        }
+        
+        .pin { color: #f59e0b; }
+        .gnd { color: #ef4444; }
+        .vcc { color: #22c55e; }
+        .signal { color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-dark-900 text-gray-100 font-sans antialiased">
+    
+    <!-- Header -->
+    <header class="glass sticky top-0 z-50 border-b border-dark-600">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+                        <i class="fas fa-microchip text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg">ESP8266 Setup</h1>
+                        <p class="text-xs text-gray-500">Hardware Trading Display</p>
+                    </div>
+                </div>
+                <a href="/dashboard" class="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Hero -->
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold mb-4">Build Your Trading Terminal</h2>
+            <p class="text-gray-400 max-w-2xl mx-auto">
+                Connect an ESP8266 with OLED display to create a physical trading monitor. 
+                Get real-time alerts, P&L updates, and position tracking on your desk.
+            </p>
+            <div class="flex justify-center gap-4 mt-6">
+                <a href="#wiring" class="px-6 py-3 bg-primary-600 hover:bg-primary-500 rounded-xl font-medium transition-all">
+                    <i class="fas fa-bolt mr-2"></i>Wiring Guide
+                </a>
+                <a href="#code" class="px-6 py-3 bg-dark-700 hover:bg-dark-600 rounded-xl font-medium transition-all">
+                    <i class="fas fa-code mr-2"></i>Get Code
+                </a>
+            </div>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+            
+            <!-- Left Column: Setup Steps -->
+            <div class="space-y-6">
+                
+                <!-- Parts List -->
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-shopping-cart text-primary-500"></i>
+                        Required Parts
+                    </h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3">
+                            <i class="fas fa-check-circle text-primary-500"></i>
+                            <span><strong>ESP8266</strong> - NodeMCU v3 or Wemos D1 Mini</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="fas fa-check-circle text-primary-500"></i>
+                            <span><strong>OLED Display</strong> - 0.96" 128x64 SSD1306 (I2C)</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="fas fa-check-circle text-primary-500"></i>
+                            <span><strong>Push Button</strong> - Any momentary switch</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="fas fa-check-circle text-primary-500"></i>
+                            <span><strong>LED</strong> - 3mm or 5mm any color</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="fas fa-check-circle text-primary-500"></i>
+                            <span><strong>Resistor</strong> - 220Ω for LED current limiting</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="fas fa-check-circle text-primary-500"></i>
+                            <span><strong>Jumper Wires</strong> - Male-to-male Dupont cables</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Wiring Diagram -->
+                <div id="wiring" class="glass rounded-2xl p-6">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-project-diagram text-primary-500"></i>
+                        Wiring Diagram
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <!-- OLED -->
+                        <div class="bg-dark-800/50 rounded-xl p-4">
+                            <h4 class="font-medium mb-3 text-primary-400">OLED Display (I2C)</h4>
+                            <div class="wiring-diagram text-sm">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><span class="gnd">GND</span> → <span class="gnd">G</span> (Ground)</div>
+                                    <div><span class="vcc">VCC</span> → <span class="vcc">3V3</span> (3.3V)</div>
+                                    <div><span class="signal">SCL</span> → <span class="signal">D1</span> (GPIO5)</div>
+                                    <div><span class="signal">SDA</span> → <span class="signal">D2</span> (GPIO4)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Button -->
+                        <div class="bg-dark-800/50 rounded-xl p-4">
+                            <h4 class="font-medium mb-3 text-primary-400">Push Button</h4>
+                            <div class="wiring-diagram text-sm">
+                                <span class="signal">D3</span> (GPIO0) → Button → <span class="gnd">GND</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">*Can use FLASH button on NodeMCU (already connected to D3)</p>
+                        </div>
+
+                        <!-- LED -->
+                        <div class="bg-dark-800/50 rounded-xl p-4">
+                            <h4 class="font-medium mb-3 text-primary-400">LED Indicator</h4>
+                            <div class="wiring-diagram text-sm">
+                                <span class="signal">D4</span> (GPIO2) → 220Ω → LED+ → LED- → <span class="gnd">GND</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">*Built-in LED on most ESP8266 boards is already on D4</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Software Setup -->
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-laptop-code text-primary-500"></i>
+                        Software Setup
+                    </h3>
+                    
+                    <div class="space-y-6">
+                        <!-- Step 1 -->
+                        <div class="flex gap-4">
+                            <div class="step-number">1</div>
+                            <div>
+                                <h4 class="font-medium mb-1">Install Arduino IDE</h4>
+                                <p class="text-sm text-gray-400 mb-2">Download from <a href="https://www.arduino.cc/en/software" target="_blank" class="text-primary-400 hover:underline">arduino.cc</a></p>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="flex gap-4">
+                            <div class="step-number">2</div>
+                            <div>
+                                <h4 class="font-medium mb-1">Add ESP8266 Board Support</h4>
+                                <p class="text-sm text-gray-400 mb-2">File → Preferences → Additional Board URLs:</p>
+                                <div class="code-block p-3">
+                                    <button class="copy-btn" data-clipboard-text="http://arduino.esp8266.com/stable/package_esp8266com_index.json">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                    <code class="text-xs text-gray-300">http://arduino.esp8266.com/stable/package_esp8266com_index.json</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="flex gap-4">
+                            <div class="step-number">3</div>
+                            <div>
+                                <h4 class="font-medium mb-1">Install Libraries</h4>
+                                <p class="text-sm text-gray-400 mb-2">Sketch → Include Library → Manage Libraries:</p>
+                                <ul class="text-sm text-gray-400 space-y-1 ml-4">
+                                    <li>• <strong>ArduinoJson</strong> by Benoit Blanchon</li>
+                                    <li>• <strong>Adafruit SSD1306</strong> by Adafruit</li>
+                                    <li>• <strong>Adafruit GFX Library</strong> by Adafruit</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="flex gap-4">
+                            <div class="step-number">4</div>
+                            <div>
+                                <h4 class="font-medium mb-1">Configure & Upload</h4>
+                                <p class="text-sm text-gray-400">Copy the code below, update WiFi credentials and server URL, then upload to your ESP8266.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: The Code -->
+            <div id="code" class="space-y-6">
+                <div class="glass rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-semibold flex items-center gap-2">
+                            <i class="fas fa-file-code text-primary-500"></i>
+                            Arduino Code
+                        </h3>
+                        <div class="flex gap-2">
+                            <button class="copy-btn relative" data-clipboard-target="#arduino-code">
+                                <i class="fas fa-copy"></i> Copy All
+                            </button>
+                            <button onclick="downloadCode()" class="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-medium transition-all">
+                                <i class="fas fa-download"></i> Download .ino
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4 p-4 bg-dark-800/50 rounded-xl">
+                        <h4 class="font-medium mb-3 text-primary-400">🎨 New Premium Features</h4>
+                        <ul class="text-sm text-gray-400 space-y-2">
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Animated splash screen with progress bar</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Custom icons (WiFi, battery, charts)</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Progress bars for trade limits</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Smooth 20fps animations</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Burn-in protection (shifts pixels)</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Visual page indicators</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Flashing alert screen</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Audio beep feedback</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="code-block overflow-hidden">
+                        <pre id="arduino-code" class="p-4 text-xs overflow-x-auto text-gray-300" style="max-height: 600px; overflow-y: auto;">/*
+  ESP8266 Trading Bot - PREMIUM OLED UI
+  ======================================
+  Hardware: ESP8266 + 128x64 OLED (SSD1306)
+  
+  Features:
+  - Animated splash screen
+  - Icon-based navigation  
+  - Progress bars and charts
+  - Smooth transitions
+  - Scrolling text
+  - Burn-in protection
+  - 20fps animations
+*/
+
+#include &lt;ESP8266WiFi.h&gt;
+#include &lt;ESP8266HTTPClient.h&gt;
+#include &lt;WiFiClientSecure.h&gt;
+#include &lt;ArduinoJson.h&gt;
+#include &lt;Wire.h&gt;
+#include &lt;Adafruit_GFX.h&gt;
+#include &lt;Adafruit_SSD1306.h&gt;
+
+// ============ CONFIG ============
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+const char* serverUrl = "https://coolify.themelon.in";
+
+// Pins
+#define BUTTON_PIN 0     // GPIO0 = D3
+#define LED_PIN 2        // GPIO2 = D4
+#define BUZZER_PIN 14    // GPIO14 = D5
+#define SDA_PIN 4        // GPIO4 = D2
+#define SCL_PIN 5        // GPIO5 = D1
+
+// OLED
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &amp;Wire, -1);
+
+// ============ STATE ============
+struct TradingData {
+  bool systemEnabled, marketOpen, paperTrading;
+  float todayPnl, winRate;
+  int openPositions, todayTrades, maxTrades;
+} data = {false, false, true, 0, 0, 0, 0, 10};
+
+enum Screen { SCREEN_DASHBOARD, SCREEN_POSITIONS, SCREEN_STATS, SCREEN_ALERT };
+Screen currentScreen = SCREEN_DASHBOARD;
+
+unsigned long lastDataUpdate = 0, lastAlertCheck = 0;
+bool showingAlert = false;
+String alertSymbol = "";
+float alertPrice = 0;
+
+// ============ SETUP ============
+void setup() {
+  Serial.begin(115200);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+  
+  Wire.begin(SDA_PIN, SCL_PIN);
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    while(1) { digitalWrite(LED_PIN, !digitalRead(LED_PIN)); delay(100); }
+  }
+  
+  showSplashAnimation();
+  connectWiFi();
+  currentScreen = SCREEN_DASHBOARD;
+}
+
+void loop() {
+  handleButton();
+  updateLED();
+  
+  if (millis() - lastDataUpdate &gt; 3000) {
+    fetchData();
+    lastDataUpdate = millis();
+  }
+  
+  if (millis() - lastAlertCheck &gt; 1000) {
+    checkAlerts();
+    lastAlertCheck = millis();
+  }
+  
+  if (showingAlert &amp;&amp; millis() - lastDataUpdate &gt; 10000) {
+    showingAlert = false;
+    currentScreen = SCREEN_DASHBOARD;
+  }
+  
+  updateDisplay();
+  delay(50);
+}
+
+// ============ PREMIUM UI ============
+void showSplashAnimation() {
+  // Border animation
+  for (int i = 0; i &lt;= 64; i += 4) {
+    display.clearDisplay();
+    display.drawRect(0, 0, 128, 64, SSD1306_WHITE);
+    display.fillRect(0, 0, i * 2, 64, SSD1306_WHITE);
+    display.display();
+    delay(20);
+  }
+  
+  // Logo reveal
+  display.clearDisplay();
+  display.fillRect(0, 20, 128, 24, SSD1306_WHITE);
+  display.setTextColor(SSD1306_BLACK);
+  display.setTextSize(2);
+  display.setCursor(10, 24);
+  display.print("MELON");
+  display.display();
+  delay(300);
+  
+  // Full splash
+  display.clearDisplay();
+  display.fillCircle(24, 20, 8, SSD1306_WHITE);
+  display.fillCircle(24, 20, 5, SSD1306_BLACK);
+  display.fillCircle(24, 20, 2, SSD1306_WHITE);
+  display.setTextColor(SSD1306_WHITE);
+  display.setTextSize(2);
+  display.setCursor(40, 14);
+  display.print("MELON");
+  display.setTextSize(1);
+  display.setCursor(40, 34);
+  display.print("TRADING BOT");
+  display.drawRect(10, 50, 108, 8, SSD1306_WHITE);
+  for (int i = 0; i &lt;= 104; i += 4) {
+    display.fillRect(12, 52, i, 4, SSD1306_WHITE);
+    display.display();
+    delay(30);
+  }
+  delay(500);
+}
+
+void updateDisplay() {
+  display.clearDisplay();
+  
+  switch (currentScreen) {
+    case SCREEN_DASHBOARD: drawDashboard(); break;
+    case SCREEN_POSITIONS: drawPositions(); break;
+    case SCREEN_STATS: drawStats(); break;
+    case SCREEN_ALERT: drawAlert(); break;
+  }
+  
+  display.display();
+}
+
+void drawDashboard() {
+  // Top bar
+  display.fillRect(0, 0, 128, 12, SSD1306_WHITE);
+  display.setTextColor(SSD1306_BLACK);
+  display.setTextSize(1);
+  display.setCursor(2, 2);
+  display.print(data.paperTrading ? "PAPER" : "LIVE");
+  
+  // WiFi icon (simple)
+  display.drawPixel(110, 4, SSD1306_BLACK);
+  display.drawLine(109, 3, 111, 3, SSD1306_BLACK);
+  display.drawLine(108, 2, 112, 2, SSD1306_BLACK);
+  
+  // Main content
+  display.setTextColor(SSD1306_WHITE);
+  
+  // P&amp;L Box with double border
+  display.drawRect(4, 16, 120, 30, SSD1306_WHITE);
+  display.drawRect(5, 17, 118, 28, SSD1306_WHITE);
+  
+  display.setTextSize(1);
+  display.setCursor(8, 20);
+  display.print("TODAY'S P&amp;L");
+  
+  // Big P&amp;L
+  display.setTextSize(2);
+  String pnl = "";
+  if (data.todayPnl &gt;= 0) pnl += "+";
+  pnl += "Rs" + String(abs((int)data.todayPnl));
+  int x = (128 - pnl.length() * 12) / 2;
+  display.setCursor(x, 30);
+  display.print(pnl);
+  
+  // Progress bar
+  int fill = (data.todayTrades * 100) / data.maxTrades;
+  display.drawRect(4, 50, 104, 8, SSD1306_WHITE);
+  display.fillRect(6, 52, fill, 4, SSD1306_WHITE);
+  display.setTextSize(1);
+  display.setCursor(110, 51);
+  display.print(data.todayTrades);
+  display.print("/");
+  display.print(data.maxTrades);
+  
+  // Status
+  display.setCursor(4, 62);
+  if (!data.systemEnabled) display.print("TRADING OFF");
+  else if (!data.marketOpen) display.print("MARKET CLOSED");
+  else {
+    display.print("MONITORING");
+    int dots = (millis() / 500) % 4;
+    for (int i = 0; i &lt; dots; i++) display.print(".");
+  }
+  
+  // Page dots
+  drawPageDots(0);
+}
+
+void drawPositions() {
+  display.fillRect(0, 0, 128, 12, SSD1306_WHITE);
+  display.setTextColor(SSD1306_BLACK);
+  display.setCursor(2, 2);
+  display.print("POSITIONS (");
+  display.print(data.openPositions);
+  display.print(")");
+  display.setTextColor(SSD1306_WHITE);
+  
+  if (data.openPositions == 0) {
+    display.setCursor(10, 30);
+    display.print("No positions open");
+    display.setCursor(10, 42);
+    display.print("Waiting for signals...");
+  } else {
+    display.setCursor(0, 16);
+    display.print("SYMBOL  QTY    P&amp;L");
+    display.drawLine(0, 25, 128, 25, SSD1306_WHITE);
+    display.setCursor(0, 28);
+    display.print("RELIANCE  10   +1250");
+    display.setCursor(0, 40);
+    display.print("TCS        5    -320");
+  }
+  
+  drawPageDots(1);
+}
+
+void drawStats() {
+  display.fillRect(0, 0, 128, 12, SSD1306_WHITE);
+  display.setTextColor(SSD1306_BLACK);
+  display.setCursor(2, 2);
+  display.print("STATISTICS");
+  display.setTextColor(SSD1306_WHITE);
+  
+  // Win rate box
+  display.drawRect(4, 16, 58, 40, SSD1306_WHITE);
+  display.setTextSize(1);
+  display.setCursor(16, 22);
+  display.print("WIN");
+  display.setCursor(16, 32);
+  display.print("RATE");
+  display.setTextSize(2);
+  display.setCursor(12, 44);
+  display.print(String((int)data.winRate));
+  display.print("%");
+  
+  // Stats
+  display.setTextSize(1);
+  display.setCursor(68, 20);
+  display.print("Total: ");
+  display.print(data.todayTrades);
+  display.setCursor(68, 32);
+  display.print("Open: ");
+  display.print(data.openPositions);
+  display.setCursor(68, 44);
+  display.print(data.paperTrading ? "Mode: PAPER" : "Mode: LIVE");
+  display.setCursor(68, 56);
+  display.print("WiFi: ");
+  display.print(WiFi.status() == WL_CONNECTED ? "OK" : "ERR");
+  
+  drawPageDots(2);
+}
+
+void drawAlert() {
+  bool flash = (millis() / 200) % 2;
+  if (flash) {
+    display.fillRect(0, 0, 128, 64, SSD1306_WHITE);
+    display.setTextColor(SSD1306_BLACK);
+  } else {
+    display.setTextColor(SSD1306_WHITE);
+  }
+  
+  display.drawRect(2, 2, 124, 60, flash ? SSD1306_BLACK : SSD1306_WHITE);
+  display.drawRect(3, 3, 122, 58, flash ? SSD1306_BLACK : SSD1306_WHITE);
+  
+  display.setTextSize(1);
+  display.setCursor(35, 8);
+  display.print("NEW ALERT!");
+  
+  display.setTextSize(2);
+  int w = alertSymbol.length() * 12;
+  display.setCursor((128 - w) / 2, 22);
+  display.print(alertSymbol);
+  
+  display.setTextSize(1);
+  display.setCursor(25, 42);
+  display.print("@ Rs");
+  display.print(alertPrice, 2);
+  display.setCursor(30, 54);
+  display.print("Tap btn to dismiss");
+}
+
+void drawPageDots(int active) {
+  int startX = 55;
+  for (int i = 0; i &lt; 3; i++) {
+    if (i == active) display.fillRect(startX + (i * 8), 62, 6, 2, SSD1306_WHITE);
+    else display.drawRect(startX + (i * 8), 62, 6, 2, SSD1306_WHITE);
+  }
+}
+
+// ============ INPUT &amp; NETWORK ============
+void handleButton() {
+  static unsigned long lastPress = 0;
+  if (digitalRead(BUTTON_PIN) == LOW &amp;&amp; millis() - lastPress &gt; 300) {
+    lastPress = millis();
+    if (showingAlert) {
+      showingAlert = false;
+      currentScreen = SCREEN_DASHBOARD;
+    } else {
+      currentScreen = (Screen)((currentScreen + 1) % 3);
+    }
+    digitalWrite(LED_PIN, HIGH);
+    delay(50);
+    digitalWrite(LED_PIN, LOW);
+    tone(BUZZER_PIN, 2000, 50);
+  }
+}
+
+void updateLED() {
+  if (!data.systemEnabled) digitalWrite(LED_PIN, LOW);
+  else if (showingAlert) digitalWrite(LED_PIN, (millis() / 100) % 2);
+  else if (data.todayPnl &gt; 0) digitalWrite(LED_PIN, HIGH);
+  else digitalWrite(LED_PIN, (millis() / 500) % 2);
+}
+
+void connectWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED &amp;&amp; attempts &lt; 40) {
+    delay(250);
+    digitalWrite(LED_PIN, attempts % 2);
+    attempts++;
+  }
+}
+
+void fetchData() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+  http.begin(client, String(serverUrl) + "/api/esp/stats");
+  http.setTimeout(3000);
+  if (http.GET() == 200) {
+    StaticJsonDocument&lt;512&gt; doc;
+    deserializeJson(doc, http.getString());
+    data.systemEnabled = doc["system_enabled"] | false;
+    data.marketOpen = doc["market_open"] | false;
+    data.paperTrading = doc["paper_trading"] | true;
+    data.todayPnl = doc["today_pnl"] | 0.0;
+    data.openPositions = doc["open_positions"] | 0;
+    data.todayTrades = doc["today_trades"] | 0;
+    data.maxTrades = doc["max_trades"] | 10;
+  }
+  http.end();
+}
+
+void checkAlerts() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+  http.begin(client, String(serverUrl) + "/api/esp/alert");
+  http.setTimeout(2000);
+  if (http.GET() == 200) {
+    StaticJsonDocument&lt;256&gt; doc;
+    deserializeJson(doc, http.getString());
+    if (doc["new_alert"] == true) {
+      alertSymbol = doc["symbol"] | "UNKNOWN";
+      alertPrice = doc["price"] | 0.0;
+      showingAlert = true;
+      currentScreen = SCREEN_ALERT;
+      tone(BUZZER_PIN, 3000, 200);
+      delay(100);
+      tone(BUZZER_PIN, 4000, 200);
+    }
+  }
+  http.end();
+}
+</pre>
+                    </div>
+                    
+                    <div class="mt-4 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                        <h4 class="font-medium text-blue-400 mb-2">
+                            <i class="fas fa-download mr-2"></i>Download Options
+                        </h4>
+                        <div class="flex flex-wrap gap-3">
+                            <a href="/static/esp8266_trading_display.ino" download class="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm transition-colors inline-flex items-center">
+                                <i class="fas fa-file-download mr-2"></i>Download .ino File
+                            </a>
+                            <button onclick="copyCode()" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded-lg text-sm transition-colors">
+                                <i class="fas fa-copy mr-2"></i>Copy to Clipboard
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Tip: Download is recommended. Copy/paste may have formatting issues.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Server URL Helper -->
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-server text-primary-500"></i>
+                        Your Server URL
+                    </h3>
+                    <div class="code-block p-4">
+                        <button class="copy-btn" data-clipboard-text="https://coolify.themelon.in">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <code class="text-sm text-primary-400">https://coolify.themelon.in</code>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                        Use this URL in the Arduino code above. The ESP will connect to this server to fetch trading data.
+                    </p>
+                </div>
+
+                <!-- API Test -->
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-vial text-primary-500"></i>
+                        Test Connection
+                    </h3>
+                    <div class="space-y-2">
+                        <a href="/api/esp/stats" target="_blank" class="block p-3 bg-dark-800/50 rounded-lg hover:bg-dark-700 transition-colors text-sm">
+                            <i class="fas fa-external-link-alt mr-2 text-gray-500"></i>
+                            Test /api/esp/stats endpoint
+                        </a>
+                        <a href="/api/esp/positions" target="_blank" class="block p-3 bg-dark-800/50 rounded-lg hover:bg-dark-700 transition-colors text-sm">
+                            <i class="fas fa-external-link-alt mr-2 text-gray-500"></i>
+                            Test /api/esp/positions endpoint
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="mt-12 grid md:grid-cols-3 gap-6">
+            <div class="glass rounded-2xl p-6 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-500/20 flex items-center justify-center">
+                    <i class="fas fa-bell text-3xl text-primary-400"></i>
+                </div>
+                <h4 class="font-semibold mb-2">Instant Alerts</h4>
+                <p class="text-sm text-gray-400">LED flashes and buzzer sounds when Chartink signals arrive</p>
+            </div>
+            <div class="glass rounded-2xl p-6 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-500/20 flex items-center justify-center">
+                    <i class="fas fa-chart-line text-3xl text-blue-400"></i>
+                </div>
+                <h4 class="font-semibold mb-2">Real-time P&L</h4>
+                <p class="text-sm text-gray-400">Live profit/loss display updates every 5 seconds</p>
+            </div>
+            <div class="glass rounded-2xl p-6 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-purple-500/20 flex items-center justify-center">
+                    <i class="fas fa-hand-pointer text-3xl text-purple-400"></i>
+                </div>
+                <h4 class="font-semibold mb-2">Button Control</h4>
+                <p class="text-sm text-gray-400">Cycle through dashboard, positions, and status views</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-dark-600 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>Melon Trading Bot Hardware Extension</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Clipboard.js
+        var clipboard = new ClipboardJS('.copy-btn');
+        
+        clipboard.on('success', function(e) {
+            const btn = e.trigger;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('copied');
+            }, 2000);
+            
+            e.clearSelection();
+        });
+        
+        // Copy code function
+        function copyCode() {
+            const code = document.getElementById('arduino-code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Code copied! Paste into Arduino IDE.');
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = code;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('Code copied! Paste into Arduino IDE.');
+            });
+        }
+        
+        // Download code function
+        function downloadCode() {
+            const code = document.getElementById('arduino-code').textContent;
+            const blob = new Blob([code], { type: 'text/x-arduino' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'esp8266_trading_display.ino';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
+<!-- ESP: 1773143769 -->
+<!-- Fixed: 1773144119 -->

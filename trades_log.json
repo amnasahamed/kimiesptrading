@@ -1,0 +1,112 @@
+[
+  {
+    "id": "20260310140013_RELIANCE",
+    "date": "2026-03-10T14:00:13.307421",
+    "symbol": "RELIANCE",
+    "action": "BUY",
+    "entry_price": 2950.5,
+    "stop_loss": 2891.49,
+    "target": 3068.52,
+    "quantity": 1,
+    "risk_amount": 59.01,
+    "risk_reward": 2.0,
+    "atr": 45.6821,
+    "order_id": "",
+    "order_status": "FAILED",
+    "status": "FAILED",
+    "pnl": 0,
+    "alert_name": "Melon Test Scan",
+    "context": {
+      "scan_url": null,
+      "webhook_url": null
+    }
+  },
+  {
+    "id": "20260310140013_INFY",
+    "date": "2026-03-10T14:00:13.690097",
+    "symbol": "INFY",
+    "action": "BUY",
+    "entry_price": 1620.0,
+    "stop_loss": 1587.6,
+    "target": 1684.8,
+    "quantity": 1,
+    "risk_amount": 32.4,
+    "risk_reward": 2.0,
+    "atr": 50.8857,
+    "order_id": "",
+    "order_status": "FAILED",
+    "status": "FAILED",
+    "pnl": 0,
+    "alert_name": "Melon Test Scan",
+    "context": {
+      "scan_url": null,
+      "webhook_url": null
+    }
+  },
+  {
+    "id": "20260310151835_RELIANCE",
+    "date": "2026-03-10T15:18:35.316989",
+    "symbol": "RELIANCE",
+    "action": "BUY",
+    "entry_price": 2500.0,
+    "stop_loss": 2450.0,
+    "target": 2600.0,
+    "quantity": 1,
+    "risk_amount": 50.0,
+    "risk_reward": 2.0,
+    "atr": 34.390909090909126,
+    "order_id": "",
+    "order_status": "FAILED",
+    "status": "FAILED",
+    "pnl": 0,
+    "alert_name": "Chartink Test",
+    "context": {
+      "volume": null,
+      "change_percent": null
+    }
+  },
+  {
+    "id": "20260310152146_RELIANCE",
+    "date": "2026-03-10T15:21:46.079990",
+    "symbol": "RELIANCE",
+    "action": "BUY",
+    "entry_price": 2450.5,
+    "stop_loss": 2401.49,
+    "target": 2548.52,
+    "quantity": 1,
+    "risk_amount": 49.01,
+    "risk_reward": 2.0,
+    "atr": 34.390909090909126,
+    "order_id": "",
+    "order_status": "FAILED",
+    "status": "FAILED",
+    "pnl": 0,
+    "alert_name": "Short term breakouts",
+    "context": {
+      "scan_url": "short-term-breakouts",
+      "webhook_url": null
+    }
+  },
+  {
+    "id": "20260310152146_TCS",
+    "date": "2026-03-10T15:21:46.682748",
+    "symbol": "TCS",
+    "action": "BUY",
+    "entry_price": 3520.0,
+    "stop_loss": 3449.6,
+    "target": 3660.8,
+    "quantity": 1,
+    "risk_amount": 70.4,
+    "risk_reward": 2.0,
+    "atr": 56.78181818181813,
+    "order_id": "",
+    "order_status": "FAILED",
+    "status": "FAILED",
+    "pnl": 0,
+    "alert_name": "Short term breakouts",
+    "context": {
+      "scan_url": "short-term-breakouts",
+      "webhook_url": null
+    }
+  }
+]
