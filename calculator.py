@@ -197,20 +197,27 @@ def calculate_intelligent_position(
     atr_tp_multiplier: float = 3.0,
     min_rr: float = 2.0,
     max_sl_percent: float = 2.0,
-    lot_size: int = 1
+    lot_size: int = 1,
+    symbol: str = None,
+    use_margin: bool = True
 ) -> Optional[TradeParams]:
     """
     Calculate position size intelligently based on BOTH budget AND risk constraints.
     
+    NEW: If symbol is provided and use_margin=True, uses actual margin requirements
+    from Zerodha's margin data for more accurate position sizing.
+    
     Logic:
     1. Calculate max quantity from trade_budget (how many shares can we buy with our budget)
     2. Calculate max quantity from risk_percent (how many shares can we risk given SL distance)
-    3. Use the MINIMUM of the two (conservative approach - satisfy both constraints)
-    4. Place market order immediately at current_price
+    3. If symbol provided: Calculate max quantity from available margin
+    4. Use the MINIMUM of the constraints (conservative approach)
+    5. Place market order immediately at current_price
     
     This ensures we:
     - Don't exceed our trade budget (e.g., ₹50,000 per trade)
     - Don't risk more than our risk_percent allows (e.g., 1% of capital)
+    - Don't exceed available margin (considering 5x leverage for most stocks)
     - Get the best possible fill at market price when signal hits
     """
     if current_price <= 0 or atr <= 0 or capital <= 0 or trade_budget <= 0:
@@ -240,7 +247,7 @@ def calculate_intelligent_position(
         stop_loss = current_price + sl_distance
         target = current_price - tp_distance
     
-    # 🔥 INTELLIGENT POSITION SIZING - Two constraints
+    # 🔥 INTELLIGENT POSITION SIZING - Multiple constraints
     
     # 1. Budget-based quantity: How many shares can we buy with trade_budget?
     # Leave 2% buffer for price movement/slippage
@@ -256,8 +263,32 @@ def calculate_intelligent_position(
     
     qty_from_risk = int(risk_amount / risk_per_share)
     
-    # Use MINIMUM of both (conservative - satisfy both constraints)
-    quantity = min(qty_from_budget, qty_from_risk)
+    # 3. NEW: Margin-based quantity (if symbol provided)
+    qty_from_margin = float('inf')  # No limit by default
+    margin_pct = 20.0  # Default 20% (5x leverage)
+    leverage = 5
+    
+    if symbol and use_margin:
+        try:
+            from margins import get_margin_data, get_margin_percentage, get_leverage_multiplier
+            
+            margin_data = get_margin_data(symbol)
+            if margin_data:
+                margin_pct = get_margin_percentage(symbol, default=20.0)
+                leverage = get_leverage_multiplier(symbol, default=5)
+                
+                # With margin trading, effective capital = capital × leverage
+                # But margin required = trade_value × (margin_pct / 100)
+                # So max trade_value = capital / (margin_pct / 100)
+                max_trade_value = capital / (margin_pct / 100)
+                qty_from_margin = int(max_trade_value / current_price)
+                
+        except Exception as e:
+            # If margin module fails, fall back to standard calculation
+            pass
+    
+    # Use MINIMUM of all constraints (conservative - satisfy all)
+    quantity = min(qty_from_budget, qty_from_risk, qty_from_margin)
     
     # Adjust for lot size
     quantity = max(lot_size, (quantity // lot_size) * lot_size)

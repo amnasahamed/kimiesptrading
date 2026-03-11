@@ -28,6 +28,12 @@ from contextlib import asynccontextmanager
 
 from calculator import calculate_atr, calculate_trade_params, calculate_intelligent_position
 from kite import KiteAPI, KiteQuote
+from signal_tracker import (
+    record_signal, 
+    is_duplicate_signal, 
+    get_signal_stats,
+    load_today_signals
+)
 
 # ============================================================================
 # Models
@@ -69,6 +75,9 @@ class ConfigUpdate(BaseModel):
     chartink: Optional[Dict[str, Any]] = None
     risk_management: Optional[Dict[str, Any]] = None
     paper_trading: Optional[bool] = None  # Test mode without real orders
+    prevent_duplicate_stocks: Optional[bool] = None  # Prevent buying same stock twice
+    club_positions: Optional[bool] = None  # Average multiple positions of same stock
+    signal_validation: Optional[Dict[str, Any]] = None  # 5-step signal validation settings
 
 # ============================================================================
 # File paths
@@ -105,6 +114,8 @@ async def lifespan(app: FastAPI):
             "risk_percent": 1.0,
             "trade_budget": 50000,  # Fixed amount per trade - max qty within this budget
             "max_trades_per_day": 10,
+            "prevent_duplicate_stocks": True,  # Don't buy same stock twice
+            "club_positions": False,  # Keep positions separate (don't average)
             "kite": {"api_key": "", "access_token": "", "base_url": "https://api.kite.trade"},
             "telegram": {"bot_token": "", "chat_id": "", "enabled": False},
             "risk_management": {
@@ -113,7 +124,21 @@ async def lifespan(app: FastAPI):
                 "min_risk_reward": 2.0,
                 "max_sl_percent": 2.0
             },
-            "chartink": {"webhook_secret": ""}
+            "chartink": {"webhook_secret": ""},
+            # 🔥 NEW: 5-Step Signal Validation Configuration
+            "signal_validation": {
+                "enabled": True,
+                "time_windows": [
+                    {"start": "10:00", "end": "11:30"},   # Best window
+                    {"start": "13:30", "end": "14:30"}    # Second window
+                ],
+                "nifty_check_enabled": True,
+                "nifty_max_decline": -0.3,      # Reject if Nifty down > 0.3%
+                "max_open_positions": 3,         # Max 3 open positions
+                "prevent_daily_duplicates": True, # Ignore repeat signals same day
+                "slippage_check_enabled": True,
+                "max_slippage_percent": 0.5      # Max 0.5% price slippage
+            }
         }
         save_config(default_config)
     
@@ -136,13 +161,21 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Chartink Trading Bot", version="1.0", lifespan=lifespan)
 
-# Add CORS middleware to allow dashboard access
+# Add CORS middleware - RESTRICTED to known origins only
+# SECURITY: Never use ["*"] in production - allows any website to access your API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for now (restrict in production)
+    allow_origins=[
+        "https://coolify.themelon.in",  # Your production domain
+        "https://themelon.in",           # Main domain
+        "http://localhost:8000",         # Local development
+        "http://localhost:3000",         # React dev server
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Explicit methods only
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
 
 # Mount static files directory
@@ -152,8 +185,40 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Position Monitor (FIX #5 & #6: Partial Exits & Trailing Stop)
 # ============================================================================
 
+async def check_gtt_status(kite: KiteAPI, gtt_id: str) -> Optional[str]:
+    """
+    Check status of a GTT order.
+    Returns: 'active', 'triggered', 'cancelled', 'expired', or None if error
+    """
+    if not gtt_id or gtt_id.startswith("PAPER_"):
+        return "active"  # Paper trading GTTs are always "active"
+    
+    try:
+        # Fetch all GTT orders and find ours
+        gtt_list = await kite.list_gtt_orders()
+        for gtt in gtt_list:
+            if str(gtt.get("id")) == str(gtt_id):
+                status = gtt.get("status", "").lower()
+                # Status can be: active, triggered, cancelled, expired, rejected
+                return status
+        # GTT not found - likely cancelled or expired
+        return "cancelled"
+    except Exception as e:
+        print(f"Error checking GTT {gtt_id}: {e}")
+        return None
+
+
 async def monitor_positions():
-    """Background task to monitor open positions for partial exits and trailing stops."""
+    """
+    Background task to monitor open positions:
+    - Partial exits at 1R
+    - Trailing stop loss
+    - 🔥 NEW: GTT status polling (detect SL/TP triggers)
+    - Kite sync for manual closes
+    """
+    sync_counter = 0
+    gtt_check_counter = 0  # 🔥 NEW: Counter for GTT status checks
+    
     while True:
         try:
             await asyncio.sleep(10)  # Check every 10 seconds
@@ -168,8 +233,32 @@ async def monitor_positions():
             
             kite = get_kite_api(config)
             
-            for symbol, pos in open_positions.items():
+            # 🔥 SYNC with Kite every 60 seconds (6 * 10s)
+            sync_counter += 1
+            if sync_counter >= 6:
+                sync_counter = 0
                 try:
+                    sync_result = await sync_positions_with_kite(kite)
+                    if sync_result.get("closed", 0) > 0:
+                        print(f"🔄 Position sync: {sync_result['closed']} position(s) marked as closed")
+                        open_positions = get_open_positions()
+                        if not open_positions:
+                            continue
+                except Exception as e:
+                    print(f"Position sync error: {e}")
+            
+            # 🔥 NEW: Check GTT status every 30 seconds (3 * 10s)
+            gtt_check_counter += 1
+            check_gtt_this_cycle = (gtt_check_counter >= 3)
+            if check_gtt_this_cycle:
+                gtt_check_counter = 0
+            
+            for position_id, pos in open_positions.items():
+                try:
+                    symbol = pos.get("symbol")
+                    if not symbol:
+                        continue
+                        
                     quote = await kite.get_quote(symbol)
                     if not quote:
                         continue
@@ -180,7 +269,9 @@ async def monitor_positions():
                     tp = pos.get("tp_price", 0)
                     qty = pos.get("quantity", 0)
                     sl_order_id = pos.get("sl_order_id")
+                    tp_order_id = pos.get("tp_order_id")
                     partial_exits = pos.get("partial_exits", [])
+                    highest_r = pos.get("highest_r", 0)  # Track highest R reached
                     
                     if entry <= 0 or qty <= 0:
                         continue
@@ -189,6 +280,52 @@ async def monitor_positions():
                     risk_per_share = abs(entry - sl)
                     current_profit = ltp - entry
                     r_multiple = current_profit / risk_per_share if risk_per_share > 0 else 0
+                    
+                    # Update highest R if we reached a new high
+                    if r_multiple > highest_r:
+                        update_position(position_id, {"highest_r": r_multiple})
+                        highest_r = r_multiple
+                    
+                    # 🔥 NEW: Check GTT status every 30 seconds
+                    if check_gtt_this_cycle and (sl_order_id or tp_order_id):
+                        try:
+                            # Check SL GTT status
+                            if sl_order_id:
+                                sl_status = await check_gtt_status(kite, sl_order_id)
+                                if sl_status == "triggered":
+                                    print(f"🛑 SL GTT triggered for {symbol}! Closing position.")
+                                    pnl = (sl - entry) * qty
+                                    close_position_by_id(position_id, sl, round(pnl, 2))
+                                    await send_telegram_message(
+                                        f"🛑 *STOP LOSS HIT: {symbol}*\n\n"
+                                        f"Exit: ₹{sl:.2f}\n"
+                                        f"P&L: ₹{pnl:.2f}\n"
+                                        f"SL GTT triggered automatically"
+                                    )
+                                    continue  # Move to next position
+                            
+                            # Check TP GTT status
+                            if tp_order_id:
+                                tp_status = await check_gtt_status(kite, tp_order_id)
+                                if tp_status == "triggered":
+                                    print(f"🎯 TP GTT triggered for {symbol}! Closing position.")
+                                    pnl = (tp - entry) * qty
+                                    close_position_by_id(position_id, tp, round(pnl, 2))
+                                    await send_telegram_message(
+                                        f"🎯 *TARGET HIT: {symbol}*\n\n"
+                                        f"Exit: ₹{tp:.2f}\n"
+                                        f"P&L: ₹{pnl:.2f}\n"
+                                        f"TP GTT triggered automatically"
+                                    )
+                                    continue  # Move to next position
+                            
+                            # Warn if GTT cancelled/expired unexpectedly
+                            if sl_order_id and sl_status in ["cancelled", "expired", "rejected"]:
+                                print(f"🚨 WARNING: SL GTT for {symbol} is {sl_status}! Position unprotected!")
+                                # TODO: Place new SL GTT or exit position
+                            
+                        except Exception as e:
+                            print(f"Error checking GTT status for {symbol}: {e}")
                     
                     # 🔥 FIX #5: Partial Exit at 1:1 R
                     # Exit 50% when price reaches 1R profit, move SL to breakeven
@@ -218,14 +355,14 @@ async def monitor_positions():
                                     
                                     # Update position
                                     new_qty = qty - exit_qty
-                                    update_position(symbol, {
+                                    update_position(position_id, {
                                         "quantity": new_qty,
                                         "partial_exits": partial_exits + [partial_exit]
                                     })
                                     
                                     # 🔥 Move SL to breakeven (or slightly below)
                                     new_sl = entry * 0.998  # 0.2% below entry for buffer
-                                    if sl_order_id:
+                                    if sl_order_id and not sl_order_id.startswith("PAPER_"):
                                         await kite.modify_sl_gtt(
                                             gtt_id=sl_order_id,
                                             new_trigger_price=new_sl,
@@ -233,7 +370,7 @@ async def monitor_positions():
                                             quantity=new_qty,
                                             transaction_type="BUY"
                                         )
-                                        update_position(symbol, {"sl_price": new_sl})
+                                    update_position(position_id, {"sl_price": new_sl})
                                     
                                     # Notify
                                     await send_telegram_message(
@@ -246,7 +383,7 @@ async def monitor_positions():
                     # 🔥 FIX #6: Trailing Stop Loss
                     # When price reaches 2R, trail SL to 1R
                     # When price reaches 3R, trail SL to 2R, etc.
-                    if r_multiple >= 2.0 and sl_order_id:
+                    if r_multiple >= 2.0 and sl_order_id and not sl_order_id.startswith("PAPER_"):
                         target_sl_r = int(r_multiple) - 1  # Trail 1R behind current
                         target_sl_price = entry + (target_sl_r * risk_per_share)
                         
@@ -262,16 +399,54 @@ async def monitor_positions():
                                 transaction_type="BUY"
                             )
                             
-                            update_position(symbol, {"sl_price": target_sl_price})
+                            update_position(position_id, {"sl_price": target_sl_price})
                             
                             await send_telegram_message(
                                 f"🛡️ *Trailing SL: {symbol}*\n"
                                 f"SL moved to {target_sl_r}R: ₹{target_sl_price:.2f}\n"
                                 f"Current: ₹{ltp:.2f} ({r_multiple:.1f}R)"
                             )
+                    
+                    # 🔥 NEW: Trailing Take Profit (optional, configurable)
+                    # Instead of static TP, we trail the TP higher as price moves up
+                    # This lets winners run while still protecting profits
+                    trailing_tp_enabled = config.get("trailing_tp_enabled", False)
+                    
+                    if trailing_tp_enabled and tp_order_id and not tp_order_id.startswith("PAPER_"):
+                        # When price reaches 2.5R, move TP from 3R to 2R (lock in profit)
+                        # When price reaches 3.5R, move TP from 2R to 3R, etc.
+                        if r_multiple >= 2.5:
+                            target_tp_r = int(r_multiple - 0.5)  # Trail 0.5R behind
+                            target_tp_price = entry + (target_tp_r * risk_per_share)
+                            
+                            # Only move TP up, never down
+                            if target_tp_price > tp * 1.01:
+                                print(f"Trailing TP for {symbol} to {target_tp_r}R: ₹{target_tp_price:.2f}")
+                                
+                                # Delete old TP and place new one
+                                await kite.delete_gtt(tp_order_id)
+                                new_tp_order = await kite.place_tp_gtt(
+                                    symbol=symbol,
+                                    quantity=qty,
+                                    trigger_price=target_tp_price,
+                                    entry_transaction_type="BUY",
+                                    product="CNC"
+                                )
+                                
+                                if new_tp_order.status == "SUCCESS":
+                                    update_position(position_id, {
+                                        "tp_price": target_tp_price,
+                                        "tp_order_id": new_tp_order.gtt_id
+                                    })
+                                    
+                                    await send_telegram_message(
+                                        f"🎯 *Trailing TP: {symbol}*\n"
+                                        f"TP moved to {target_tp_r}R: ₹{target_tp_price:.2f}\n"
+                                        f"Current: ₹{ltp:.2f} ({r_multiple:.1f}R)"
+                                    )
                 
                 except Exception as e:
-                    print(f"Error monitoring position {symbol}: {e}")
+                    print(f"Error monitoring position {position_id}: {e}")
         
         except Exception as e:
             print(f"Position monitor error: {e}")
@@ -432,7 +607,7 @@ def update_trade_pnl(order_id: str, exit_price: float, pnl: float):
 
 
 # ============================================================================
-# Position Management (FIX #2 & #3)
+# Position Management (FIX #2 & #3) - Now supports multiple positions per symbol
 # ============================================================================
 
 from kite import Position
@@ -458,9 +633,14 @@ def save_positions(positions: Dict[str, Any]):
         print(f"Error saving positions: {e}")
 
 def store_position(position: Position):
-    """Store a new position."""
+    """Store a new position with unique ID (supports multiple positions per symbol)."""
     positions = load_positions()
-    positions[position.symbol] = {
+    
+    # Use entry_order_id as key to support multiple positions per symbol
+    position_id = position.entry_order_id or f"{position.symbol}_{datetime.now().strftime('%H%M%S')}"
+    
+    positions[position_id] = {
+        "id": position_id,
         "symbol": position.symbol,
         "quantity": position.quantity,
         "entry_price": position.entry_price,
@@ -473,34 +653,434 @@ def store_position(position: Position):
         "entry_time": position.entry_time.isoformat() if position.entry_time else None
     }
     save_positions(positions)
+    return position_id
 
-def update_position(symbol: str, updates: Dict[str, Any]):
-    """Update an existing position."""
+def update_position(position_id: str, updates: Dict[str, Any]):
+    """Update an existing position by ID."""
     positions = load_positions()
-    if symbol in positions:
-        positions[symbol].update(updates)
+    if position_id in positions:
+        positions[position_id].update(updates)
         save_positions(positions)
 
-def close_position(symbol: str, exit_price: float, pnl: float, reason: str):
-    """Mark position as closed."""
+def close_position_by_id(position_id: str, exit_price: float, pnl: float, reason: str):
+    """Mark position as closed by ID."""
     positions = load_positions()
-    if symbol in positions:
-        positions[symbol]["status"] = "CLOSED"
-        positions[symbol]["exit_price"] = exit_price
-        positions[symbol]["pnl"] = pnl
-        positions[symbol]["exit_reason"] = reason
-        positions[symbol]["exit_time"] = datetime.now().isoformat()
+    if position_id in positions:
+        positions[position_id]["status"] = "CLOSED"
+        positions[position_id]["exit_price"] = exit_price
+        positions[position_id]["pnl"] = pnl
+        positions[position_id]["exit_reason"] = reason
+        positions[position_id]["exit_time"] = datetime.now().isoformat()
         save_positions(positions)
         
         # Also update the trade log
-        entry_order_id = positions[symbol].get("entry_order_id")
+        entry_order_id = positions[position_id].get("entry_order_id")
         if entry_order_id:
             update_trade_pnl(entry_order_id, exit_price, pnl)
+        
+        return True
+    return False
+
+def get_or_create_clubbed_position(symbol: str) -> tuple[str, dict]:
+    """
+    Get existing clubbed position for symbol or return None.
+    Returns (position_id, position_data) or (None, None)
+    """
+    positions = load_positions()
+    for pos_id, pos in positions.items():
+        if pos.get("symbol") == symbol and pos.get("status") == "OPEN" and pos.get("clubbed", False):
+            return pos_id, pos
+    return None, None
+
+async def club_position_with_existing(
+    symbol: str,
+    new_entry_price: float,
+    new_quantity: int,
+    new_sl: float,
+    new_tp: float,
+    new_entry_order_id: str,
+    new_sl_order_id: str,
+    new_tp_order_id: str,
+    kite: KiteAPI
+) -> tuple[bool, str, dict]:
+    """
+    Club new position with existing position of same symbol.
+    Calculates weighted average entry, updates quantity, keeps single SL/TP/GTT.
+    
+    🔥 CRITICAL FIX: Cancels NEW position's GTT orders before marking as CLUBBED
+    to prevent orphan GTTs that can create unexpected short positions.
+    
+    Returns: (success, message, updated_position)
+    """
+    symbol = symbol.upper()
+    existing_id, existing = get_or_create_clubbed_position(symbol)
+    
+    if not existing:
+        # No existing clubbed position - this will be the first one
+        return False, "No existing position to club with", None
+    
+    # Calculate weighted average
+    old_qty = existing.get("quantity", 0)
+    old_entry = existing.get("entry_price", 0)
+    
+    total_qty = old_qty + new_quantity
+    avg_entry = ((old_entry * old_qty) + (new_entry_price * new_quantity)) / total_qty
+    
+    # Keep the more conservative (tighter) SL and TP
+    final_sl = existing.get("sl_price", new_sl)  # Keep original SL
+    final_tp = existing.get("tp_price", new_tp)  # Keep original TP
+    
+    # =========================================================================
+    # 🔥 CRITICAL FIX: Cancel ALL GTT orders before creating new ones
+    # This prevents orphan GTTs that can trigger unexpectedly
+    # =========================================================================
+    
+    # 1. Cancel EXISTING position's GTT orders
+    old_sl_gtt = existing.get("sl_order_id")
+    old_tp_gtt = existing.get("tp_order_id")
+    
+    try:
+        if old_sl_gtt and not old_sl_gtt.startswith("PAPER_"):
+            await kite.delete_gtt(old_sl_gtt)
+            print(f"🗑️ Cancelled existing SL GTT: {old_sl_gtt}")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not delete old SL GTT {old_sl_gtt}: {e}")
+    
+    try:
+        if old_tp_gtt and not old_tp_gtt.startswith("PAPER_"):
+            await kite.delete_gtt(old_tp_gtt)
+            print(f"🗑️ Cancelled existing TP GTT: {old_tp_gtt}")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not delete old TP GTT {old_tp_gtt}: {e}")
+    
+    # 2. 🔥 NEW: Cancel NEW position's GTT orders (THE BUG FIX!)
+    try:
+        if new_sl_order_id and not new_sl_order_id.startswith("PAPER_"):
+            await kite.delete_gtt(new_sl_order_id)
+            print(f"🗑️ Cancelled new position SL GTT: {new_sl_order_id}")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not delete new SL GTT {new_sl_order_id}: {e}")
+    
+    try:
+        if new_tp_order_id and not new_tp_order_id.startswith("PAPER_"):
+            await kite.delete_gtt(new_tp_order_id)
+            print(f"🗑️ Cancelled new position TP GTT: {new_tp_order_id}")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not delete new TP GTT {new_tp_order_id}: {e}")
+    
+    # 3. Place new combined GTT orders with updated quantity
+    final_sl_order_id = None
+    final_tp_order_id = None
+    gtt_errors = []
+    
+    try:
+        sl_order = await kite.place_sl_gtt(
+            symbol=symbol,
+            quantity=total_qty,
+            trigger_price=final_sl,
+            entry_transaction_type="BUY",
+            product="CNC"
+        )
+        if sl_order.status == "SUCCESS":
+            final_sl_order_id = sl_order.gtt_id
+            print(f"✅ New SL GTT placed: {final_sl_order_id} (qty: {total_qty})")
+        else:
+            gtt_errors.append(f"SL GTT failed: {sl_order.message}")
+    except Exception as e:
+        gtt_errors.append(f"SL GTT error: {e}")
+        print(f"🚨 Error placing SL GTT: {e}")
+    
+    try:
+        tp_order = await kite.place_tp_gtt(
+            symbol=symbol,
+            quantity=total_qty,
+            trigger_price=final_tp,
+            entry_transaction_type="BUY",
+            product="CNC"
+        )
+        if tp_order.status == "SUCCESS":
+            final_tp_order_id = tp_order.gtt_id
+            print(f"✅ New TP GTT placed: {final_tp_order_id} (qty: {total_qty})")
+        else:
+            gtt_errors.append(f"TP GTT failed: {tp_order.message}")
+    except Exception as e:
+        gtt_errors.append(f"TP GTT error: {e}")
+        print(f"⚠️ Error placing TP GTT: {e}")
+    
+    # 🔥 SAFETY CHECK: If SL GTT failed, warn but don't abort (existing position already modified)
+    if not final_sl_order_id:
+        print(f"🚨 WARNING: Clubbed position {symbol} has NO STOP LOSS!")
+        # TODO: Consider exiting position if SL GTT fails
+    
+    # Update the clubbed position
+    positions = load_positions()
+    positions[existing_id].update({
+        "quantity": total_qty,
+        "entry_price": round(avg_entry, 2),
+        "sl_price": final_sl,
+        "tp_price": final_tp,
+        "sl_order_id": final_sl_order_id,
+        "tp_order_id": final_tp_order_id,
+        "clubbed": True,
+        "club_count": existing.get("club_count", 1) + 1,
+        "last_added": datetime.now().isoformat(),
+        "component_trades": existing.get("component_trades", []) + [{
+            "order_id": new_entry_order_id,
+            "entry_price": new_entry_price,
+            "quantity": new_quantity,
+            "time": datetime.now().isoformat()
+        }]
+    })
+    save_positions(positions)
+    
+    # Mark the new position as closed (clubbed into existing)
+    close_position_by_id(new_entry_order_id, new_entry_price, 0, "CLUBBED")
+    
+    # Return success message with any warnings
+    msg = f"Clubbed: {old_qty} + {new_quantity} = {total_qty} shares @ ₹{avg_entry:.2f}"
+    if gtt_errors:
+        msg += f" (Warnings: {'; '.join(gtt_errors)})"
+    
+    return True, msg, positions[existing_id]
+
+def close_position(symbol: str, exit_price: float, pnl: float, reason: str):
+    """Mark position as closed (legacy - closes first matching open position)."""
+    positions = load_positions()
+    for position_id, pos in positions.items():
+        if pos.get("symbol") == symbol and pos.get("status") == "OPEN":
+            positions[position_id]["status"] = "CLOSED"
+            positions[position_id]["exit_price"] = exit_price
+            positions[position_id]["pnl"] = pnl
+            positions[position_id]["exit_reason"] = reason
+            positions[position_id]["exit_time"] = datetime.now().isoformat()
+            save_positions(positions)
+            
+            # Also update the trade log
+            entry_order_id = pos.get("entry_order_id")
+            if entry_order_id:
+                update_trade_pnl(entry_order_id, exit_price, pnl)
+            return True
+    return False
 
 def get_open_positions() -> Dict[str, Any]:
     """Get all open positions."""
     positions = load_positions()
     return {k: v for k, v in positions.items() if v.get("status") == "OPEN"}
+
+def get_open_positions_by_symbol(symbol: str) -> Dict[str, Any]:
+    """Get all open positions for a specific symbol."""
+    positions = load_positions()
+    return {k: v for k, v in positions.items() 
+            if v.get("symbol") == symbol and v.get("status") == "OPEN"}
+
+
+async def sync_positions_with_kite(kite: KiteAPI) -> Dict[str, Any]:
+    """
+    Sync local positions with actual Kite positions.
+    Marks local positions as closed if they're no longer in Kite.
+    
+    Returns:
+        {
+            "synced": int,       # Number of positions synced
+            "closed": int,       # Number marked as closed
+            "errors": int,       # Number of errors
+            "details": list      # Details of changes
+        }
+    """
+    result = {
+        "synced": 0,
+        "closed": 0,
+        "errors": 0,
+        "details": []
+    }
+    
+    try:
+        # Fetch actual positions from Kite
+        kite_positions = await kite.fetch_kite_positions()
+        
+        # Create a set of symbols that are actually open in Kite
+        # Handle both formats: "WABAG" and "WABAG-EQ"
+        kite_symbols = {}  # Map normalized symbol -> original tradingsymbol
+        for pos in kite_positions:
+            symbol = pos.get("tradingsymbol", "").upper()
+            quantity = pos.get("quantity", 0)
+            if quantity > 0:  # Only consider positions with positive quantity
+                # Store both full symbol and base symbol (without -EQ, -BE, etc.)
+                kite_symbols[symbol] = symbol
+                base_symbol = symbol.split('-')[0]  # "WABAG-EQ" -> "WABAG"
+                if base_symbol != symbol:
+                    kite_symbols[base_symbol] = symbol
+        
+        print(f"📊 Kite positions found: {list(kite_symbols.keys())}")
+        
+        # Load local positions
+        local_positions = load_positions()
+        
+        for position_id, pos in list(local_positions.items()):
+            if pos.get("status") != "OPEN":
+                continue
+            
+            symbol = pos.get("symbol", "").upper()
+            
+            # Check if this symbol is still open in Kite
+            # Try both the exact symbol and base symbol
+            symbol_in_kite = symbol in kite_symbols
+            base_symbol = symbol.split('-')[0]
+            base_in_kite = base_symbol in kite_symbols
+            
+            if symbol and not symbol_in_kite and not base_in_kite:
+                # Position was closed externally (from Kite)
+                entry_price = pos.get("entry_price", 0)
+                
+                # Try to get current price for P&L calculation
+                try:
+                    quote = await kite.get_quote(symbol)
+                    current_price = quote.ltp if quote else entry_price
+                except:
+                    current_price = entry_price
+                
+                # Calculate approximate P&L
+                qty = pos.get("quantity", 0)
+                pnl = (current_price - entry_price) * qty
+                
+                # Mark as closed
+                local_positions[position_id]["status"] = "CLOSED"
+                local_positions[position_id]["exit_price"] = current_price
+                local_positions[position_id]["pnl"] = round(pnl, 2)
+                local_positions[position_id]["exit_reason"] = "MANUAL_KITE"
+                local_positions[position_id]["exit_time"] = datetime.now().isoformat()
+                local_positions[position_id]["synced_at"] = datetime.now().isoformat()
+                
+                result["closed"] += 1
+                result["details"].append({
+                    "position_id": position_id,
+                    "symbol": symbol,
+                    "action": "marked_closed",
+                    "exit_price": current_price,
+                    "pnl": round(pnl, 2)
+                })
+                
+                print(f"🔄 Sync: Marked {symbol} as closed (closed from Kite)")
+                
+                # Update trade log if order ID exists
+                entry_order_id = pos.get("entry_order_id")
+                if entry_order_id:
+                    update_trade_pnl(entry_order_id, current_price, pnl)
+        
+        # Save updated positions
+        if result["closed"] > 0:
+            save_positions(local_positions)
+            
+            # Send Telegram notification
+            msg = (
+                f"🔄 *Position Sync Complete*\n\n"
+                f"Closed {result['closed']} position(s) that were "
+                f"manually closed from Kite.\n\n"
+            )
+            for detail in result["details"][:5]:  # Show first 5
+                msg += f"• {detail['symbol']}: ₹{detail['pnl']:.2f}\n"
+            
+            await send_telegram_message(msg)
+        
+        # Add debug info
+        local_open_symbols = [pos.get("symbol", "").upper() for pos in local_positions.values() if pos.get("status") == "OPEN"]
+        result["debug"] = {
+            "kite_positions_found": list(kite_symbols.keys()),
+            "local_open_positions": local_open_symbols,
+            "kite_raw_count": len(kite_positions)
+        }
+        
+        result["synced"] = len(kite_symbols)
+        
+    except Exception as e:
+        result["errors"] += 1
+        result["details"].append({"error": str(e)})
+        print(f"❌ Position sync error: {e}")
+    
+    return result
+
+
+def force_close_position(position_id: str, exit_price: float, reason: str = "MANUAL_FORCE") -> bool:
+    """
+    Force close a position without placing an order.
+    Use this when position was already closed externally (e.g., from Kite).
+    
+    Returns True if successful.
+    """
+    positions = load_positions()
+    
+    if position_id not in positions:
+        return False
+    
+    pos = positions[position_id]
+    if pos.get("status") != "OPEN":
+        return False
+    
+    entry_price = pos.get("entry_price", 0)
+    qty = pos.get("quantity", 0)
+    pnl = (exit_price - entry_price) * qty
+    
+    # Update position
+    positions[position_id]["status"] = "CLOSED"
+    positions[position_id]["exit_price"] = exit_price
+    positions[position_id]["pnl"] = round(pnl, 2)
+    positions[position_id]["exit_reason"] = reason
+    positions[position_id]["exit_time"] = datetime.now().isoformat()
+    
+    save_positions(positions)
+    
+    # Update trade log
+    entry_order_id = pos.get("entry_order_id")
+    if entry_order_id:
+        update_trade_pnl(entry_order_id, exit_price, pnl)
+    
+    print(f"📝 Force closed position {position_id} ({pos.get('symbol')}) at ₹{exit_price:.2f}")
+    return True
+
+
+def is_in_trading_window() -> tuple[bool, str]:
+    """
+    Check if current time is within preferred trading windows.
+    
+    Valid windows:
+    - 10:00 AM - 11:30 AM (Best window - morning momentum)
+    - 1:30 PM - 2:30 PM (Second window - afternoon continuation)
+    
+    Returns: (is_valid, message)
+    """
+    now = datetime.now().time()
+    
+    valid_windows = [
+        (time(10, 0), time(11, 30)),   # Best window
+        (time(13, 30), time(14, 30))   # Second window
+    ]
+    
+    for start, end in valid_windows:
+        if start <= now <= end:
+            return True, "OK"
+    
+    return False, "Outside trading windows (10:00-11:30, 13:30-14:30)"
+
+
+async def get_nifty_change(kite: KiteAPI) -> float:
+    """
+    Get NIFTY 50 change percentage from Kite API.
+    
+    Returns: Change percentage (e.g., -0.3 for -0.3%)
+    """
+    try:
+        quote = await kite.get_quote("NIFTY 50")
+        if quote:
+            return quote.change_percent
+    except Exception as e:
+        print(f"Error fetching Nifty change: {e}")
+    
+    return 0.0  # Default to neutral if can't fetch
+
+
+def count_open_positions() -> int:
+    """Count number of open positions."""
+    return len(get_open_positions())
 
 def count_today_trades() -> int:
     """Count number of trades taken today."""
@@ -584,10 +1164,14 @@ def is_within_trading_hours(config: Dict[str, Any]) -> bool:
     
     return start_time <= now <= end_time
 
-def can_trade(config: Dict[str, Any]) -> tuple[bool, str]:
+def can_trade(config: Dict[str, Any], symbol: str = None) -> tuple[bool, str]:
     """
-    Check if trading is allowed.
+    Check if trading is allowed (legacy function - kept for compatibility).
     Returns (can_trade, reason)
+    
+    Args:
+        config: System configuration
+        symbol: Stock symbol to check (optional, for duplicate detection)
     """
     if not config.get("system_enabled", False):
         return False, "System is disabled"
@@ -599,7 +1183,65 @@ def can_trade(config: Dict[str, Any]) -> tuple[bool, str]:
     if count_today_trades() >= max_trades:
         return False, f"Max trades ({max_trades}) reached for today"
     
+    # 🔥 Check if already holding this symbol
+    if symbol and config.get("prevent_duplicate_stocks", True):
+        open_positions = get_open_positions()
+        for pos_id, pos in open_positions.items():
+            if pos.get("symbol") == symbol.upper() and pos.get("status") == "OPEN":
+                return False, f"Already holding {symbol} - skipping duplicate"
+    
     return True, "OK"
+
+
+async def validate_signal(
+    config: Dict[str, Any], 
+    symbol: str = None,
+    kite: KiteAPI = None
+) -> tuple[bool, str]:
+    """
+    🔥 5-STEP SIGNAL VALIDATION
+    
+    Validates a signal before placing any order:
+    1. Time Window Check - Only 10:00-11:30 and 13:30-14:30
+    2. Nifty Health Check - Reject if Nifty down > 0.3%
+    3. Open Positions Check - Max 3 open positions
+    4. Duplicate Check - Ignore if already triggered today
+    5. Price Slippage Check - Done separately in process_single_alert
+    
+    Returns: (is_valid, reason)
+    """
+    signal_config = config.get("signal_validation", {})
+    
+    # Check 0: System enabled
+    if not config.get("system_enabled", False):
+        return False, "System is disabled"
+    
+    # Check 1: Time Window (10:00-11:30, 13:30-14:30)
+    in_window, window_msg = is_in_trading_window()
+    if not in_window:
+        return False, f"⏰ Outside trading windows (10:00-11:30, 13:30-14:30)"
+    
+    # Check 2: Nifty Health (reject if down > 0.3%)
+    if kite and signal_config.get("nifty_check_enabled", True):
+        nifty_change = await get_nifty_change(kite)
+        max_decline = signal_config.get("nifty_max_decline", -0.3)
+        if nifty_change < max_decline:
+            return False, f"📉 Nifty weak: {nifty_change:.2f}% (max decline: {max_decline}%)"
+    
+    # Check 3: Open Positions Limit (max 3)
+    max_positions = signal_config.get("max_open_positions", 3)
+    open_count = count_open_positions()
+    if open_count >= max_positions:
+        return False, f"📊 Max open positions reached: {open_count}/{max_positions}"
+    
+    # Check 4: Duplicate Check (same day)
+    if symbol and signal_config.get("prevent_daily_duplicates", True):
+        if is_duplicate_signal(symbol):
+            return False, f"🔄 Duplicate signal: {symbol} already triggered today"
+    
+    # Check 5: Price Slippage - handled in process_single_alert where we have live price
+    
+    return True, "✅ All checks passed"
 
 # ============================================================================
 # Trading Logic
@@ -783,6 +1425,29 @@ async def process_single_alert(
             print(f"📍 Using CURRENT market price ₹{current_ltp:.2f} for position sizing")
     
     # ==========================================================================
+    # 🔥 STEP 1b: Price Slippage Check (5th validation step)
+    # Reject if current price is more than 0.5% above alerted price
+    # ==========================================================================
+    signal_config = config.get("signal_validation", {})
+    if signal_config.get("slippage_check_enabled", True) and price and price > 0:
+        max_slippage = signal_config.get("max_slippage_percent", 0.5)
+        # Calculate how much current price is above alert price
+        price_slippage_pct = (current_ltp - price) / price * 100
+        
+        if price_slippage_pct > max_slippage:
+            reason = f"💸 Price slippage too high: {price_slippage_pct:.2f}% above alert price (max: {max_slippage}%)"
+            print(f"🚫 {reason}")
+            return {
+                "status": "REJECTED",
+                "symbol": symbol,
+                "reason": reason,
+                "alert_price": price,
+                "current_price": current_ltp,
+                "slippage_percent": round(price_slippage_pct, 2),
+                "timestamp": datetime.now().isoformat()
+            }
+    
+    # ==========================================================================
     # 🔥 STEP 2: Build OHLCV and Calculate ATR
     # ==========================================================================
     ohlcv_data = await kite.get_ohlcv_history(symbol, interval="day", duration=15)
@@ -843,6 +1508,8 @@ async def process_single_alert(
         atr_tp_multiplier=risk_config.get("atr_multiplier_tp", 3.0),
         min_rr=risk_config.get("min_risk_reward", 2.0),
         max_sl_percent=risk_config.get("max_sl_percent", 2.0),
+        symbol=symbol,  # NEW: Pass symbol for margin-aware sizing
+        use_margin=True,
         lot_size=1  # NSE stocks, lot size = 1
     )
     
@@ -901,7 +1568,26 @@ async def process_single_alert(
         sl_order_id = position.sl_order_id
         tp_order_id = position.tp_order_id
         
-        store_position(position)
+        # 🔥 Check if clubbing is enabled and position exists
+        clubbed = False
+        if config.get("club_positions", False):
+            clubbed, club_msg, _ = await club_position_with_existing(
+                symbol=symbol,
+                new_entry_price=actual_entry,
+                new_quantity=trade_params.quantity,
+                new_sl=trade_params.stop_loss,
+                new_tp=trade_params.target,
+                new_entry_order_id=position.entry_order_id,
+                new_sl_order_id=sl_order_id,
+                new_tp_order_id=tp_order_id,
+                kite=kite
+            )
+            if clubbed:
+                print(f"🔄 {club_msg}")
+        
+        if not clubbed:
+            position.clubbed = True  # Mark as clubbable for future
+            store_position(position)
         
         # PAPER TRADING: Position is logged but NOT auto-closed
         # In paper mode, you manually track P&L via dashboard
@@ -929,8 +1615,26 @@ async def process_single_alert(
             
             print(f"✅ FILLED: {symbol} at ₹{actual_entry:.2f} (qty: {trade_params.quantity})")
             
-            # 🔥 FIX #2: Track position for monitoring
-            store_position(position)
+            # 🔥 Check if clubbing is enabled
+            clubbed = False
+            if config.get("club_positions", False):
+                clubbed, club_msg, _ = await club_position_with_existing(
+                    symbol=symbol,
+                    new_entry_price=actual_entry,
+                    new_quantity=trade_params.quantity,
+                    new_sl=trade_params.stop_loss,
+                    new_tp=trade_params.target,
+                    new_entry_order_id=position.entry_order_id,
+                    new_sl_order_id=sl_order_id,
+                    new_tp_order_id=tp_order_id,
+                    kite=kite
+                )
+                if clubbed:
+                    print(f"🔄 {club_msg}")
+            
+            if not clubbed:
+                position.clubbed = True
+                store_position(position)
         else:
             order_status = entry_order.status
             trade_status = "FAILED"
@@ -979,6 +1683,9 @@ async def process_single_alert(
         tp_status = "✅" if tp_order_id else "❌"
         paper_tag = "📝 PAPER | " if is_paper_trading else ""
         
+        # Calculate latency for message
+        latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+        
         msg = f"""
 {emoji} {paper_tag}*Market Order Executed*
 
@@ -994,7 +1701,7 @@ async def process_single_alert(
 *SL Order:* `{sl_order_id or 'FAILED'}`
 *TP Order:* `{tp_order_id or 'FAILED'}`
 
-⏱️ Latency: {total_ms:.0f}ms
+⏱️ Latency: {latency_ms:.0f}ms
 """
         # Handle Telegram notification with proper error handling
         try:
@@ -1036,6 +1743,13 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
     """
     Main trading logic - handles single or multiple stocks from Chartink.
     Executes in ~200-300ms total.
+    
+    🔥 Implements 5-step signal validation before placing orders:
+    1. Time Window Check - Only 10:00-11:30 and 13:30-14:30
+    2. Nifty Health Check - Reject if Nifty down > 0.3%
+    3. Open Positions Check - Max 3 open positions
+    4. Duplicate Check - Ignore if already triggered today
+    5. Price Slippage Check - Reject if price moved > 0.5%
     """
     start_time = datetime.now()
     
@@ -1047,16 +1761,7 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
     if expected_secret and alert.secret != expected_secret:
         raise HTTPException(status_code=401, detail="Invalid webhook secret")
     
-    # 3. Guard checks (0.1ms)
-    can_trade_flag, reason = can_trade(config)
-    if not can_trade_flag:
-        return {
-            "status": "REJECTED",
-            "reason": reason,
-            "timestamp": datetime.now().isoformat()
-        }
-    
-    # 4. Parse Chartink payload - may contain multiple stocks
+    # 3. Parse Chartink payload - may contain multiple stocks
     stock_alerts = parse_chartink_payload(alert)
     
     # Filter out invalid entries
@@ -1069,26 +1774,63 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
             "timestamp": datetime.now().isoformat()
         }
     
-    # 5. Process each stock (sequentially to respect max_trades limit)
+    # Get Kite API instance for validation (Nifty check)
+    kite = get_kite_api(config)
+    
+    # 4. Process each stock with 5-step validation
     results = []
     for stock_alert in stock_alerts:
-        # Check max trades before processing each
-        if count_today_trades() >= config.get("max_trades_per_day", 10):
+        symbol = stock_alert["symbol"]
+        alert_price = stock_alert.get("price")
+        
+        # 🔥 STEP 1-4: Run signal validation (time, nifty, positions, duplicate)
+        is_valid, reason = await validate_signal(config, symbol, kite)
+        
+        if not is_valid:
+            # Record rejected signal
+            record_signal(symbol, "REJECTED", reason=reason)
             results.append({
-                "symbol": stock_alert["symbol"],
+                "symbol": symbol,
                 "status": "REJECTED",
-                "reason": "Max daily trades reached"
+                "reason": reason,
+                "timestamp": datetime.now().isoformat()
+            })
+            print(f"🚫 Signal rejected: {symbol} - {reason}")
+            continue
+        
+        # Check max trades before processing
+        if count_today_trades() >= config.get("max_trades_per_day", 10):
+            reason = "Max daily trades reached"
+            record_signal(symbol, "REJECTED", reason=reason)
+            results.append({
+                "symbol": symbol,
+                "status": "REJECTED",
+                "reason": reason
             })
             continue
         
+        # Record that we're executing this signal
+        record_signal(symbol, "EXECUTING")
+        
+        # Process the trade (includes price slippage check - Step 5)
         result = await process_single_alert(
-            symbol=stock_alert["symbol"],
-            price=stock_alert["price"],
+            symbol=symbol,
+            price=alert_price,
             scan_name=stock_alert["scan_name"],
             action=alert.action,
             context=stock_alert["context"],
             config=config
         )
+        
+        # Update signal record with final status
+        if result.get("status") == "SUCCESS":
+            record_signal(symbol, "EXECUTED", metadata={
+                "order_id": result.get("order_id"),
+                "entry_price": result.get("trade_params", {}).get("entry")
+            })
+        else:
+            record_signal(symbol, "FAILED", reason=result.get("message", "Unknown"))
+        
         results.append(result)
     
     # Calculate total latency
@@ -1104,6 +1846,7 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
             "results": results,
             "total_stocks": len(stock_alerts),
             "processed": len([r for r in results if r.get("status") == "SUCCESS"]),
+            "rejected": len([r for r in results if r.get("status") == "REJECTED"]),
             "latency_ms": round(total_ms, 2),
             "timestamp": datetime.now().isoformat()
         }
@@ -1240,6 +1983,30 @@ async def get_config():
         config["telegram"]["bot_token"] = "***" if config["telegram"].get("bot_token") else ""
     return config
 
+
+@app.get("/api/signals")
+async def get_signals():
+    """Get today's signal history with validation stats."""
+    from signal_tracker import get_signal_stats, load_today_signals
+    
+    stats = get_signal_stats()
+    signals = load_today_signals()
+    
+    return {
+        "stats": stats,
+        "signals": signals[-50:] if len(signals) > 50 else signals,  # Last 50 signals
+        "validation_config": load_config().get("signal_validation", {})
+    }
+
+
+@app.post("/api/signals/clear")
+async def clear_signals():
+    """Clear today's signal history (for testing)."""
+    from signal_tracker import record_signal
+    record_signal("ADMIN", "CLEARED", reason="Manual clear via API")
+    return {"status": "cleared", "message": "Signal history cleared"}
+
+
 @app.post("/api/config")
 async def update_config(update: ConfigUpdate):
     """Update configuration."""
@@ -1279,6 +2046,18 @@ async def update_config(update: ConfigUpdate):
     
     if update.paper_trading is not None:
         config["paper_trading"] = update.paper_trading
+    
+    if update.prevent_duplicate_stocks is not None:
+        config["prevent_duplicate_stocks"] = update.prevent_duplicate_stocks
+    
+    if update.club_positions is not None:
+        config["club_positions"] = update.club_positions
+    
+    # 🔥 Update signal validation settings
+    if update.signal_validation is not None:
+        if "signal_validation" not in config:
+            config["signal_validation"] = {}
+        config["signal_validation"].update(update.signal_validation)
         
     if update.kite_api_key:
         if "kite" not in config:
@@ -1362,7 +2141,11 @@ async def get_positions():
     kite = get_kite_api(config)
     positions_with_pnl = []
     
-    for symbol, pos in open_positions.items():
+    for position_id, pos in open_positions.items():
+        symbol = pos.get("symbol")
+        if not symbol:
+            continue
+            
         quote = await kite.get_quote(symbol)
         if quote:
             ltp = quote.ltp
@@ -1371,13 +2154,14 @@ async def get_positions():
             unrealized_pnl = (ltp - entry) * qty
             
             positions_with_pnl.append({
+                "id": position_id,  # Include position ID for closing
                 **pos,
                 "ltp": ltp,
                 "unrealized_pnl": round(unrealized_pnl, 2),
                 "pnl_percent": round((ltp - entry) / entry * 100, 2) if entry > 0 else 0
             })
         else:
-            positions_with_pnl.append(pos)
+            positions_with_pnl.append({"id": position_id, **pos})
     
     return {
         "positions": positions_with_pnl,
@@ -1385,25 +2169,412 @@ async def get_positions():
         "total_unrealized_pnl": round(sum(p.get("unrealized_pnl", 0) for p in positions_with_pnl), 2)
     }
 
-@app.post("/api/positions/{symbol}/close")
-async def close_position_api(symbol: str):
-    """Manually close a position."""
+@app.post("/api/positions/{position_id}/close")
+async def close_position_api(position_id: str):
+    """Manually close a position by ID."""
     config = load_config()
     kite = get_kite_api(config)
     
-    # Close the position
-    result = await kite.close_position(symbol, reason="MANUAL")
+    # Get position details
+    positions = load_positions()
+    if position_id not in positions:
+        return {"status": "error", "message": "Position not found"}
     
-    if result.status == "SUCCESS":
-        return {"status": "success", "message": f"Position {symbol} closed"}
+    position = positions[position_id]
+    symbol = position.get("symbol")
+    qty = position.get("quantity", 0)
+    entry_price = position.get("entry_price", 0)
+    
+    if qty <= 0:
+        return {"status": "error", "message": "Invalid quantity"}
+    
+    # Cancel SL and TP GTT orders first
+    sl_order_id = position.get("sl_order_id")
+    tp_order_id = position.get("tp_order_id")
+    
+    try:
+        if sl_order_id and not sl_order_id.startswith("PAPER_"):
+            await kite.delete_gtt(sl_order_id)
+    except Exception as e:
+        print(f"Warning: Could not delete SL GTT: {e}")
+    
+    try:
+        if tp_order_id and not tp_order_id.startswith("PAPER_"):
+            await kite.delete_gtt(tp_order_id)
+    except Exception as e:
+        print(f"Warning: Could not delete TP GTT: {e}")
+    
+    # Place market order to exit
+    exit_order = await kite.place_market_order(
+        symbol=symbol,
+        transaction_type="SELL",
+        quantity=qty
+    )
+    
+    print(f"Exit order placed: {exit_order.order_id}, status: {exit_order.status}")
+    
+    # Handle different order statuses
+    if exit_order.status in ["PENDING", "SUCCESS"]:
+        # Wait for fill (even if SUCCESS, check fill details)
+        fill_result = await kite.wait_for_order_fill(exit_order.order_id, timeout=30)
+        
+        if fill_result.get("filled"):
+            exit_price = fill_result.get("average_price", entry_price)
+            pnl = (exit_price - entry_price) * qty
+            
+            # Close position in our records
+            close_position_by_id(position_id, exit_price, pnl, "MANUAL")
+            
+            # Send notification
+            await send_telegram_message(
+                f"🔴 *Position Closed: {symbol}*\n\n"
+                f"Exit: ₹{exit_price:.2f}\n"
+                f"P&L: ₹{pnl:.2f}\n"
+                f"Reason: Manual close"
+            )
+            
+            return {"status": "success", "message": f"Position {symbol} closed", "pnl": pnl}
+        else:
+            return {"status": "error", "message": f"Order not filled: {fill_result.get('message', 'Unknown')}"}
+    elif exit_order.status == "FAILED":
+        return {"status": "error", "message": exit_order.message or "Order rejected by broker"}
+    elif exit_order.status == "ERROR":
+        return {"status": "error", "message": exit_order.message or "System error placing order"}
+    
+    return {"status": "error", "message": f"Unexpected order status: {exit_order.status}"}
+
+
+@app.post("/api/positions/sync")
+async def sync_positions_api():
+    """
+    Manually sync positions with Kite.
+    Marks local positions as closed if they're no longer in Kite.
+    """
+    config = load_config()
+    kite = get_kite_api(config)
+    
+    result = await sync_positions_with_kite(kite)
+    
+    return {
+        "status": "success" if result.get("errors", 0) == 0 else "partial",
+        "message": f"Synced {result.get('synced', 0)} positions, closed {result.get('closed', 0)}",
+        "details": result
+    }
+
+
+@app.post("/api/gtt/cleanup")
+async def cleanup_orphan_gtt_api():
+    """
+    Clean up orphan GTT orders for closed positions.
+    Cancels GTT orders that belong to positions already marked as closed.
+    
+    Use this to fix dangling GTTs from clubbing or manual closes.
+    """
+    config = load_config()
+    kite = get_kite_api(config)
+    
+    result = {
+        "cancelled": [],
+        "errors": [],
+        "checked": 0
+    }
+    
+    try:
+        # Get all positions (including closed ones)
+        all_positions = load_positions()
+        
+        # Get all active GTT orders from Kite
+        gtt_orders = await kite.list_gtt_orders()
+        
+        # Build set of valid GTT IDs from open positions
+        valid_gtt_ids = set()
+        for pos_id, pos in all_positions.items():
+            if pos.get("status") == "OPEN":
+                sl_id = pos.get("sl_order_id")
+                tp_id = pos.get("tp_order_id")
+                if sl_id and not sl_id.startswith("PAPER_"):
+                    valid_gtt_ids.add(str(sl_id))
+                if tp_id and not tp_id.startswith("PAPER_"):
+                    valid_gtt_ids.add(str(tp_id))
+        
+        # Check each GTT order
+        for gtt in gtt_orders:
+            gtt_id = str(gtt.get("id", ""))
+            gtt_status = gtt.get("status", "").lower()
+            
+            # Skip already triggered/cancelled GTTs
+            if gtt_status in ["triggered", "cancelled", "expired", "rejected"]:
+                continue
+            
+            result["checked"] += 1
+            
+            # If GTT not associated with any open position, cancel it
+            if gtt_id not in valid_gtt_ids:
+                symbol = gtt.get("condition", {}).get("tradingsymbol", "UNKNOWN")
+                try:
+                    success = await kite.delete_gtt(gtt_id)
+                    if success:
+                        result["cancelled"].append({
+                            "gtt_id": gtt_id,
+                            "symbol": symbol,
+                            "reason": "Orphan - no matching open position"
+                        })
+                        print(f"🗑️ Cancelled orphan GTT: {gtt_id} ({symbol})")
+                    else:
+                        result["errors"].append({"gtt_id": gtt_id, "error": "Delete failed"})
+                except Exception as e:
+                    result["errors"].append({"gtt_id": gtt_id, "error": str(e)})
+        
+        return {
+            "status": "success" if len(result["errors"]) == 0 else "partial",
+            "message": f"Cancelled {len(result['cancelled'])} orphan GTTs ({result['checked']} checked)",
+            "details": result
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "details": result
+        }
+
+
+@app.get("/api/positions/kite-debug")
+async def kite_positions_debug():
+    """
+    Debug endpoint to see raw Kite positions.
+    Shows what Kite API returns vs what bot has stored.
+    """
+    config = load_config()
+    kite = get_kite_api(config)
+    
+    try:
+        # Fetch from Kite
+        kite_positions = await kite.fetch_kite_positions()
+        
+        # Get local positions
+        local_positions = load_positions()
+        local_open = {k: v for k, v in local_positions.items() if v.get("status") == "OPEN"}
+        
+        return {
+            "kite_positions": [
+                {
+                    "symbol": p.get("tradingsymbol"),
+                    "quantity": p.get("quantity"),
+                    "product": p.get("product"),  # CNC or MIS
+                    "exchange": p.get("exchange")
+                }
+                for p in kite_positions
+            ],
+            "local_open_positions": [
+                {
+                    "id": k,
+                    "symbol": v.get("symbol"),
+                    "quantity": v.get("quantity"),
+                    "status": v.get("status")
+                }
+                for k, v in local_open.items()
+            ],
+            "match_analysis": {
+                "kite_count": len(kite_positions),
+                "local_open_count": len(local_open)
+            }
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/positions/{position_id}/force-close")
+async def force_close_position_api(position_id: str, exit_price: Optional[float] = None):
+    """
+    Force close a position without placing an order.
+    Use when position was already closed externally (e.g., from Kite app).
+    
+    Args:
+        position_id: The position ID
+        exit_price: Optional exit price. If not provided, uses current market price.
+    """
+    config = load_config()
+    kite = get_kite_api(config)
+    
+    # Get position details
+    positions = load_positions()
+    if position_id not in positions:
+        return {"status": "error", "message": "Position not found"}
+    
+    position = positions[position_id]
+    symbol = position.get("symbol")
+    
+    if position.get("status") != "OPEN":
+        return {"status": "error", "message": "Position is not open"}
+    
+    # Get exit price
+    if exit_price is None or exit_price <= 0:
+        # Fetch current price
+        quote = await kite.get_quote(symbol)
+        if not quote:
+            return {"status": "error", "message": "Could not fetch current price"}
+        exit_price = quote.ltp
+    
+    # Cancel SL and TP GTT orders
+    sl_order_id = position.get("sl_order_id")
+    tp_order_id = position.get("tp_order_id")
+    
+    try:
+        if sl_order_id and not sl_order_id.startswith("PAPER_"):
+            await kite.delete_gtt(sl_order_id)
+    except Exception as e:
+        print(f"Warning: Could not delete SL GTT: {e}")
+    
+    try:
+        if tp_order_id and not tp_order_id.startswith("PAPER_"):
+            await kite.delete_gtt(tp_order_id)
+    except Exception as e:
+        print(f"Warning: Could not delete TP GTT: {e}")
+    
+    # Force close the position
+    success = force_close_position(position_id, exit_price, reason="MANUAL_FORCE_CLOSE")
+    
+    if success:
+        entry_price = position.get("entry_price", 0)
+        qty = position.get("quantity", 0)
+        pnl = (exit_price - entry_price) * qty
+        
+        await send_telegram_message(
+            f"🔴 *Position Force-Closed: {symbol}*\n\n"
+            f"Exit: ₹{exit_price:.2f}\n"
+            f"P&L: ₹{pnl:.2f}\n"
+            f"Reason: Manual force close (already closed in Kite)"
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Position {symbol} force-closed",
+            "exit_price": exit_price,
+            "pnl": round(pnl, 2)
+        }
     else:
-        return {"status": "error", "message": result.message}
+        return {"status": "error", "message": "Failed to close position"}
+
 
 @app.post("/api/test-telegram")
 async def test_telegram():
     """Send a test Telegram message."""
     await send_telegram_message("🧪 *Test Message*\n\nTrading bot is working correctly!")
     return {"status": "sent"}
+
+@app.get("/api/gtt-orders")
+async def get_gtt_orders():
+    """Get all active GTT orders from Kite."""
+    config = load_config()
+    kite = get_kite_api(config)
+    
+    try:
+        gtt_orders = await kite.list_gtt_orders()
+        
+        # Enrich with position info if available
+        positions = load_positions()
+        position_gtt_map = {}
+        for pos_id, pos in positions.items():
+            if pos.get("status") == "OPEN":
+                sl_id = pos.get("sl_order_id")
+                tp_id = pos.get("tp_order_id")
+                if sl_id:
+                    position_gtt_map[sl_id] = {"position_id": pos_id, "symbol": pos.get("symbol"), "type": "SL"}
+                if tp_id:
+                    position_gtt_map[tp_id] = {"position_id": pos_id, "symbol": pos.get("symbol"), "type": "TP"}
+        
+        # Add position info to GTT orders
+        for gtt in gtt_orders:
+            gtt_id = str(gtt.get("id"))
+            if gtt_id in position_gtt_map:
+                gtt["position_info"] = position_gtt_map[gtt_id]
+        
+        return {
+            "status": "success",
+            "count": len(gtt_orders),
+            "orders": gtt_orders
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/sync-kite")
+async def sync_kite_positions():
+    """Sync positions and orders from Kite (includes manual/external trades)."""
+    config = load_config()
+    kite = get_kite_api(config)
+    
+    try:
+        # Fetch positions from Kite
+        kite_positions = await kite.fetch_kite_positions()
+        
+        # Get our current positions
+        local_positions = load_positions()
+        local_order_ids = {p.get("entry_order_id") for p in local_positions.values()}
+        
+        synced_count = 0
+        
+        for pos in kite_positions:
+            # Only process MIS (intraday) positions with net quantity > 0
+            if pos.get("product") != "MIS":
+                continue
+                
+            quantity = int(pos.get("quantity", 0))
+            if quantity <= 0:
+                continue
+            
+            symbol = pos.get("tradingsymbol")
+            exchange = pos.get("exchange")
+            
+            # Skip if already tracked
+            # Note: Kite doesn't give us order_id in positions, so we use symbol+price+time matching
+            # For now, add as external position
+            
+            entry_price = float(pos.get("average_price", 0))
+            last_price = float(pos.get("last_price", 0))
+            
+            # Check if this position already exists locally
+            existing = False
+            for local_pos in local_positions.values():
+                if (local_pos.get("symbol") == symbol and 
+                    abs(local_pos.get("entry_price", 0) - entry_price) < 0.5 and
+                    local_pos.get("status") == "OPEN"):
+                    existing = True
+                    break
+            
+            if existing:
+                continue
+            
+            # Add as external position
+            position_id = f"EXTERNAL_{symbol}_{datetime.now().strftime('%H%M%S')}"
+            
+            positions = load_positions()
+            positions[position_id] = {
+                "id": position_id,
+                "symbol": symbol,
+                "quantity": quantity,
+                "entry_price": entry_price,
+                "entry_order_id": None,  # External trade - no order ID
+                "sl_price": entry_price * 0.98,  # Default 2% SL
+                "tp_price": entry_price * 1.06,  # Default 6% TP
+                "sl_order_id": None,
+                "tp_order_id": None,
+                "status": "OPEN",
+                "entry_time": datetime.now().isoformat(),
+                "external": True,  # Mark as external/manual trade
+                "source": "KITE_APP"
+            }
+            save_positions(positions)
+            synced_count += 1
+        
+        return {
+            "status": "success",
+            "message": f"Synced {synced_count} external positions from Kite",
+            "synced_count": synced_count
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.get("/api/quote/{symbol}")
 async def get_quote(symbol: str):
@@ -1599,6 +2770,110 @@ async def get_stats():
         "risk_percent": config.get("risk_percent", 0),
         "total_trades": total_trades  # Added for compatibility
     }
+
+# ============================================================================
+# File Upload Endpoint for CSV/Data Files
+# ============================================================================
+
+from fastapi import UploadFile, File
+import shutil
+
+@app.get("/upload", response_class=HTMLResponse)
+async def upload_page():
+    """Simple file upload page."""
+    return """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload CSV/Data Files</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        h1 { color: #333; }
+        .upload-box { border: 2px dashed #ccc; padding: 40px; text-align: center; border-radius: 10px; }
+        .upload-box:hover { border-color: #4CAF50; background: #f9f9f9; }
+        input[type="file"] { margin: 20px 0; }
+        button { background: #4CAF50; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .info { background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>📁 Upload CSV/Data Files</h1>
+    
+    <div class="info">
+        <strong>Upload your margin/leverage CSV file here.</strong><br>
+        The file will be saved to the server and can be used to improve position sizing.
+    </div>
+    
+    <div class="upload-box">
+        <form action="/api/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".csv,.json,.xlsx,.txt" required>
+            <br><br>
+            <button type="submit">Upload File</button>
+        </form>
+    </div>
+    
+    <h3>Alternative: Use cURL</h3>
+    <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">
+curl -X POST 'https://coolify.themelon.in/api/upload' \\
+  -F 'file=@your-file.csv'
+    </pre>
+    
+    <h3>Alternative: Use SCP</h3>
+    <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">
+scp your-file.csv root@coolify.themelon.in:/root/trading-bot/uploads/
+    </pre>
+</body>
+</html>
+    """
+
+@app.post("/api/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """Handle file upload."""
+    # Create uploads directory if not exists
+    upload_dir = Path("uploads")
+    upload_dir.mkdir(exist_ok=True)
+    
+    # Save file
+    file_path = upload_dir / file.filename
+    
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        return {
+            "status": "success",
+            "message": f"File '{file.filename}' uploaded successfully",
+            "filename": file.filename,
+            "path": str(file_path),
+            "size": file_path.stat().st_size
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Upload failed: {str(e)}"
+        }
+    finally:
+        file.file.close()
+
+@app.get("/api/uploaded-files")
+async def list_uploaded_files():
+    """List all uploaded files."""
+    upload_dir = Path("uploads")
+    if not upload_dir.exists():
+        return {"files": []}
+    
+    files = []
+    for f in upload_dir.iterdir():
+        if f.is_file():
+            files.append({
+                "name": f.name,
+                "size": f.stat().st_size,
+                "modified": datetime.fromtimestamp(f.stat().st_mtime).isoformat()
+            })
+    
+    return {"files": files}
 
 if __name__ == "__main__":
     import uvicorn

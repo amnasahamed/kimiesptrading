@@ -335,21 +335,22 @@ class KiteAPI:
         stop_loss: float = 0,
         target: float = 0,
         product: str = "MIS",
-        use_market_order: bool = True  # Default to market for immediate execution
+        use_market_order: bool = True,  # Default to market for immediate execution
+        require_sl_gtt: bool = True,     # 🔥 NEW: Fail trade if SL GTT can't be placed
+        max_gtt_retries: int = 3         # 🔥 NEW: Retry GTT placement N times
     ) -> Tuple[KiteOrder, Optional[Position]]:
         """
-        Place a complete bracket order:
+        Place a complete bracket order with SAFETY CHECKS:
         1. Entry order (ALWAYS market for immediate execution)
         2. Wait for fill
-        3. Place SL GTT
-        4. Place TP GTT
+        3. Place SL GTT (CRITICAL - retry on failure)
+        4. Place TP GTT (best effort)
+        5. 🔥 NEW: If SL GTT fails and require_sl_gtt=True, EXIT the position immediately!
         
-        Returns: (EntryOrder, Position)
+        Returns: (EntryOrder, Position or None)
         """
         # Step 1: Place entry order - ALWAYS use market for immediate execution
-        # When webhook fires, we want in NOW, not hope for a better price
         if use_market_order or not entry_price:
-            # Market order - guaranteed immediate fill
             entry_order = await self.place_market_order(
                 symbol=symbol,
                 transaction_type=transaction_type,
@@ -357,7 +358,6 @@ class KiteAPI:
                 product=product
             )
         else:
-            # Limit order only if explicitly requested
             entry_order = await self.place_limit_order(
                 symbol=symbol,
                 transaction_type=transaction_type,
@@ -394,15 +394,56 @@ class KiteAPI:
             tp_price=target
         )
         
-        # Step 4: Place SL GTT
-        sl_order = await self.place_sl_gtt(symbol, quantity, stop_loss, transaction_type, product)
-        if sl_order.status == "SUCCESS":
-            position.sl_order_id = sl_order.gtt_id
+        # 🔥 STEP 4: Place SL GTT with RETRY LOGIC (CRITICAL!)
+        sl_order = None
+        sl_error_msg = ""
         
-        # Step 5: Place TP GTT
+        for attempt in range(max_gtt_retries):
+            sl_order = await self.place_sl_gtt(symbol, quantity, stop_loss, transaction_type, product)
+            
+            if sl_order.status == "SUCCESS":
+                position.sl_order_id = sl_order.gtt_id
+                print(f"✅ SL GTT placed: {sl_order.gtt_id} (attempt {attempt + 1})")
+                break
+            else:
+                sl_error_msg = sl_order.message
+                print(f"⚠️ SL GTT failed (attempt {attempt + 1}/{max_gtt_retries}): {sl_error_msg}")
+                if attempt < max_gtt_retries - 1:
+                    await asyncio.sleep(1)  # Wait before retry
+        
+        # 🔥 CRITICAL: If SL GTT failed and we require it, EXIT the trade!
+        if not position.sl_order_id and require_sl_gtt:
+            print(f"🚨 CRITICAL: SL GTT failed after {max_gtt_retries} attempts. Exiting position for safety!")
+            
+            # Place exit order immediately
+            exit_transaction = "SELL" if transaction_type.upper() == "BUY" else "BUY"
+            exit_order = await self.place_market_order(
+                symbol=symbol,
+                transaction_type=exit_transaction,
+                quantity=entry_order.filled_quantity,
+                product=product,
+                tag="emergency_exit_no_sl"
+            )
+            
+            entry_order.status = "FAILED"
+            entry_order.message = f"Trade aborted: SL GTT failed ({sl_error_msg}). Position exited for safety."
+            
+            return entry_order, None
+        
+        # 🔥 STEP 5: Place TP GTT (best effort, not critical)
         tp_order = await self.place_tp_gtt(symbol, quantity, target, transaction_type, product)
         if tp_order.status == "SUCCESS":
             position.tp_order_id = tp_order.gtt_id
+            print(f"✅ TP GTT placed: {tp_order.gtt_id}")
+        else:
+            # TP failure is logged but doesn't abort trade
+            print(f"⚠️ TP GTT failed (non-critical): {tp_order.message}")
+            position.tp_order_id = None  # No TP protection, but we have SL
+        
+        # 🔥 SAFETY CHECK: Warn if position has no SL
+        if not position.sl_order_id:
+            print(f"🚨 WARNING: Position {symbol} has NO STOP LOSS! Manual monitoring required!")
+            position.status = "OPEN_NO_SL"  # Special status
         
         # Track position
         self.positions[symbol] = position
@@ -427,7 +468,7 @@ class KiteAPI:
             trigger_price=trigger_price,
             transaction_type=exit_transaction,
             product=product,
-            order_type="SL-M"  # Stop Loss Market
+            order_type="SL"  # Use SL (with limit price), not SL-M
         )
     
     async def place_tp_gtt(
@@ -468,8 +509,10 @@ class KiteAPI:
                 message="Invalid GTT parameters"
             )
         
-        # Get instrument token
+        # Get instrument token and current price
         token = await self.get_instrument_token(symbol)
+        quote = await self.get_quote(symbol)
+        
         if not token:
             return KiteGTT(
                 gtt_id="",
@@ -477,27 +520,43 @@ class KiteAPI:
                 message=f"Could not get instrument token for {symbol}"
             )
         
+        # Get current LTP for last_price
+        last_price = quote.ltp if quote else trigger_price
+        
         url = f"{self.base_url}/gtt/triggers"
         
-        # Build GTT payload
+        # Build GTT payload - must be form-encoded, not JSON
+        # condition and orders must be JSON-encoded strings
+        condition = {
+            "exchange": "NSE",
+            "tradingsymbol": symbol,
+            "trigger_values": [round(trigger_price, 2)],
+            "last_price": round(last_price, 2)
+        }
+        
+        # For SL orders, price must be the trigger price (not 0)
+        # For LIMIT orders, price is the limit price
+        if order_type == "LIMIT":
+            order_price = round(trigger_price, 2)
+        elif order_type == "SL":
+            order_price = round(trigger_price, 2)  # SL needs a price (acts as limit)
+        else:
+            order_price = 0
+        
+        orders = [{
+            "exchange": "NSE",
+            "tradingsymbol": symbol,
+            "transaction_type": transaction_type,
+            "quantity": quantity,
+            "order_type": order_type,
+            "product": product,
+            "price": order_price
+        }]
+        
+        # Form-encoded payload (not JSON)
         gtt_data = {
-            "condition": {
-                "exchange": "NSE",
-                "tradingsymbol": symbol,
-                "trigger_values": [round(trigger_price, 2)],
-                "last_price": round(trigger_price * 0.99, 2)  # Slightly below trigger
-            },
-            "orders": [
-                {
-                    "exchange": "NSE",
-                    "tradingsymbol": symbol,
-                    "transaction_type": transaction_type,
-                    "quantity": str(quantity),
-                    "order_type": order_type,
-                    "product": product,
-                    "price": round(trigger_price, 2) if order_type == "LIMIT" else "0"
-                }
-            ],
+            "condition": json.dumps(condition),
+            "orders": json.dumps(orders),
             "type": "single"
         }
         
@@ -505,8 +564,8 @@ class KiteAPI:
             client = await self._get_client()
             resp = await client.post(
                 url,
-                headers={**self.headers, "Content-Type": "application/json"},
-                json=gtt_data
+                headers=self.headers,  # No Content-Type override - let httpx handle form encoding
+                data=gtt_data  # Use data= for form encoding, not json=
             )
             result = resp.json()
             
@@ -563,9 +622,68 @@ class KiteAPI:
             print(f"Error deleting GTT: {e}")
             return False
     
+    async def list_gtt_orders(self) -> List[Dict[str, Any]]:
+        """List all GTT orders from Kite."""
+        url = f"{self.base_url}/gtt/triggers"
+        
+        try:
+            client = await self._get_client()
+            resp = await client.get(url, headers=self.headers)
+            data = resp.json()
+            
+            if data.get("status") == "success":
+                return data.get("data", [])
+            return []
+        except Exception as e:
+            print(f"Error listing GTT orders: {e}")
+            return []
+    
     async def get_positions(self) -> Dict[str, Position]:
         """Get current open positions."""
         return self.positions
+    
+    async def fetch_kite_positions(self) -> List[Dict[str, Any]]:
+        """
+        Fetch positions from Kite API (includes external/manual trades).
+        Returns both day (MIS) and net (CNC) positions.
+        """
+        url = f"{self.base_url}/portfolio/positions"
+        
+        try:
+            client = await self._get_client()
+            resp = await client.get(url, headers=self.headers)
+            data = resp.json()
+            
+            if data.get("status") == "success":
+                # Get both day positions (intraday/MIS) and net positions (CNC/delivery)
+                day_positions = data.get("data", {}).get("day", [])
+                net_positions = data.get("data", {}).get("net", [])
+                
+                # Combine both, with net positions taking precedence for same symbol
+                all_positions = {p.get("tradingsymbol"): p for p in day_positions}
+                all_positions.update({p.get("tradingsymbol"): p for p in net_positions})
+                
+                return list(all_positions.values())
+            return []
+        except Exception as e:
+            print(f"Error fetching Kite positions: {e}")
+            return []
+    
+    async def fetch_kite_orders(self) -> List[Dict[str, Any]]:
+        """Fetch orders from Kite API."""
+        url = f"{self.base_url}/orders"
+        
+        try:
+            client = await self._get_client()
+            resp = await client.get(url, headers=self.headers)
+            data = resp.json()
+            
+            if data.get("status") == "success":
+                return data.get("data", [])
+            return []
+        except Exception as e:
+            print(f"Error fetching Kite orders: {e}")
+            return []
     
     async def close_position(
         self,
