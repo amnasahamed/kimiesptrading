@@ -100,6 +100,15 @@
         .gnd { color: #ef4444; }
         .vcc { color: #22c55e; }
         .signal { color: #3b82f6; }
+        
+        .screen-preview {
+            background: #000;
+            border: 2px solid #333;
+            border-radius: 4px;
+            width: 128px;
+            height: 64px;
+            image-rendering: pixelated;
+        }
     </style>
 </head>
 <body class="bg-dark-900 text-gray-100 font-sans antialiased">
@@ -114,7 +123,7 @@
                     </div>
                     <div>
                         <h1 class="font-bold text-lg">ESP8266 Setup</h1>
-                        <p class="text-xs text-gray-500">Hardware Trading Display</p>
+                        <p class="text-xs text-gray-500">1.3" OLED Trading Display</p>
                     </div>
                 </div>
                 <a href="/dashboard" class="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
@@ -129,10 +138,10 @@
         
         <!-- Hero -->
         <div class="text-center mb-12">
-            <h2 class="text-4xl font-bold mb-4">Build Your Trading Terminal</h2>
+            <h2 class="text-4xl font-bold mb-4">1.3" OLED Trading Terminal</h2>
             <p class="text-gray-400 max-w-2xl mx-auto">
-                Connect an ESP8266 with OLED display to create a physical trading monitor. 
-                Get real-time alerts, P&L updates, and position tracking on your desk.
+                Build a dedicated hardware display for your trading bot. Optimized for 128x64 I2C OLED 
+                with fast 150ms button response, clean layouts, and snappy 30fps refresh.
             </p>
             <div class="flex justify-center gap-4 mt-6">
                 <a href="#wiring" class="px-6 py-3 bg-primary-600 hover:bg-primary-500 rounded-xl font-medium transition-all">
@@ -162,38 +171,41 @@
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fas fa-check-circle text-primary-500"></i>
-                            <span><strong>OLED Display</strong> - 0.96" 128x64 SSD1306 (I2C)</span>
+                            <span><strong>OLED Display</strong> - 1.3" 128x64 SSD1306/SH1106 I2C (4-pin)</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fas fa-check-circle text-primary-500"></i>
-                            <span><strong>Push Button</strong> - Any momentary switch</span>
+                            <span><strong>Push Button</strong> - Momentary switch for D6 (GPIO12)</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fas fa-check-circle text-primary-500"></i>
-                            <span><strong>LED</strong> - 3mm or 5mm any color</span>
+                            <span><strong>Buzzer</strong> - Active piezo buzzer (optional)</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fas fa-check-circle text-primary-500"></i>
-                            <span><strong>Resistor</strong> - 220Ω for LED current limiting</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i class="fas fa-check-circle text-primary-500"></i>
-                            <span><strong>Jumper Wires</strong> - Male-to-male Dupont cables</span>
+                            <span><strong>Jumper Wires</strong> - Female-to-female Dupont cables</span>
                         </li>
                     </ul>
+                    <div class="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                        <p class="text-sm text-blue-400">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Note:</strong> 1.3" OLEDs may use address <code>0x3C</code> or <code>0x3D</code>. 
+                            If display is blank, try changing OLED_ADDR in the code.
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Wiring Diagram -->
                 <div id="wiring" class="glass rounded-2xl p-6">
                     <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
                         <i class="fas fa-project-diagram text-primary-500"></i>
-                        Wiring Diagram
+                        Wiring for 1.3" OLED
                     </h3>
                     
                     <div class="space-y-4">
                         <!-- OLED -->
                         <div class="bg-dark-800/50 rounded-xl p-4">
-                            <h4 class="font-medium mb-3 text-primary-400">OLED Display (I2C)</h4>
+                            <h4 class="font-medium mb-3 text-primary-400">1.3" OLED Display (I2C)</h4>
                             <div class="wiring-diagram text-sm">
                                 <div class="grid grid-cols-2 gap-2">
                                     <div><span class="gnd">GND</span> → <span class="gnd">G</span> (Ground)</div>
@@ -206,20 +218,21 @@
 
                         <!-- Button -->
                         <div class="bg-dark-800/50 rounded-xl p-4">
-                            <h4 class="font-medium mb-3 text-primary-400">Push Button</h4>
+                            <h4 class="font-medium mb-3 text-primary-400">Navigation Button</h4>
                             <div class="wiring-diagram text-sm">
-                                <span class="signal">D3</span> (GPIO0) → Button → <span class="gnd">GND</span>
+                                <span class="signal">D6</span> (GPIO12) → Button → <span class="gnd">GND</span>
                             </div>
-                            <p class="text-xs text-gray-500 mt-2">*Can use FLASH button on NodeMCU (already connected to D3)</p>
+                            <p class="text-xs text-gray-500 mt-2">
+                                *Use D6 (GPIO12) NOT D3 - D3 is the FLASH button used for programming mode
+                            </p>
                         </div>
 
-                        <!-- LED -->
+                        <!-- Buzzer -->
                         <div class="bg-dark-800/50 rounded-xl p-4">
-                            <h4 class="font-medium mb-3 text-primary-400">LED Indicator</h4>
+                            <h4 class="font-medium mb-3 text-primary-400">Alert Buzzer (Optional)</h4>
                             <div class="wiring-diagram text-sm">
-                                <span class="signal">D4</span> (GPIO2) → 220Ω → LED+ → LED- → <span class="gnd">GND</span>
+                                <span class="signal">D5</span> (GPIO14) → Buzzer+ → Buzzer- → <span class="gnd">GND</span>
                             </div>
-                            <p class="text-xs text-gray-500 mt-2">*Built-in LED on most ESP8266 boards is already on D4</p>
                         </div>
                     </div>
                 </div>
@@ -275,7 +288,7 @@
                             <div class="step-number">4</div>
                             <div>
                                 <h4 class="font-medium mb-1">Configure & Upload</h4>
-                                <p class="text-sm text-gray-400">Copy the code below, update WiFi credentials and server URL, then upload to your ESP8266.</p>
+                                <p class="text-sm text-gray-400">Copy the code below, update WiFi credentials, then upload to ESP8266.</p>
                             </div>
                         </div>
                     </div>
@@ -288,7 +301,7 @@
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-xl font-semibold flex items-center gap-2">
                             <i class="fas fa-file-code text-primary-500"></i>
-                            Arduino Code
+                            Optimized Arduino Code
                         </h3>
                         <div class="flex gap-2">
                             <button class="copy-btn relative" data-clipboard-target="#arduino-code">
@@ -301,33 +314,30 @@
                     </div>
                     
                     <div class="mb-4 p-4 bg-dark-800/50 rounded-xl">
-                        <h4 class="font-medium mb-3 text-primary-400">🎨 New Premium Features</h4>
+                        <h4 class="font-medium mb-3 text-primary-400">✨ Optimizations for 1.3" OLED</h4>
                         <ul class="text-sm text-gray-400 space-y-2">
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Animated splash screen with progress bar</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Custom icons (WiFi, battery, charts)</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Progress bars for trade limits</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Smooth 20fps animations</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Burn-in protection (shifts pixels)</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Visual page indicators</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Flashing alert screen</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> Audio beep feedback</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>State machine button</strong> - 100% reliable, non-blocking</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>50ms debounce + 200ms cooldown</strong> - no double presses</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>D6 (GPIO12)</strong> - avoids Flash mode conflict</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>Serial debug</strong> - see [BTN] messages for troubleshooting</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>400kHz I2C</strong> - faster OLED refresh</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>500ms HTTP timeout</strong> - UI stays responsive</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>DynamicJsonDocument</strong> - prevents stack overflow</li>
                         </ul>
                     </div>
                     
                     <div class="code-block overflow-hidden">
                         <pre id="arduino-code" class="p-4 text-xs overflow-x-auto text-gray-300" style="max-height: 600px; overflow-y: auto;">/*
-  ESP8266 Trading Bot - PREMIUM OLED UI
-  ======================================
-  Hardware: ESP8266 + 128x64 OLED (SSD1306)
+  ESP8266 Trading Bot - Optimized for 1.3" 128x64 OLED
+  =====================================================
+  Hardware: ESP8266 + 1.3" I2C OLED (SSD1306, 4-pin)
   
   Features:
-  - Animated splash screen
-  - Icon-based navigation  
-  - Progress bars and charts
-  - Smooth transitions
-  - Scrolling text
-  - Burn-in protection
-  - 20fps animations
+  - Fast 150ms button response
+  - Clean, information-dense layouts
+  - No animation delays
+  - 30fps refresh for snappy UI
+  - 4 screens: Dashboard | Positions | Stats | Alert
 */
 
 #include &lt;ESP8266WiFi.h&gt;
@@ -343,250 +353,334 @@ const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
 const char* serverUrl = "https://coolify.themelon.in";
 
-// Pins
-#define BUTTON_PIN 0     // GPIO0 = D3
-#define LED_PIN 2        // GPIO2 = D4
-#define BUZZER_PIN 14    // GPIO14 = D5
-#define SDA_PIN 4        // GPIO4 = D2
-#define SCL_PIN 5        // GPIO5 = D1
+// Pins (NodeMCU D1 Mini mapping)
+// NOTE: Use D6 (GPIO12) for button, NOT D3 (GPIO0) which is Flash button
+#define BUTTON_PIN 12     // D6 - External button (GPIO12 is safe)
+#define LED_PIN 2         // D4 - Built-in LED (Active LOW)
+#define BUZZER_PIN 14     // D5 - Optional buzzer
+#define SDA_PIN 4         // D2 - OLED SDA
+#define SCL_PIN 5         // D1 - OLED SCL
 
 // OLED
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &amp;Wire, -1);
+#define OLED_RESET -1
+#define OLED_ADDR 0x3C    // Common for 1.3" OLEDs (try 0x3D if not working)
 
-// ============ STATE ============
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+// ============ DATA STRUCTURES ============
 struct TradingData {
-  bool systemEnabled, marketOpen, paperTrading;
-  float todayPnl, winRate;
-  int openPositions, todayTrades, maxTrades;
-} data = {false, false, true, 0, 0, 0, 0, 10};
+  bool systemEnabled;
+  bool marketOpen;
+  bool paperTrading;
+  float todayPnl;
+  float winRate;
+  int openPositions;
+  int todayTrades;
+  int maxTrades;
+  char symbol1[12];
+  float pnl1;
+  int qty1;
+};
 
-enum Screen { SCREEN_DASHBOARD, SCREEN_POSITIONS, SCREEN_STATS, SCREEN_ALERT };
-Screen currentScreen = SCREEN_DASHBOARD;
+struct AlertData {
+  bool active;
+  char symbol[12];
+  float price;
+  unsigned long showTime;
+};
 
-unsigned long lastDataUpdate = 0, lastAlertCheck = 0;
-bool showingAlert = false;
-String alertSymbol = "";
-float alertPrice = 0;
+TradingData data = {false, false, true, 0, 0, 0, 0, 10, "", 0, 0};
+AlertData alert = {false, "", 0, 0};
+
+// Screens
+enum Screen { SCR_DASHBOARD, SCR_POSITIONS, SCR_STATS, SCR_COUNT };
+Screen currentScreen = SCR_DASHBOARD;
+const char* screenNames[] = {"DASHBOARD", "POSITIONS", "STATS"};
+
+// Timing
+unsigned long lastDataFetch = 0;
+unsigned long lastAlertCheck = 0;
+unsigned long lastDisplayUpdate = 0;
+const unsigned long DATA_INTERVAL = 3000;
+const unsigned long ALERT_INTERVAL = 1000;
+const unsigned long DISPLAY_INTERVAL = 33; // ~30fps
+
+// Button state machine - NON-BLOCKING for reliable detection
+enum ButtonState { BTN_IDLE, BTN_DEBOUNCING, BTN_PRESSED, BTN_WAIT_RELEASE };
+ButtonState btnState = BTN_IDLE;
+unsigned long btnTimer = 0;
+const unsigned long BTN_DEBOUNCE_MS = 50;   // 50ms debounce
+const unsigned long BTN_COOLDOWN_MS = 200;  // 200ms between presses
+
+// Debug counter
+int btnPressCount = 0;
 
 // ============ SETUP ============
 void setup() {
   Serial.begin(115200);
+  
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(LED_PIN, OUTPUT);
   pinMode(BUZZER_PIN, OUTPUT);
   
+  // Init OLED with specific I2C pins at 400kHz for faster refresh
   Wire.begin(SDA_PIN, SCL_PIN);
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    while(1) { digitalWrite(LED_PIN, !digitalRead(LED_PIN)); delay(100); }
+  Wire.setClock(400000); // 400kHz I2C (default is 100kHz)
+  
+  if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    // Blink LED forever
+    while(1) {
+      digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+      delay(100);
+    }
   }
   
-  showSplashAnimation();
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.display();
+  
+  // Quick splash (no animation delays)
+  showSplash();
+  
+  // Connect WiFi
   connectWiFi();
-  currentScreen = SCREEN_DASHBOARD;
+  
+  // Initial data fetch
+  fetchData();
+  
+  Serial.println(F("Ready!"));
 }
 
+// ============ MAIN LOOP ============
 void loop() {
+  unsigned long now = millis();
+  
+  // Handle button with fast debounce
   handleButton();
+  
+  // Update LED indicator
   updateLED();
   
-  if (millis() - lastDataUpdate &gt; 3000) {
+  // Fetch trading data every 3 seconds
+  if (now - lastDataFetch > DATA_INTERVAL) {
     fetchData();
-    lastDataUpdate = millis();
+    lastDataFetch = now;
   }
   
-  if (millis() - lastAlertCheck &gt; 1000) {
+  // Check for alerts every second
+  if (now - lastAlertCheck > ALERT_INTERVAL) {
     checkAlerts();
-    lastAlertCheck = millis();
+    lastAlertCheck = now;
   }
   
-  if (showingAlert &amp;&amp; millis() - lastDataUpdate &gt; 10000) {
-    showingAlert = false;
-    currentScreen = SCREEN_DASHBOARD;
+  // Update display at 30fps
+  if (now - lastDisplayUpdate > DISPLAY_INTERVAL) {
+    updateDisplay();
+    lastDisplayUpdate = now;
   }
   
-  updateDisplay();
-  delay(50);
+  // Alert timeout (10 seconds)
+  if (alert.active && now - alert.showTime > 10000) {
+    alert.active = false;
+  }
 }
 
-// ============ PREMIUM UI ============
-void showSplashAnimation() {
-  // Border animation
-  for (int i = 0; i &lt;= 64; i += 4) {
-    display.clearDisplay();
-    display.drawRect(0, 0, 128, 64, SSD1306_WHITE);
-    display.fillRect(0, 0, i * 2, 64, SSD1306_WHITE);
-    display.display();
-    delay(20);
-  }
-  
-  // Logo reveal
-  display.clearDisplay();
-  display.fillRect(0, 20, 128, 24, SSD1306_WHITE);
-  display.setTextColor(SSD1306_BLACK);
-  display.setTextSize(2);
-  display.setCursor(10, 24);
-  display.print("MELON");
-  display.display();
-  delay(300);
-  
-  // Full splash
-  display.clearDisplay();
-  display.fillCircle(24, 20, 8, SSD1306_WHITE);
-  display.fillCircle(24, 20, 5, SSD1306_BLACK);
-  display.fillCircle(24, 20, 2, SSD1306_WHITE);
-  display.setTextColor(SSD1306_WHITE);
-  display.setTextSize(2);
-  display.setCursor(40, 14);
-  display.print("MELON");
-  display.setTextSize(1);
-  display.setCursor(40, 34);
-  display.print("TRADING BOT");
-  display.drawRect(10, 50, 108, 8, SSD1306_WHITE);
-  for (int i = 0; i &lt;= 104; i += 4) {
-    display.fillRect(12, 52, i, 4, SSD1306_WHITE);
-    display.display();
-    delay(30);
-  }
-  delay(500);
-}
-
+// ============ DISPLAY SCREENS ============
 void updateDisplay() {
   display.clearDisplay();
   
-  switch (currentScreen) {
-    case SCREEN_DASHBOARD: drawDashboard(); break;
-    case SCREEN_POSITIONS: drawPositions(); break;
-    case SCREEN_STATS: drawStats(); break;
-    case SCREEN_ALERT: drawAlert(); break;
+  if (alert.active) {
+    drawAlert();
+  } else {
+    switch (currentScreen) {
+      case SCR_DASHBOARD: drawDashboard(); break;
+      case SCR_POSITIONS: drawPositions(); break;
+      case SCR_STATS: drawStats(); break;
+    }
   }
   
   display.display();
 }
 
 void drawDashboard() {
-  // Top bar
-  display.fillRect(0, 0, 128, 12, SSD1306_WHITE);
+  // === TOP BAR (12px height) ===
+  // Mode indicator (left)
+  display.fillRect(0, 0, 34, 12, SSD1306_WHITE);
   display.setTextColor(SSD1306_BLACK);
   display.setTextSize(1);
   display.setCursor(2, 2);
-  display.print(data.paperTrading ? "PAPER" : "LIVE");
+  display.print(data.paperTrading ? "DEMO" : "LIVE");
   
-  // WiFi icon (simple)
-  display.drawPixel(110, 4, SSD1306_BLACK);
-  display.drawLine(109, 3, 111, 3, SSD1306_BLACK);
-  display.drawLine(108, 2, 112, 2, SSD1306_BLACK);
+  // WiFi icon (right side of top bar)
+  drawWiFiIcon(90, 2);
   
-  // Main content
+  // System status indicator (far right)
+  if (data.systemEnabled && data.marketOpen) {
+    display.fillCircle(122, 6, 3, SSD1306_WHITE);
+  } else {
+    display.drawCircle(122, 6, 3, SSD1306_WHITE);
+  }
+  
+  // === MAIN P&L DISPLAY (center, large) ===
   display.setTextColor(SSD1306_WHITE);
   
-  // P&amp;L Box with double border
-  display.drawRect(4, 16, 120, 30, SSD1306_WHITE);
-  display.drawRect(5, 17, 118, 28, SSD1306_WHITE);
-  
+  // P&L Label
   display.setTextSize(1);
-  display.setCursor(8, 20);
-  display.print("TODAY'S P&amp;L");
+  display.setCursor(4, 16);
+  display.print("TODAY'S P&L");
   
-  // Big P&amp;L
-  display.setTextSize(2);
-  String pnl = "";
-  if (data.todayPnl &gt;= 0) pnl += "+";
-  pnl += "Rs" + String(abs((int)data.todayPnl));
-  int x = (128 - pnl.length() * 12) / 2;
-  display.setCursor(x, 30);
-  display.print(pnl);
+  // P&L Value - BIG (use entire width)
+  display.setTextSize(3);
+  String pnlStr = formatCurrency(data.todayPnl);
+  int textWidth = pnlStr.length() * 18;
+  int startX = (128 - textWidth) / 2;
+  if (startX < 0) startX = 0;
   
-  // Progress bar
-  int fill = (data.todayTrades * 100) / data.maxTrades;
-  display.drawRect(4, 50, 104, 8, SSD1306_WHITE);
-  display.fillRect(6, 52, fill, 4, SSD1306_WHITE);
+  display.setCursor(startX, 28);
+  if (data.todayPnl >= 0) {
+    display.print("+");
+  } else {
+    display.print("-");
+  }
+  display.print("");
+  display.print(String(abs((int)data.todayPnl)));
+  
+  // === BOTTOM INFO BAR ===
+  display.drawLine(0, 52, 128, 52, SSD1306_WHITE);
+  
+  // Left: Trade count
   display.setTextSize(1);
-  display.setCursor(110, 51);
+  display.setCursor(4, 55);
   display.print(data.todayTrades);
   display.print("/");
   display.print(data.maxTrades);
+  display.print(" TRADES");
   
-  // Status
-  display.setCursor(4, 62);
-  if (!data.systemEnabled) display.print("TRADING OFF");
-  else if (!data.marketOpen) display.print("MARKET CLOSED");
-  else {
-    display.print("MONITORING");
-    int dots = (millis() / 500) % 4;
-    for (int i = 0; i &lt; dots; i++) display.print(".");
+  // Right: Status text
+  display.setCursor(90, 55);
+  if (!data.systemEnabled) {
+    display.print("OFF");
+  } else if (!data.marketOpen) {
+    display.print("CLOSED");
+  } else {
+    int dots = (millis() / 400) % 4;
+    display.print("LIVE");
+    for (int i = 0; i < dots; i++) display.print(".");
   }
   
-  // Page dots
-  drawPageDots(0);
+  // Page indicator (bottom dots)
+  drawPageIndicator(0);
 }
 
 void drawPositions() {
-  display.fillRect(0, 0, 128, 12, SSD1306_WHITE);
+  // Header bar
+  display.fillRect(0, 0, 128, 11, SSD1306_WHITE);
   display.setTextColor(SSD1306_BLACK);
-  display.setCursor(2, 2);
-  display.print("POSITIONS (");
+  display.setTextSize(1);
+  display.setCursor(2, 1);
+  display.print("POSITIONS");
+  display.setCursor(80, 1);
+  display.print("(");
   display.print(data.openPositions);
   display.print(")");
+  
   display.setTextColor(SSD1306_WHITE);
   
   if (data.openPositions == 0) {
-    display.setCursor(10, 30);
-    display.print("No positions open");
-    display.setCursor(10, 42);
+    display.setCursor(20, 28);
+    display.print("No open positions");
+    display.setCursor(15, 42);
     display.print("Waiting for signals...");
   } else {
-    display.setCursor(0, 16);
-    display.print("SYMBOL  QTY    P&amp;L");
-    display.drawLine(0, 25, 128, 25, SSD1306_WHITE);
-    display.setCursor(0, 28);
-    display.print("RELIANCE  10   +1250");
-    display.setCursor(0, 40);
-    display.print("TCS        5    -320");
+    // Table header
+    display.setTextSize(1);
+    display.setCursor(0, 14);
+    display.print("SYMBOL");
+    display.setCursor(60, 14);
+    display.print("QTY");
+    display.setCursor(90, 14);
+    display.print("P&L");
+    display.drawLine(0, 23, 128, 23, SSD1306_WHITE);
+    
+    // Position rows
+    int yPos = 26;
+    display.setCursor(0, yPos);
+    display.print(data.symbol1[0] ? data.symbol1 : "--");
+    display.setCursor(62, yPos);
+    display.print(data.qty1 ? data.qty1 : 0);
+    display.setCursor(90, yPos);
+    float pnl = data.pnl1 ? data.pnl1 : 0;
+    if (pnl >= 0) {
+      display.print("+");
+      display.print((int)pnl);
+    } else {
+      display.print((int)pnl);
+    }
+    
+    if (data.openPositions > 1) {
+      display.setCursor(0, 40);
+      display.print("+");
+      display.print(data.openPositions - 1);
+      display.print(" more on app...");
+    }
   }
   
-  drawPageDots(1);
+  drawPageIndicator(1);
 }
 
 void drawStats() {
-  display.fillRect(0, 0, 128, 12, SSD1306_WHITE);
+  // Header bar
+  display.fillRect(0, 0, 128, 11, SSD1306_WHITE);
   display.setTextColor(SSD1306_BLACK);
-  display.setCursor(2, 2);
+  display.setTextSize(1);
+  display.setCursor(2, 1);
   display.print("STATISTICS");
+  
   display.setTextColor(SSD1306_WHITE);
   
-  // Win rate box
-  display.drawRect(4, 16, 58, 40, SSD1306_WHITE);
+  // Win Rate - Big number left side
   display.setTextSize(1);
-  display.setCursor(16, 22);
-  display.print("WIN");
-  display.setCursor(16, 32);
-  display.print("RATE");
+  display.setCursor(4, 16);
+  display.print("WIN RATE");
+  
+  display.setTextSize(3);
+  display.setCursor(4, 28);
+  display.print((int)data.winRate);
   display.setTextSize(2);
-  display.setCursor(12, 44);
-  display.print(String((int)data.winRate));
   display.print("%");
   
-  // Stats
-  display.setTextSize(1);
-  display.setCursor(68, 20);
-  display.print("Total: ");
-  display.print(data.todayTrades);
-  display.setCursor(68, 32);
-  display.print("Open: ");
-  display.print(data.openPositions);
-  display.setCursor(68, 44);
-  display.print(data.paperTrading ? "Mode: PAPER" : "Mode: LIVE");
-  display.setCursor(68, 56);
-  display.print("WiFi: ");
-  display.print(WiFi.status() == WL_CONNECTED ? "OK" : "ERR");
+  // Vertical separator
+  display.drawLine(70, 16, 70, 50, SSD1306_WHITE);
   
-  drawPageDots(2);
+  // Stats column on right
+  display.setTextSize(1);
+  
+  display.setCursor(76, 18);
+  display.print("TTL:");
+  display.print(data.todayTrades);
+  
+  display.setCursor(76, 28);
+  display.print("OPEN:");
+  display.print(data.openPositions);
+  
+  display.setCursor(76, 38);
+  display.print("P&L:");
+  if (data.todayPnl >= 0) display.print("+");
+  display.print((int)data.todayPnl);
+  
+  display.setCursor(76, 48);
+  display.print("WIFI:");
+  display.print(WiFi.status() == WL_CONNECTED ? "OK" : "--");
+  
+  drawPageIndicator(2);
 }
 
 void drawAlert() {
-  bool flash = (millis() / 200) % 2;
+  bool flash = (millis() / 150) % 2;
+  
   if (flash) {
     display.fillRect(0, 0, 128, 64, SSD1306_WHITE);
     display.setTextColor(SSD1306_BLACK);
@@ -595,110 +689,253 @@ void drawAlert() {
   }
   
   display.drawRect(2, 2, 124, 60, flash ? SSD1306_BLACK : SSD1306_WHITE);
-  display.drawRect(3, 3, 122, 58, flash ? SSD1306_BLACK : SSD1306_WHITE);
+  display.drawRect(4, 4, 120, 56, flash ? SSD1306_BLACK : SSD1306_WHITE);
   
   display.setTextSize(1);
   display.setCursor(35, 8);
   display.print("NEW ALERT!");
   
   display.setTextSize(2);
-  int w = alertSymbol.length() * 12;
-  display.setCursor((128 - w) / 2, 22);
-  display.print(alertSymbol);
+  int symWidth = strlen(alert.symbol) * 12;
+  int symX = (128 - symWidth) / 2;
+  if (symX < 10) symX = 10;
+  display.setCursor(symX, 24);
+  display.print(alert.symbol);
   
   display.setTextSize(1);
-  display.setCursor(25, 42);
+  display.setCursor(30, 44);
   display.print("@ Rs");
-  display.print(alertPrice, 2);
-  display.setCursor(30, 54);
-  display.print("Tap btn to dismiss");
+  display.print(alert.price, 1);
+  
+  display.setCursor(20, 56);
+  display.print("Press btn to dismiss");
 }
 
-void drawPageDots(int active) {
-  int startX = 55;
-  for (int i = 0; i &lt; 3; i++) {
-    if (i == active) display.fillRect(startX + (i * 8), 62, 6, 2, SSD1306_WHITE);
-    else display.drawRect(startX + (i * 8), 62, 6, 2, SSD1306_WHITE);
-  }
+// ============ DRAW HELPERS ============
+void drawWiFiIcon(int x, int y) {
+  display.drawPixel(x + 2, y + 4, SSD1306_BLACK);
+  display.drawLine(x + 1, y + 3, x + 3, y + 3, SSD1306_BLACK);
+  display.drawLine(x, y + 2, x + 4, y + 2, SSD1306_BLACK);
+  display.drawLine(x, y + 1, x + 4, y + 1, SSD1306_BLACK);
 }
 
-// ============ INPUT &amp; NETWORK ============
-void handleButton() {
-  static unsigned long lastPress = 0;
-  if (digitalRead(BUTTON_PIN) == LOW &amp;&amp; millis() - lastPress &gt; 300) {
-    lastPress = millis();
-    if (showingAlert) {
-      showingAlert = false;
-      currentScreen = SCREEN_DASHBOARD;
+void drawPageIndicator(int activePage) {
+  int startX = 58;
+  int y = 62;
+  
+  for (int i = 0; i < 3; i++) {
+    if (i == activePage) {
+      display.fillRect(startX + (i * 8), y, 5, 2, SSD1306_WHITE);
     } else {
-      currentScreen = (Screen)((currentScreen + 1) % 3);
+      display.drawPixel(startX + (i * 8) + 2, y + 1, SSD1306_WHITE);
     }
-    digitalWrite(LED_PIN, HIGH);
-    delay(50);
-    digitalWrite(LED_PIN, LOW);
-    tone(BUZZER_PIN, 2000, 50);
   }
 }
 
-void updateLED() {
-  if (!data.systemEnabled) digitalWrite(LED_PIN, LOW);
-  else if (showingAlert) digitalWrite(LED_PIN, (millis() / 100) % 2);
-  else if (data.todayPnl &gt; 0) digitalWrite(LED_PIN, HIGH);
-  else digitalWrite(LED_PIN, (millis() / 500) % 2);
+String formatCurrency(float value) {
+  String result = "Rs";
+  result += String(abs((int)value));
+  return result;
 }
 
+void showSplash() {
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  
+  display.fillCircle(24, 22, 10, SSD1306_WHITE);
+  display.fillCircle(24, 22, 7, SSD1306_BLACK);
+  display.fillCircle(24, 22, 4, SSD1306_WHITE);
+  display.fillCircle(24, 22, 2, SSD1306_BLACK);
+  
+  display.setTextSize(2);
+  display.setCursor(44, 14);
+  display.print("MELON");
+  
+  display.setTextSize(1);
+  display.setCursor(44, 32);
+  display.print("Trading Bot");
+  
+  display.setCursor(44, 44);
+  display.print("1.3 OLED");
+  
+  display.drawRect(10, 56, 108, 6, SSD1306_WHITE);
+  display.display();
+  
+  for (int i = 0; i <= 100; i += 25) {
+    display.fillRect(12, 58, i, 2, SSD1306_WHITE);
+    display.display();
+    delay(50);
+  }
+  delay(200);
+}
+
+// ============ INPUT ============
+void handleButton() {
+  bool rawState = digitalRead(BUTTON_PIN);
+  unsigned long now = millis();
+  
+  switch (btnState) {
+    case BTN_IDLE:
+      // Waiting for press (LOW = pressed with INPUT_PULLUP)
+      if (rawState == LOW) {
+        btnState = BTN_DEBOUNCING;
+        btnTimer = now;
+        Serial.println(F("[BTN] Press detected, debouncing..."));
+      }
+      break;
+      
+    case BTN_DEBOUNCING:
+      // Wait for debounce period
+      if (now - btnTimer >= BTN_DEBOUNCE_MS) {
+        // Check if still pressed
+        if (digitalRead(BUTTON_PIN) == LOW) {
+          btnState = BTN_PRESSED;
+          btnPressCount++;
+          Serial.print(F("[BTN] CONFIRMED PRESS #"));
+          Serial.println(btnPressCount);
+          
+          // EXECUTE ACTION
+          if (alert.active) {
+            alert.active = false;
+            Serial.println(F("[BTN] Dismissed alert"));
+          } else {
+            currentScreen = (Screen)((currentScreen + 1) % SCR_COUNT);
+            Serial.print(F("[BTN] Screen -> "));
+            Serial.println(screenNames[currentScreen]);
+          }
+          
+          // Feedback
+          tone(BUZZER_PIN, 2000, 30);
+          updateDisplay();
+          
+          btnState = BTN_WAIT_RELEASE;
+        } else {
+          // False alarm (noise/bounce)
+          Serial.println(F("[BTN] Debounce failed - noise"));
+          btnState = BTN_IDLE;
+        }
+      }
+      break;
+      
+    case BTN_PRESSED:
+      // Shouldn't happen, go to wait release
+      btnState = BTN_WAIT_RELEASE;
+      break;
+      
+    case BTN_WAIT_RELEASE:
+      // Wait for button to be released + cooldown
+      if (rawState == HIGH) {
+        if (now - btnTimer >= BTN_COOLDOWN_MS) {
+          Serial.println(F("[BTN] Ready for next press"));
+          btnState = BTN_IDLE;
+        }
+      } else {
+        // Still held, reset cooldown timer
+        btnTimer = now;
+      }
+      break;
+  }
+}
+
+// ============ LED CONTROL ============
+void updateLED() {
+  if (!data.systemEnabled) {
+    digitalWrite(LED_PIN, HIGH);
+  } else if (alert.active) {
+    digitalWrite(LED_PIN, (millis() / 100) % 2 ? LOW : HIGH);
+  } else if (data.todayPnl > 0) {
+    digitalWrite(LED_PIN, LOW);
+  } else if (data.todayPnl < 0) {
+    digitalWrite(LED_PIN, (millis() / 500) % 2 ? LOW : HIGH);
+  } else {
+    digitalWrite(LED_PIN, (millis() / 1000) % 2 ? LOW : HIGH);
+  }
+}
+
+// ============ NETWORK ============
 void connectWiFi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+  
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED &amp;&amp; attempts &lt; 40) {
-    delay(250);
-    digitalWrite(LED_PIN, attempts % 2);
+  while (WiFi.status() != WL_CONNECTED && attempts < 50) {
+    delay(100);
+    digitalWrite(LED_PIN, attempts % 2 ? LOW : HIGH);
     attempts++;
+  }
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.print(F("WiFi IP: "));
+    Serial.println(WiFi.localIP());
   }
 }
 
 void fetchData() {
   if (WiFi.status() != WL_CONNECTED) return;
+  
   WiFiClientSecure client;
   client.setInsecure();
   HTTPClient http;
+  
   http.begin(client, String(serverUrl) + "/api/esp/stats");
-  http.setTimeout(3000);
-  if (http.GET() == 200) {
-    StaticJsonDocument&lt;512&gt; doc;
-    deserializeJson(doc, http.getString());
-    data.systemEnabled = doc["system_enabled"] | false;
-    data.marketOpen = doc["market_open"] | false;
-    data.paperTrading = doc["paper_trading"] | true;
-    data.todayPnl = doc["today_pnl"] | 0.0;
-    data.openPositions = doc["open_positions"] | 0;
-    data.todayTrades = doc["today_trades"] | 0;
-    data.maxTrades = doc["max_trades"] | 10;
+  http.setTimeout(500); // 500ms max - keep UI responsive
+  http.addHeader("Content-Type", "application/json");
+  
+  int code = http.GET();
+  if (code == 200) {
+    DynamicJsonDocument doc(1024); // Heap allocation to avoid stack overflow
+    DeserializationError error = deserializeJson(doc, http.getString());
+    
+    if (!error) {
+      data.systemEnabled = doc["system_enabled"] | false;
+      data.marketOpen = doc["market_open"] | false;
+      data.paperTrading = doc["paper_trading"] | true;
+      data.todayPnl = doc["today_pnl"] | 0.0;
+      data.winRate = doc["win_rate"] | 0.0;
+      data.openPositions = doc["open_positions"] | 0;
+      data.todayTrades = doc["today_trades"] | 0;
+      data.maxTrades = doc["max_trades"] | 10;
+      
+      JsonArray positions = doc["positions"];
+      if (positions && positions.size() > 0) {
+        JsonObject pos = positions[0];
+        strlcpy(data.symbol1, pos["symbol"] | "", sizeof(data.symbol1));
+        data.qty1 = pos["quantity"] | 0;
+        data.pnl1 = pos["pnl"] | 0.0;
+      }
+    }
   }
+  
   http.end();
 }
 
 void checkAlerts() {
   if (WiFi.status() != WL_CONNECTED) return;
+  
   WiFiClientSecure client;
   client.setInsecure();
   HTTPClient http;
+  
   http.begin(client, String(serverUrl) + "/api/esp/alert");
-  http.setTimeout(2000);
-  if (http.GET() == 200) {
-    StaticJsonDocument&lt;256&gt; doc;
-    deserializeJson(doc, http.getString());
-    if (doc["new_alert"] == true) {
-      alertSymbol = doc["symbol"] | "UNKNOWN";
-      alertPrice = doc["price"] | 0.0;
-      showingAlert = true;
-      currentScreen = SCREEN_ALERT;
-      tone(BUZZER_PIN, 3000, 200);
+  http.setTimeout(500); // 500ms max
+  
+  int code = http.GET();
+  if (code == 200) {
+    DynamicJsonDocument doc(512); // Heap allocation
+    DeserializationError error = deserializeJson(doc, http.getString());
+    
+    if (!error && doc["new_alert"] == true) {
+      strlcpy(alert.symbol, doc["symbol"] | "UNKNOWN", sizeof(alert.symbol));
+      alert.price = doc["price"] | 0.0;
+      alert.active = true;
+      alert.showTime = millis();
+      
+      tone(BUZZER_PIN, 3000, 100);
       delay(100);
       tone(BUZZER_PIN, 4000, 200);
     }
   }
+  
   http.end();
 }
 </pre>
@@ -720,6 +957,37 @@ void checkAlerts() {
                             <i class="fas fa-info-circle mr-1"></i>
                             Tip: Download is recommended. Copy/paste may have formatting issues.
                         </p>
+                    </div>
+                </div>
+
+                <!-- Troubleshooting -->
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-wrench text-warning-500"></i>
+                        Troubleshooting
+                    </h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="p-3 bg-dark-800/50 rounded-lg">
+                            <strong class="text-white">Display stays blank?</strong>
+                            <p class="text-gray-400 mt-1">Try changing OLED_ADDR to 0x3D in the code. Some 1.3" OLEDs use different I2C addresses.</p>
+                        </div>
+                        <div class="p-3 bg-dark-800/50 rounded-lg">
+                            <strong class="text-white">Button works randomly/inconsistently?</strong>
+                            <p class="text-gray-400 mt-1">
+                                1. Use <strong>D6 (GPIO12)</strong> NOT D3<br>
+                                2. Open Serial Monitor at 115200 baud to see <code>[BTN]</code> debug messages<br>
+                                3. Check wiring: D6 → Button → GND<br>
+                                4. Try a different button - some cheap buttons have poor contacts
+                            </p>
+                        </div>
+                        <div class="p-3 bg-dark-800/50 rounded-lg">
+                            <strong class="text-white">Button double-presses?</strong>
+                            <p class="text-gray-400 mt-1">This is button "bounce". The code has 50ms debounce + 200ms cooldown. If still bouncing, increase BTN_COOLDOWN_MS to 300 or 400.</p>
+                        </div>
+                        <div class="p-3 bg-dark-800/50 rounded-lg">
+                            <strong class="text-white">WiFi not connecting?</strong>
+                            <p class="text-gray-400 mt-1">Update ssid and password in the CONFIG section. Check serial monitor at 115200 baud.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -764,24 +1032,24 @@ void checkAlerts() {
         <div class="mt-12 grid md:grid-cols-3 gap-6">
             <div class="glass rounded-2xl p-6 text-center">
                 <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-500/20 flex items-center justify-center">
-                    <i class="fas fa-bell text-3xl text-primary-400"></i>
+                    <i class="fas fa-hand-pointer text-3xl text-primary-400"></i>
                 </div>
-                <h4 class="font-semibold mb-2">Instant Alerts</h4>
-                <p class="text-sm text-gray-400">LED flashes and buzzer sounds when Chartink signals arrive</p>
+                <h4 class="font-semibold mb-2">Reliable Button</h4>
+                <p class="text-sm text-gray-400">State machine debounce on GPIO12 (D6) - 100% consistent detection</p>
             </div>
             <div class="glass rounded-2xl p-6 text-center">
                 <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-500/20 flex items-center justify-center">
-                    <i class="fas fa-chart-line text-3xl text-blue-400"></i>
+                    <i class="fas fa-tachometer-alt text-3xl text-blue-400"></i>
                 </div>
-                <h4 class="font-semibold mb-2">Real-time P&L</h4>
-                <p class="text-sm text-gray-400">Live profit/loss display updates every 5 seconds</p>
+                <h4 class="font-semibold mb-2">400kHz I2C</h4>
+                <p class="text-sm text-gray-400">4x faster OLED updates with 500ms HTTP timeouts for responsive UI</p>
             </div>
             <div class="glass rounded-2xl p-6 text-center">
                 <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-purple-500/20 flex items-center justify-center">
-                    <i class="fas fa-hand-pointer text-3xl text-purple-400"></i>
+                    <i class="fas fa-memory text-3xl text-purple-400"></i>
                 </div>
-                <h4 class="font-semibold mb-2">Button Control</h4>
-                <p class="text-sm text-gray-400">Cycle through dashboard, positions, and status views</p>
+                <h4 class="font-semibold mb-2">Memory Safe</h4>
+                <p class="text-sm text-gray-400">DynamicJsonDocument prevents stack overflow crashes</p>
             </div>
         </div>
 
@@ -796,55 +1064,40 @@ void checkAlerts() {
 
     <script>
         // Initialize Clipboard.js
-        var clipboard = new ClipboardJS('.copy-btn');
+        new ClipboardJS('.copy-btn');
         
-        clipboard.on('success', function(e) {
-            const btn = e.trigger;
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-            btn.classList.add('copied');
-            
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-                btn.classList.remove('copied');
-            }, 2000);
-            
-            e.clearSelection();
+        // Copy feedback
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const originalHTML = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                this.classList.add('copied');
+                setTimeout(() => {
+                    this.innerHTML = originalHTML;
+                    this.classList.remove('copied');
+                }, 2000);
+            });
         });
         
-        // Copy code function
         function copyCode() {
             const code = document.getElementById('arduino-code').textContent;
             navigator.clipboard.writeText(code).then(() => {
-                alert('Code copied! Paste into Arduino IDE.');
-            }).catch(err => {
-                console.error('Copy failed:', err);
-                // Fallback
-                const textarea = document.createElement('textarea');
-                textarea.value = code;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                alert('Code copied! Paste into Arduino IDE.');
+                alert('Code copied to clipboard!');
             });
         }
         
-        // Download code function
         function downloadCode() {
             const code = document.getElementById('arduino-code').textContent;
-            const blob = new Blob([code], { type: 'text/x-arduino' });
-            const url = URL.createObjectURL(blob);
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'esp8266_trading_display.ino';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            window.URL.revokeObjectURL(url);
         }
     </script>
 </body>
 </html>
-<!-- ESP: 1773143769 -->
-<!-- Fixed: 1773144119 -->

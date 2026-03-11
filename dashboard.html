@@ -666,6 +666,30 @@
                                     </div>
                                 </div>
                                 
+                                <!-- Trading Hours -->
+                                <div class="bg-dark-800/50 rounded-xl p-4">
+                                    <h4 class="font-medium flex items-center gap-2 mb-3">
+                                        <i class="fas fa-clock text-blue-400"></i>
+                                        Trading Hours (IST)
+                                    </h4>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs text-gray-500 mb-1">Market Open</label>
+                                            <input type="time" id="config-trading-start" 
+                                                   class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-primary-500 focus:outline-none transition-colors font-mono text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500 mb-1">Market Close</label>
+                                            <input type="time" id="config-trading-end" 
+                                                   class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-primary-500 focus:outline-none transition-colors font-mono text-sm">
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Trades will only execute during these hours. Default: 09:15 - 15:30 IST
+                                    </p>
+                                </div>
+                                
                                 <!-- Paper Trading Toggle -->
                                 <div class="bg-dark-800/50 rounded-xl p-4 flex items-center justify-between">
                                     <div>
@@ -786,6 +810,7 @@
             updateTradesTable();
             updatePositions();
             updateConfigForm();
+            updateSidebarConnectionStatus();
         }
 
         // Update header
@@ -1086,6 +1111,32 @@
             }).join('');
         }
 
+        // Update sidebar connection status
+        function updateSidebarConnectionStatus() {
+            const statusDot = document.getElementById('connection-status');
+            const statusText = document.getElementById('connection-text');
+            
+            if (!appData.config || !appData.config.kite) {
+                statusDot.className = 'status-dot inactive';
+                statusText.textContent = 'Not Connected';
+                return;
+            }
+            
+            const token = appData.config.kite.access_token;
+            const hasToken = token && (token === "***" || token.length > 10);
+            
+            if (hasToken && appData.config.system_enabled) {
+                statusDot.className = 'status-dot active';
+                statusText.textContent = 'Connected';
+            } else if (hasToken && !appData.config.system_enabled) {
+                statusDot.className = 'status-dot warning';
+                statusText.textContent = 'System Paused';
+            } else {
+                statusDot.className = 'status-dot inactive';
+                statusText.textContent = 'Not Connected';
+            }
+        }
+
         // Update config form
         function updateConfigForm() {
             if (!appData.config) return;
@@ -1094,6 +1145,10 @@
             document.getElementById('config-risk').value = appData.config.risk_percent || 1;
             document.getElementById('config-max-trades').value = appData.config.max_trades_per_day || 10;
             document.getElementById('config-secret').value = appData.config.chartink?.webhook_secret || '';
+            
+            // Trading hours
+            document.getElementById('config-trading-start').value = appData.config.trading_hours?.start || '09:15';
+            document.getElementById('config-trading-end').value = appData.config.trading_hours?.end || '15:30';
             
             // Kite settings
             const apiKey = appData.config.kite?.api_key || '8zjbufhni9k0u2mx';
@@ -1114,7 +1169,9 @@
             }
             
             // Update Kite status badge
-            const hasToken = appData.config.kite?.access_token && appData.config.kite.access_token.length > 10;
+            // Token is "***" when masked (exists) or a real token with length > 10
+            const token = appData.config.kite?.access_token;
+            const hasToken = token && (token === "***" || token.length > 10);
             const badge = document.getElementById('kite-status-badge');
             if (hasToken) {
                 badge.textContent = 'Connected';
@@ -1276,7 +1333,11 @@
                 capital: parseFloat(document.getElementById('config-capital').value),
                 risk_percent: parseFloat(document.getElementById('config-risk').value),
                 max_trades_per_day: parseInt(document.getElementById('config-max-trades').value),
-                chartink: { webhook_secret: document.getElementById('config-secret').value }
+                chartink: { webhook_secret: document.getElementById('config-secret').value },
+                trading_hours: {
+                    start: document.getElementById('config-trading-start').value,
+                    end: document.getElementById('config-trading-end').value
+                }
             };
             
             try {
@@ -1287,6 +1348,7 @@
                 });
                 if (res.ok) {
                     showToast('Settings saved', 'success');
+                    await loadData(); // Refresh to get updated data
                 }
             } catch (err) {
                 showToast('Failed to save', 'error');
