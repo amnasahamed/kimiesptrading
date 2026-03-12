@@ -130,6 +130,35 @@ class KiteAPI:
             print(f"Error fetching quote: {e}")
             return None
     
+    async def get_funds(self) -> Optional[Dict[str, Any]]:
+        """Get available funds and margins from Kite account."""
+        url = f"{self.base_url}/user/margins"
+        
+        try:
+            client = await self._get_client()
+            resp = await client.get(url, headers=self.headers)
+            
+            if resp.status_code == 401:
+                print("Error: Unauthorized - Check your API key and access token")
+                return None
+            
+            data = resp.json()
+            
+            if data.get("status") == "success" and "data" in data:
+                equity = data["data"].get("equity", {})
+                return {
+                    "available_cash": float(equity.get("available", {}).get("cash", 0)),
+                    "available_intraday": float(equity.get("available", {}).get("intraday_payin", 0)),
+                    "utilized": float(equity.get("utilised", {}).get("debits", 0)),
+                    "exposure": float(equity.get("utilised", {}).get("exposure", 0)),
+                    "span": float(equity.get("utilised", {}).get("span", 0)),
+                    "net_available": float(equity.get("net", 0))
+                }
+            return None
+        except Exception as e:
+            print(f"Error fetching funds: {e}")
+            return None
+    
     async def get_instrument_token(self, symbol: str) -> Optional[str]:
         """Get instrument token for a symbol."""
         if not symbol or not isinstance(symbol, str):

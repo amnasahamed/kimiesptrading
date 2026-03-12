@@ -442,15 +442,22 @@
                         <span class="font-semibold text-yellow-400">PAPER MODE</span>
                     </div>
                     
+                    <!-- Kite Balance (Live) -->
+                    <div id="kite-balance-container" class="hidden md:flex items-center gap-2" title="Real-time Kite account balance">
+                        <span class="text-gray-500">🏦</span>
+                        <span class="text-gray-400">Kite:</span>
+                        <span id="kite-balance" class="font-mono font-semibold text-primary-400">--</span>
+                    </div>
+                    
                     <!-- Capital -->
-                    <div class="hidden md:flex items-center gap-2">
+                    <div class="hidden md:flex items-center gap-2" title="Trading capital configured in settings">
                         <span class="text-gray-500">💰</span>
                         <span class="text-gray-400">Capital:</span>
                         <span id="status-capital" class="font-mono font-semibold text-gray-300">₹0</span>
                     </div>
                     
                     <!-- Risk Used -->
-                    <div class="hidden lg:flex items-center gap-2">
+                    <div class="hidden lg:flex items-center gap-2" title="Total risk across all open positions">
                         <span class="text-gray-500">⚠️</span>
                         <span class="text-gray-400">Risk:</span>
                         <span id="status-risk" class="font-mono font-semibold text-primary-400">0%</span>
@@ -1267,9 +1274,13 @@
                                                class="w-full bg-dark-700 border border-dark-500 rounded-lg px-4 py-2 focus:border-primary-500 focus:outline-none transition-colors">
                                     </div>
                                     <div>
-                                        <label class="block text-sm text-gray-400 mb-2">Risk per Trade (%)</label>
+                                        <label class="block text-sm text-gray-400 mb-2 flex items-center gap-2">
+                                            Risk per Trade (%)
+                                            <span class="text-xs text-gray-500 cursor-help" title="How much of your capital you're willing to lose on a single trade if Stop Loss hits. Example: 1% risk on ₹100,000 capital = ₹1,000 max loss per trade. Position size is calculated automatically based on this risk and the distance to Stop Loss.">ⓘ</span>
+                                        </label>
                                         <input type="number" id="config-risk" step="0.1" 
                                                class="w-full bg-dark-700 border border-dark-500 rounded-lg px-4 py-2 focus:border-primary-500 focus:outline-none transition-colors">
+                                        <p class="text-xs text-gray-500 mt-1">Position size = Risk Amount ÷ (Entry - Stop Loss)</p>
                                     </div>
                                     <div>
                                         <label class="block text-sm text-gray-400 mb-2">Max Trades/Day</label>
@@ -1501,6 +1512,8 @@
             const tradingIcon = document.getElementById('status-trading-icon');
             const tradingText = document.getElementById('status-trading-text');
             const modeBadge = document.getElementById('status-mode-badge');
+            const kiteBalanceEl = document.getElementById('kite-balance');
+            const kiteContainer = document.getElementById('kite-balance-container');
             const capitalEl = document.getElementById('status-capital');
             const riskEl = document.getElementById('status-risk');
             const marketEl = document.getElementById('status-market');
@@ -1529,6 +1542,7 @@
                 statusBar.className = 'px-6 py-2 border-b border-dark-600 flex items-center justify-between text-sm bg-yellow-500/5';
                 if (liveWarning) liveWarning.classList.add('hidden');
                 if (liveWarning) liveWarning.classList.remove('flex');
+                if (kiteContainer) kiteContainer.classList.add('hidden');  // Hide Kite balance in paper mode
             } else {
                 modeBadge.className = 'flex items-center gap-2 px-3 py-1 rounded-lg bg-danger-500/10 border border-danger-500/30';
                 modeBadge.innerHTML = '<span class="text-lg">🔴</span><span class="font-semibold text-danger-400">LIVE MODE</span>';
@@ -1537,6 +1551,10 @@
                     liveWarning.classList.remove('hidden');
                     liveWarning.classList.add('flex');
                 }
+                if (kiteContainer) kiteContainer.classList.remove('hidden');  // Show Kite balance in live mode
+                
+                // Fetch Kite balance in live mode
+                fetchKiteBalance();
             }
             
             // Capital
@@ -2906,6 +2924,30 @@
                 }
             } catch (err) {
                 showToast('Connection test failed', 'error');
+            }
+        }
+        
+        // Fetch Kite Account Balance
+        async function fetchKiteBalance() {
+            const kiteBalanceEl = document.getElementById('kite-balance');
+            if (!kiteBalanceEl) return;
+            
+            try {
+                const res = await fetch('/api/kite/funds?_=' + Date.now());
+                const data = await res.json();
+                
+                if (data.status === 'success' && data.funds) {
+                    const available = data.funds.net_available || data.funds.available_cash || 0;
+                    kiteBalanceEl.textContent = '₹' + available.toLocaleString('en-IN');
+                    kiteBalanceEl.className = 'font-mono font-semibold text-primary-400';
+                } else {
+                    kiteBalanceEl.textContent = 'Error';
+                    kiteBalanceEl.className = 'font-mono font-semibold text-gray-500';
+                }
+            } catch (err) {
+                console.error('Failed to fetch Kite balance:', err);
+                kiteBalanceEl.textContent = '--';
+                kiteBalanceEl.className = 'font-mono font-semibold text-gray-500';
             }
         }
 

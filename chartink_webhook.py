@@ -3791,6 +3791,135 @@ async def debug_paper_live_classification():
     }
 
 
+@app.get("/api/kite/funds")
+async def get_kite_funds():
+    """
+    Get Kite account balance and margin details.
+    """
+    config = load_config()
+    kite = get_kite_api(config)
+    
+    try:
+        funds = await kite.get_funds()
+        if funds:
+            return {
+                "status": "success",
+                "funds": funds,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Could not fetch funds - check API credentials",
+                "funds": None
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "funds": None
+        }
+
+
+@app.get("/api/analysis/paper-uptrend")
+async def analyze_paper_uptrend():
+    """
+    Analyze maximum uptrend reached after paper trade entry.
+    This helps identify optimal scalp targets.
+    
+    Returns statistics on how much stocks typically move up after entry.
+    """
+    config = load_config()
+    positions = load_positions()
+    kite = get_kite_api(config)
+    
+    # Get closed paper positions
+    closed_paper_positions = [
+        {**pos, "id": k} for k, pos in positions.items() 
+        if pos.get("status") == "CLOSED" and pos.get("paper_trading") == True
+    ]
+    
+    # For each position, calculate max uptrend
+    uptrend_analysis = []
+    
+    for pos in closed_paper_positions:
+        symbol = pos.get("symbol")
+        entry_price = pos.get("entry_price", 0)
+        exit_price = pos.get("exit_price", 0)
+        
+        if not symbol or entry_price <= 0:
+            continue
+        
+        # Calculate uptrend from entry to exit
+        if exit_price and exit_price > entry_price:
+            uptrend_pct = ((exit_price - entry_price) / entry_price) * 100
+        else:
+            uptrend_pct = 0
+        
+        analysis = {
+            "symbol": symbol,
+            "entry_price": entry_price,
+            "exit_price": exit_price,
+            "pnl": pos.get("pnl", 0),
+            "exit_reason": pos.get("exit_reason", "UNKNOWN"),
+            "uptrend_pct": round(uptrend_pct, 2),
+            "entry_time": pos.get("entry_time"),
+            "exit_time": pos.get("exit_time")
+        }
+        
+        uptrend_analysis.append(analysis)
+    
+    # Calculate statistics
+    if uptrend_analysis:
+        winning_trades = [a for a in uptrend_analysis if a["pnl"] > 0]
+        losing_trades = [a for a in uptrend_analysis if a["pnl"] < 0]
+        
+        avg_uptrend_winners = sum(a["uptrend_pct"] for a in winning_trades) / len(winning_trades) if winning_trades else 0
+        avg_uptrend_losers = sum(a["uptrend_pct"] for a in losing_trades) / len(losing_trades) if losing_trades else 0
+        max_uptrend = max((a["uptrend_pct"] for a in uptrend_analysis), default=0)
+        
+        # Group by exit reason
+        sl_exits = [a for a in uptrend_analysis if "SL" in a["exit_reason"].upper()]
+        tp_exits = [a for a in uptrend_analysis if "TP" in a["exit_reason"].upper() or "TARGET" in a["exit_reason"].upper()]
+        manual_exits = [a for a in uptrend_analysis if "MANUAL" in a["exit_reason"].upper()]
+        
+        stats = {
+            "total_trades": len(uptrend_analysis),
+            "winners": len(winning_trades),
+            "losers": len(losing_trades),
+            "avg_uptrend_winners_pct": round(avg_uptrend_winners, 2),
+            "avg_uptrend_losers_pct": round(avg_uptrend_losers, 2),
+            "max_uptrend_pct": round(max_uptrend, 2),
+            "exit_breakdown": {
+                "stop_loss": {
+                    "count": len(sl_exits),
+                    "avg_uptrend_pct": round(sum(a["uptrend_pct"] for a in sl_exits) / len(sl_exits), 2) if sl_exits else 0
+                },
+                "target": {
+                    "count": len(tp_exits),
+                    "avg_uptrend_pct": round(sum(a["uptrend_pct"] for a in tp_exits) / len(tp_exits), 2) if tp_exits else 0
+                },
+                "manual": {
+                    "count": len(manual_exits),
+                    "avg_uptrend_pct": round(sum(a["uptrend_pct"] for a in manual_exits) / len(manual_exits), 2) if manual_exits else 0
+                }
+            },
+            "recommendations": {
+                "optimal_scalp_target": f"{round(avg_uptrend_winners * 0.6, 2)}%",  # 60% of avg winner
+                "early_exit_threshold": f"{round(avg_uptrend_losers * 0.5, 2)}%" if avg_uptrend_losers < 0 else "N/A"
+            }
+        }
+    else:
+        stats = {"message": "No closed paper trades available for analysis"}
+    
+    return {
+        "status": "success",
+        "analysis": uptrend_analysis[-20:],  # Last 20 trades
+        "statistics": stats,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
