@@ -892,14 +892,23 @@ def close_position_by_id(position_id: str, exit_price: float, pnl: float, reason
         return True
     return False
 
-def get_or_create_clubbed_position(symbol: str) -> tuple[str, dict]:
+def get_or_create_clubbed_position(symbol: str, is_paper_trading: bool = False) -> tuple[str, dict]:
     """
     Get existing clubbed position for symbol or return None.
-    Returns (position_id, position_data) or (None, None)
+    Only returns positions with the SAME paper_trading mode to prevent mixing.
+    
+    Args:
+        symbol: Stock symbol
+        is_paper_trading: Whether the new position is paper trading
+        
+    Returns: (position_id, position_data) or (None, None)
     """
     positions = load_positions()
     for pos_id, pos in positions.items():
-        if pos.get("symbol") == symbol and pos.get("status") == "OPEN" and pos.get("clubbed", False):
+        if (pos.get("symbol") == symbol and 
+            pos.get("status") == "OPEN" and 
+            pos.get("clubbed", False) and
+            pos.get("paper_trading", False) == is_paper_trading):  # Match paper/live mode
             return pos_id, pos
     return None, None
 
@@ -912,6 +921,7 @@ async def club_position_with_existing(
     new_entry_order_id: str,
     new_sl_order_id: str,
     new_tp_order_id: str,
+    is_paper_trading: bool,
     kite: KiteAPI
 ) -> tuple[bool, str, dict]:
     """
@@ -924,7 +934,7 @@ async def club_position_with_existing(
     Returns: (success, message, updated_position)
     """
     symbol = symbol.upper()
-    existing_id, existing = get_or_create_clubbed_position(symbol)
+    existing_id, existing = get_or_create_clubbed_position(symbol, is_paper_trading)
     
     if not existing:
         # No existing clubbed position - this will be the first one
@@ -1290,8 +1300,18 @@ async def get_nifty_change(kite: KiteAPI) -> float:
 
 
 def count_open_positions() -> int:
-    """Count number of open positions."""
+    """Count number of open positions (all)."""
     return len(get_open_positions())
+
+def count_paper_positions() -> int:
+    """Count number of paper trading open positions."""
+    positions = get_open_positions()
+    return len({k: v for k, v in positions.items() if v.get("paper_trading", False) == True})
+
+def count_live_positions() -> int:
+    """Count number of live trading open positions."""
+    positions = get_open_positions()
+    return len({k: v for k, v in positions.items() if v.get("paper_trading", False) != True})
 
 def count_today_trades() -> int:
     """Count number of trades taken today."""
@@ -1447,11 +1467,14 @@ def can_trade(config: Dict[str, Any], symbol: str = None) -> tuple[bool, str]:
     if count_today_trades() >= max_trades:
         return False, f"Max trades ({max_trades}) reached for today"
     
-    # 🔥 Check if already holding this symbol
+    # 🔥 Check if already holding this symbol (respect paper/live mode)
     if symbol and config.get("prevent_duplicate_stocks", True):
         open_positions = get_open_positions()
+        current_mode = config.get("paper_trading", False)
         for pos_id, pos in open_positions.items():
-            if pos.get("symbol") == symbol.upper() and pos.get("status") == "OPEN":
+            if (pos.get("symbol") == symbol.upper() and 
+                pos.get("status") == "OPEN" and
+                pos.get("paper_trading", False) == current_mode):  # Only block if same mode
                 return False, f"Already holding {symbol} - skipping duplicate"
     
     return True, "OK"
@@ -1503,11 +1526,11 @@ async def validate_signal(
             if nifty_change < max_decline:
                 return False, f"📉 Nifty weak: {nifty_change:.2f}% (max decline: {max_decline}%)"
         
-        # Check 3: Open Positions Limit (higher limit for paper trading)
+        # Check 3: Open Positions Limit (higher limit for paper trading, count only paper positions)
         max_positions = paper_filters.get("max_positions", 20)
-        open_count = count_open_positions()
-        if open_count >= max_positions:
-            return False, f"📊 Max paper positions reached: {open_count}/{max_positions}"
+        paper_count = count_paper_positions()  # Count only paper positions
+        if paper_count >= max_positions:
+            return False, f"📊 Max paper positions reached: {paper_count}/{max_positions}"
         
         # Check 4: Duplicate Check (configurable)
         if paper_filters.get("prevent_duplicates", True):
@@ -1529,11 +1552,11 @@ async def validate_signal(
         if nifty_change < max_decline:
             return False, f"📉 Nifty weak: {nifty_change:.2f}% (max decline: {max_decline}%)"
     
-    # Check 3: Open Positions Limit (max 3)
+    # Check 3: Open Positions Limit (max 3, count only live positions)
     max_positions = signal_config.get("max_open_positions", 3)
-    open_count = count_open_positions()
-    if open_count >= max_positions:
-        return False, f"📊 Max open positions reached: {open_count}/{max_positions}"
+    live_count = count_live_positions()  # Count only live positions
+    if live_count >= max_positions:
+        return False, f"📊 Max open positions reached: {live_count}/{max_positions}"
     
     # Check 4: Duplicate Check (same day)
     if symbol and signal_config.get("prevent_daily_duplicates", True):
@@ -1919,6 +1942,7 @@ async def process_single_alert(
                 new_entry_order_id=position.entry_order_id,
                 new_sl_order_id=sl_order_id,
                 new_tp_order_id=tp_order_id,
+                is_paper_trading=is_paper_trading,  # Pass mode to prevent mixing
                 kite=kite
             )
             if clubbed:
@@ -1954,7 +1978,7 @@ async def process_single_alert(
             
             print(f"✅ FILLED: {symbol} at ₹{actual_entry:.2f} (qty: {trade_params.quantity})")
             
-            # 🔥 Check if clubbing is enabled
+            # 🔥 Check if clubbing is enabled (pass is_paper_trading to prevent mixing)
             clubbed = False
             if config.get("club_positions", False):
                 clubbed, club_msg, _ = await club_position_with_existing(
@@ -1966,6 +1990,7 @@ async def process_single_alert(
                     new_entry_order_id=position.entry_order_id,
                     new_sl_order_id=sl_order_id,
                     new_tp_order_id=tp_order_id,
+                    is_paper_trading=is_paper_trading,  # Pass mode to prevent mixing
                     kite=kite
                 )
                 if clubbed:
