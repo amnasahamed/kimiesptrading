@@ -115,6 +115,8 @@ class ConfigUpdate(BaseModel):
     kite_api_key: Optional[str] = None
     kite_api_secret: Optional[str] = None
     telegram: Optional[Dict[str, Any]] = None
+    whatsapp: Optional[Dict[str, Any]] = None
+    analysis_engine: Optional[Dict[str, Any]] = None
     chartink: Optional[Dict[str, Any]] = None
     risk_management: Optional[Dict[str, Any]] = None
     paper_trading: Optional[bool] = None  # Test mode without real orders
@@ -128,6 +130,7 @@ class ConfigUpdate(BaseModel):
 
 CONFIG_FILE = Path("config.json")
 TRADES_FILE = Path("trades_log.json")
+INSIGHTS_FILE = Path("trade_insights.json")
 DASHBOARD_HTML = Path("dashboard.html")
 
 # ============================================================================
@@ -161,6 +164,7 @@ async def lifespan(app: FastAPI):
             "club_positions": False,  # Keep positions separate (don't average)
             "kite": {"api_key": "", "access_token": "", "base_url": "https://api.kite.trade"},
             "telegram": {"bot_token": "", "chat_id": "", "enabled": False},
+            "whatsapp": {"api_key": "", "recipient": "", "enabled": False},
             "risk_management": {
                 "atr_multiplier_sl": 1.5,
                 "atr_multiplier_tp": 3.0,
@@ -168,6 +172,26 @@ async def lifespan(app: FastAPI):
                 "max_sl_percent": 2.0
             },
             "chartink": {"webhook_secret": ""},
+            # 🔥 ANALYSIS ENGINE: Configure how strategy optimization works
+            "analysis_engine": {
+                "enabled": True,
+                "engine_type": "local",  # "local" (rule-based) or "openai" or "claude"
+                "openai_api_key": "",
+                "claude_api_key": "",
+                "thresholds": {
+                    "min_trades_for_recommendation": 5,  # Need 5+ trades for suggestions
+                    "execution_gap_threshold": 20,       # 20% difference triggers alert
+                    "min_win_rate_for_best": 60,         # 60%+ is considered good
+                    "max_win_rate_for_worst": 35         # Below 35% needs attention
+                },
+                "metrics": {
+                    "analyze_time_performance": True,
+                    "analyze_risk_reward": True,
+                    "analyze_atr_multipliers": True,
+                    "analyze_position_sizing": True,
+                    "analyze_execution_gaps": True
+                }
+            },
             # 🔥 PAPER TRADING: Filters for signal accuracy testing
             "paper_trading_filters": {
                 "enabled": True,
@@ -350,7 +374,7 @@ async def monitor_positions():
                                 if sl_status == "triggered":
                                     print(f"🛑 SL GTT triggered for {symbol}! Closing position.")
                                     pnl = (sl - entry) * qty
-                                    close_position_by_id(position_id, sl, round(pnl, 2))
+                                    await close_position_by_id(position_id, sl, round(pnl, 2))
                                     await send_telegram_message(
                                         f"🛑 *STOP LOSS HIT: {symbol}*\n\n"
                                         f"Exit: ₹{sl:.2f}\n"
@@ -365,7 +389,7 @@ async def monitor_positions():
                                 if tp_status == "triggered":
                                     print(f"🎯 TP GTT triggered for {symbol}! Closing position.")
                                     pnl = (tp - entry) * qty
-                                    close_position_by_id(position_id, tp, round(pnl, 2))
+                                    await close_position_by_id(position_id, tp, round(pnl, 2))
                                     await send_telegram_message(
                                         f"🎯 *TARGET HIT: {symbol}*\n\n"
                                         f"Exit: ₹{tp:.2f}\n"
@@ -784,6 +808,455 @@ def update_trade_pnl(order_id: str, exit_price: float, pnl: float):
 
 
 # ============================================================================
+# Trade Insights & Learning System
+# ============================================================================
+
+def load_insights() -> Dict[str, Any]:
+    """Load trade insights/analytics data."""
+    if not INSIGHTS_FILE.exists():
+        return {
+            "symbols": {},  # Per-symbol statistics
+            "daily_stats": {},  # Per-day statistics
+            "last_updated": datetime.now().isoformat()
+        }
+    try:
+        with open(INSIGHTS_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading insights: {e}")
+        return {"symbols": {}, "daily_stats": {}, "last_updated": datetime.now().isoformat()}
+
+def save_insights(insights: Dict[str, Any]):
+    """Save trade insights to file."""
+    insights["last_updated"] = datetime.now().isoformat()
+    try:
+        with open(INSIGHTS_FILE, "w") as f:
+            json.dump(insights, f, indent=2)
+    except Exception as e:
+        print(f"Error saving insights: {e}")
+
+def update_trade_insights(trade: Dict[str, Any]):
+    """Update insights when a trade is completed."""
+    insights = load_insights()
+    
+    symbol = trade.get("symbol", "")
+    pnl = trade.get("pnl", 0)
+    is_paper = trade.get("paper_trading", False)
+    trade_type = "paper" if is_paper else "live"
+    
+    if not symbol:
+        return
+    
+    # Initialize symbol stats if not exists
+    if symbol not in insights["symbols"]:
+        insights["symbols"][symbol] = {
+            "paper": {"trades": 0, "wins": 0, "losses": 0, "total_pnl": 0, "avg_pnl": 0},
+            "live": {"trades": 0, "wins": 0, "losses": 0, "total_pnl": 0, "avg_pnl": 0},
+            "first_seen": datetime.now().isoformat()
+        }
+    
+    stats = insights["symbols"][symbol][trade_type]
+    stats["trades"] += 1
+    stats["total_pnl"] += pnl
+    
+    if pnl > 0:
+        stats["wins"] += 1
+    elif pnl < 0:
+        stats["losses"] += 1
+    
+    stats["avg_pnl"] = stats["total_pnl"] / stats["trades"]
+    stats["win_rate"] = (stats["wins"] / stats["trades"] * 100) if stats["trades"] > 0 else 0
+    
+    # Update last trade info
+    insights["symbols"][symbol]["last_trade"] = {
+        "date": trade.get("date", datetime.now().isoformat()),
+        "pnl": pnl,
+        "type": trade_type
+    }
+    
+    save_insights(insights)
+    print(f"📊 Insights updated for {symbol} ({trade_type}): P&L ₹{pnl:.2f}")
+
+def get_symbol_insights(symbol: str) -> Dict[str, Any]:
+    """Get insights for a specific symbol."""
+    insights = load_insights()
+    return insights["symbols"].get(symbol, {})
+
+# ============================================================================
+# Advanced Strategy Analytics & Optimization
+# ============================================================================
+
+class StrategyOptimizer:
+    """Analyzes trade history and suggests strategy optimizations."""
+    
+    def __init__(self):
+        self.insights = load_insights()
+        self.all_trades = load_all_trades()
+        self.config = load_config().get("analysis_engine", {})
+        self.thresholds = self.config.get("thresholds", {
+            "min_trades_for_recommendation": 5,
+            "execution_gap_threshold": 20,
+            "min_win_rate_for_best": 60,
+            "max_win_rate_for_worst": 35
+        })
+        self.metrics = self.config.get("metrics", {
+            "analyze_time_performance": True,
+            "analyze_risk_reward": True,
+            "analyze_atr_multipliers": True,
+            "analyze_position_sizing": True,
+            "analyze_execution_gaps": True
+        })
+        self.min_trades = self.thresholds.get("min_trades_for_recommendation", 5)
+    
+    def analyze_time_performance(self) -> Dict[str, Any]:
+        """Analyze performance by time of day to find best/worst trading windows."""
+        hourly_stats = {f"{h:02d}:00": {"trades": 0, "wins": 0, "pnl": 0} for h in range(9, 16)}
+        
+        for trade in self.all_trades:
+            if trade.get("status") != "CLOSED":
+                continue
+            try:
+                trade_time = datetime.fromisoformat(trade.get("date", ""))
+                hour_key = f"{trade_time.hour:02d}:00"
+                if hour_key in hourly_stats:
+                    hourly_stats[hour_key]["trades"] += 1
+                    hourly_stats[hour_key]["pnl"] += trade.get("pnl", 0)
+                    if trade.get("pnl", 0) > 0:
+                        hourly_stats[hour_key]["wins"] += 1
+            except:
+                continue
+        
+        # Calculate win rates and find best/worst hours
+        for hour, stats in hourly_stats.items():
+            if stats["trades"] > 0:
+                stats["win_rate"] = (stats["wins"] / stats["trades"]) * 100
+                stats["avg_pnl"] = stats["pnl"] / stats["trades"]
+        
+        # Sort by performance
+        sorted_hours = sorted(hourly_stats.items(), 
+                            key=lambda x: x[1].get("avg_pnl", 0), 
+                            reverse=True)
+        
+        return {
+            "hourly_breakdown": hourly_stats,
+            "best_hour": sorted_hours[0] if sorted_hours else None,
+            "worst_hour": sorted_hours[-1] if sorted_hours else None,
+            "sorted_by_pnl": sorted_hours
+        }
+    
+    def analyze_risk_reward_performance(self) -> Dict[str, Any]:
+        """Analyze which R:R ratios perform best."""
+        rr_buckets = {
+            "1:1_to_1:2": {"trades": 0, "wins": 0, "pnl": 0},
+            "1:2_to_1:3": {"trades": 0, "wins": 0, "pnl": 0},
+            "1:3_plus": {"trades": 0, "wins": 0, "pnl": 0}
+        }
+        
+        for trade in self.all_trades:
+            if trade.get("status") != "CLOSED":
+                continue
+            rr = trade.get("risk_reward", 2.0)
+            pnl = trade.get("pnl", 0)
+            
+            bucket = "1:2_to_1:3"
+            if rr < 2.0:
+                bucket = "1:1_to_1:2"
+            elif rr >= 3.0:
+                bucket = "1:3_plus"
+            
+            rr_buckets[bucket]["trades"] += 1
+            rr_buckets[bucket]["pnl"] += pnl
+            if pnl > 0:
+                rr_buckets[bucket]["wins"] += 1
+        
+        # Calculate win rates
+        for bucket, stats in rr_buckets.items():
+            if stats["trades"] > 0:
+                stats["win_rate"] = (stats["wins"] / stats["trades"]) * 100
+                stats["avg_pnl"] = stats["pnl"] / stats["trades"]
+        
+        # Find best R:R
+        best_rr = max(rr_buckets.items(), key=lambda x: x[1].get("avg_pnl", -999999))
+        
+        return {
+            "buckets": rr_buckets,
+            "best_rr_range": best_rr[0],
+            "best_rr_stats": best_rr[1]
+        }
+    
+    def analyze_atr_multiplier_performance(self) -> Dict[str, Any]:
+        """Analyze which ATR multipliers for SL work best."""
+        sl_buckets = {
+            "tight_1x": {"range": (0, 1.5), "trades": 0, "wins": 0, "pnl": 0},
+            "medium_1_5x": {"range": (1.5, 2.0), "trades": 0, "wins": 0, "pnl": 0},
+            "wide_2x_plus": {"range": (2.0, 999), "trades": 0, "wins": 0, "pnl": 0}
+        }
+        
+        for trade in self.all_trades:
+            if trade.get("status") != "CLOSED" or not trade.get("atr"):
+                continue
+            
+            entry = trade.get("entry_price", 0)
+            sl = trade.get("stop_loss", 0)
+            atr = trade.get("atr", 1)
+            
+            if entry > 0 and sl > 0 and atr > 0:
+                sl_distance = abs(entry - sl)
+                atr_multiplier = sl_distance / atr
+                
+                bucket = "medium_1_5x"
+                if atr_multiplier < 1.5:
+                    bucket = "tight_1x"
+                elif atr_multiplier >= 2.0:
+                    bucket = "wide_2x_plus"
+                
+                sl_buckets[bucket]["trades"] += 1
+                sl_buckets[bucket]["pnl"] += trade.get("pnl", 0)
+                if trade.get("pnl", 0) > 0:
+                    sl_buckets[bucket]["wins"] += 1
+        
+        # Calculate win rates
+        for bucket, stats in sl_buckets.items():
+            if stats["trades"] > 0:
+                stats["win_rate"] = (stats["wins"] / stats["trades"]) * 100
+                stats["avg_pnl"] = stats["pnl"] / stats["trades"]
+        
+        best_sl = max(sl_buckets.items(), key=lambda x: x[1].get("avg_pnl", -999999))
+        
+        return {
+            "buckets": sl_buckets,
+            "best_sl_setting": best_sl[0],
+            "recommendation": self._get_sl_recommendation(best_sl[0])
+        }
+    
+    def _get_sl_recommendation(self, best_bucket: str) -> str:
+        """Get human-readable SL recommendation."""
+        recommendations = {
+            "tight_1x": "Use tighter stops (1x ATR) - quick cuts, small losses",
+            "medium_1_5x": "Current 1.5x ATR setting is optimal",
+            "wide_2x_plus": "Wider stops (2x+ ATR) perform better - let trades breathe"
+        }
+        return recommendations.get(best_bucket, "Maintain current settings")
+    
+    def analyze_position_sizing(self) -> Dict[str, Any]:
+        """Analyze if current position sizing is optimal."""
+        risk_buckets = {
+            "low_0_5": {"range": (0, 0.5), "trades": 0, "wins": 0, "pnl": 0},
+            "medium_0_5_1": {"range": (0.5, 1.0), "trades": 0, "wins": 0, "pnl": 0},
+            "high_1_2": {"range": (1.0, 2.0), "trades": 0, "wins": 0, "pnl": 0},
+            "aggressive_2_plus": {"range": (2.0, 100), "trades": 0, "wins": 0, "pnl": 0}
+        }
+        
+        for trade in self.all_trades:
+            if trade.get("status") != "CLOSED":
+                continue
+            
+            risk_amt = trade.get("risk_amount", 0)
+            capital = 100000  # Default assumption
+            risk_pct = (risk_amt / capital) * 100 if capital > 0 else 1.0
+            
+            bucket = "medium_0_5_1"
+            if risk_pct < 0.5:
+                bucket = "low_0_5"
+            elif risk_pct >= 1.0 and risk_pct < 2.0:
+                bucket = "high_1_2"
+            elif risk_pct >= 2.0:
+                bucket = "aggressive_2_plus"
+            
+            risk_buckets[bucket]["trades"] += 1
+            risk_buckets[bucket]["pnl"] += trade.get("pnl", 0)
+            if trade.get("pnl", 0) > 0:
+                risk_buckets[bucket]["wins"] += 1
+        
+        for bucket, stats in risk_buckets.items():
+            if stats["trades"] > 0:
+                stats["win_rate"] = (stats["wins"] / stats["trades"]) * 100
+                stats["avg_pnl"] = stats["pnl"] / stats["trades"]
+        
+        best_risk = max(risk_buckets.items(), key=lambda x: x[1].get("avg_pnl", -999999))
+        
+        return {
+            "buckets": risk_buckets,
+            "optimal_risk_range": best_risk[0],
+            "current_suggestion": self._get_risk_suggestion(best_risk[0])
+        }
+    
+    def _get_risk_suggestion(self, best_bucket: str) -> str:
+        """Get risk percentage suggestion."""
+        suggestions = {
+            "low_0_5": "Consider increasing risk to 0.5-1% for better returns",
+            "medium_0_5_1": "Current 1% risk is optimal for your strategy",
+            "high_1_2": "High risk (1-2%) is working - but monitor drawdowns",
+            "aggressive_2_plus": "Very aggressive sizing - consider reducing to 1%"
+        }
+        return suggestions.get(best_bucket, "Maintain current 1% risk")
+    
+    def generate_strategy_recommendations(self) -> List[Dict[str, Any]]:
+        """Generate comprehensive strategy recommendations based on configured thresholds."""
+        recommendations = []
+        
+        # Skip if analysis is disabled
+        if not self.config.get("enabled", True):
+            return [{"type": "disabled", "message": "Analysis engine is disabled in settings"}]
+        
+        # Time-based recommendations
+        if self.metrics.get("analyze_time_performance", True):
+            time_analysis = self.analyze_time_performance()
+            if time_analysis["best_hour"] and time_analysis["best_hour"][1].get("trades", 0) >= self.min_trades:
+                best_hour, stats = time_analysis["best_hour"]
+                win_rate = stats.get("win_rate", 0)
+                avg_pnl = stats.get("avg_pnl", 0)
+                
+                # Only recommend if win rate meets threshold
+                if win_rate >= self.thresholds.get("min_win_rate_for_best", 60):
+                    recommendations.append({
+                        "type": "time_window",
+                        "priority": "high" if avg_pnl > 1000 else "medium",
+                        "title": f"Best Trading Hour: {best_hour}",
+                        "message": f"{best_hour} shows {win_rate:.0f}% win rate with ₹{avg_pnl:.0f} avg P&L. Consider focusing trades during this hour.",
+                        "data": stats,
+                        "actionable": True,
+                        "suggested_config": {"trading_hours": {"start": best_hour, "end": f"{int(best_hour.split(':')[0])+1}:00"}}
+                    })
+            
+            if time_analysis["worst_hour"] and time_analysis["worst_hour"][1].get("trades", 0) >= self.min_trades:
+                worst_hour, stats = time_analysis["worst_hour"]
+                if stats.get("avg_pnl", 0) < -500:
+                    recommendations.append({
+                        "type": "avoid_time",
+                        "priority": "high",
+                        "title": f"Avoid Trading at {worst_hour}",
+                        "message": f"{worst_hour} shows consistent losses (₹{stats.get('avg_pnl', 0):.0f} avg). Consider avoiding this time window.",
+                        "data": stats,
+                        "actionable": True
+                    })
+        
+        # Risk/Reward recommendations
+        if self.metrics.get("analyze_risk_reward", True):
+            rr_analysis = self.analyze_risk_reward_performance()
+            if rr_analysis["best_rr_stats"].get("trades", 0) >= self.min_trades:
+                recommendations.append({
+                    "type": "risk_reward",
+                    "priority": "medium",
+                    "title": f"Optimal R:R is {rr_analysis['best_rr_range']}",
+                    "message": f"{rr_analysis['best_rr_range']} shows best performance with ₹{rr_analysis['best_rr_stats'].get('avg_pnl', 0):.0f} avg P&L.",
+                    "data": rr_analysis,
+                    "actionable": True,
+                    "suggested_config": {"min_risk_reward": 2.0 if "1:2" in rr_analysis['best_rr_range'] else 3.0}
+                })
+        
+        # ATR Multiplier recommendations
+        if self.metrics.get("analyze_atr_multipliers", True):
+            sl_analysis = self.analyze_atr_multiplier_performance()
+            # Check all buckets for minimum trades
+            total_atr_trades = sum(b.get("trades", 0) for b in sl_analysis["buckets"].values())
+            if total_atr_trades >= self.min_trades:
+                recommendations.append({
+                    "type": "atr_multiplier",
+                    "priority": "medium",
+                    "title": "Stop Loss Optimization",
+                    "message": sl_analysis["recommendation"],
+                    "data": sl_analysis,
+                    "actionable": True,
+                    "suggested_config": {
+                        "tight_1x": {"atr_multiplier_sl": 1.0},
+                        "medium_1_5x": {"atr_multiplier_sl": 1.5},
+                        "wide_2x_plus": {"atr_multiplier_sl": 2.0}
+                    }.get(sl_analysis["best_sl_setting"], {})
+                })
+        
+        # Position sizing recommendations
+        if self.metrics.get("analyze_position_sizing", True):
+            risk_analysis = self.analyze_position_sizing()
+            total_risk_trades = sum(b.get("trades", 0) for b in risk_analysis["buckets"].values())
+            if total_risk_trades >= self.min_trades:
+                suggestions = {
+                    "low_0_5": {"risk_percent": 0.75, "message": "Increase to 0.75% for better returns"},
+                    "medium_0_5_1": {"risk_percent": 1.0, "message": "Current 1% risk is optimal"},
+                    "high_1_2": {"risk_percent": 1.0, "message": "Consider reducing to 1% to limit drawdowns"},
+                    "aggressive_2_plus": {"risk_percent": 1.0, "message": "Reduce to 1% for safer trading"}
+                }
+                suggestion = suggestions.get(risk_analysis["optimal_risk_range"], {})
+                recommendations.append({
+                    "type": "position_sizing",
+                    "priority": "high" if risk_analysis["optimal_risk_range"] in ["aggressive_2_plus", "low_0_5"] else "medium",
+                    "title": "Position Size Optimization",
+                    "message": suggestion.get("message", risk_analysis["current_suggestion"]),
+                    "data": risk_analysis,
+                    "actionable": True,
+                    "suggested_config": {"risk_percent": suggestion.get("risk_percent", 1.0)}
+                })
+        
+        # Execution quality analysis
+        if self.metrics.get("analyze_execution_gaps", True):
+            execution_gap_threshold = self.thresholds.get("execution_gap_threshold", 20)
+            
+            for symbol, data in self.insights.get("symbols", {}).items():
+                paper = data.get("paper", {})
+                live = data.get("live", {})
+                
+                # Use configured min trades
+                if paper.get("trades", 0) >= self.min_trades and live.get("trades", 0) >= 3:
+                    paper_wr = paper.get("win_rate", 0)
+                    live_wr = live.get("win_rate", 0)
+                    paper_pnl = paper.get("total_pnl", 0) / paper.get("trades", 1)
+                    live_pnl = live.get("total_pnl", 0) / live.get("trades", 1)
+                    
+                    # Significant execution gap (using configured threshold)
+                    if paper_wr > live_wr + execution_gap_threshold and paper_pnl > live_pnl + 500:
+                        recommendations.append({
+                            "type": "execution_gap",
+                            "priority": "high",
+                            "title": f"{symbol}: Execution Gap Detected",
+                            "message": f"Paper: {paper_wr:.0f}% WR, ₹{paper_pnl:.0f} avg | Live: {live_wr:.0f}% WR, ₹{live_pnl:.0f} avg. Check slippage and entry timing.",
+                            "data": {"symbol": symbol, "paper": paper, "live": live, "gap_percent": paper_wr - live_wr},
+                            "actionable": True,
+                            "suggested_config": {"slippage_tolerance": 0.3}  # Tighter slippage check
+                        })
+        
+        return sorted(recommendations, key=lambda x: {"high": 0, "medium": 1, "low": 2}.get(x["priority"], 3))
+
+
+def get_learning_recommendations() -> List[Dict[str, Any]]:
+    """Generate learning recommendations based on trade history."""
+    insights = load_insights()
+    recommendations = []
+    
+    for symbol, data in insights["symbols"].items():
+        paper = data.get("paper", {})
+        live = data.get("live", {})
+        live_win_rate = live.get("win_rate", 0)
+        
+        if paper.get("trades", 0) >= 3 and paper_win_rate > 60 and live_win_rate < 40:
+            recommendations.append({
+                "symbol": symbol,
+                "type": "execution_gap",
+                "message": f"{symbol}: Paper win rate {paper_win_rate:.0f}% vs Live {live_win_rate:.0f}% - check execution slippage",
+                "priority": "high"
+            })
+        
+        # Check for consistently profitable symbols
+        if paper.get("trades", 0) >= 5 and paper_win_rate > 65:
+            recommendations.append({
+                "symbol": symbol,
+                "type": "strong_performer",
+                "message": f"{symbol}: Strong paper performance ({paper_win_rate:.0f}% win rate) - consider for live",
+                "priority": "medium"
+            })
+        
+        # Check for consistently losing symbols
+        if paper.get("trades", 0) >= 5 and paper_win_rate < 35:
+            recommendations.append({
+                "symbol": symbol,
+                "type": "avoid",
+                "message": f"{symbol}: Poor performance ({paper_win_rate:.0f}% win rate) - consider avoiding",
+                "priority": "medium"
+            })
+    
+    return sorted(recommendations, key=lambda x: x["priority"] == "high", reverse=True)
+
+
+# ============================================================================
 # Position Management (FIX #2 & #3) - Now supports multiple positions per symbol
 # ============================================================================
 
@@ -873,21 +1346,50 @@ def update_position(position_id: str, updates: Dict[str, Any]):
         positions[position_id].update(updates)
         save_positions(positions)
 
-def close_position_by_id(position_id: str, exit_price: float, pnl: float, reason: str):
-    """Mark position as closed by ID."""
+async def close_position_by_id(position_id: str, exit_price: float, pnl: float, reason: str):
+    """Mark position as closed by ID and send notifications for real trades."""
     positions = load_positions()
     if position_id in positions:
-        positions[position_id]["status"] = "CLOSED"
-        positions[position_id]["exit_price"] = exit_price
-        positions[position_id]["pnl"] = pnl
-        positions[position_id]["exit_reason"] = reason
-        positions[position_id]["exit_time"] = datetime.now().isoformat()
+        position = positions[position_id]
+        position["status"] = "CLOSED"
+        position["exit_price"] = exit_price
+        position["pnl"] = pnl
+        position["exit_reason"] = reason
+        position["exit_time"] = datetime.now().isoformat()
         save_positions(positions)
         
         # Also update the trade log
-        entry_order_id = positions[position_id].get("entry_order_id")
+        entry_order_id = position.get("entry_order_id")
         if entry_order_id:
             update_trade_pnl(entry_order_id, exit_price, pnl)
+        
+        # Update insights for learning
+        try:
+            trade_record = {
+                "symbol": position.get("symbol"),
+                "pnl": pnl,
+                "paper_trading": position.get("paper_trading", False),
+                "date": position.get("exit_time", datetime.now().isoformat())
+            }
+            update_trade_insights(trade_record)
+        except Exception as e:
+            print(f"Failed to update insights: {e}")
+        
+        # Send WhatsApp notification for REAL trades only
+        is_paper = position.get("paper_trading", False)
+        if not is_paper:
+            try:
+                await notify_trade_exit(
+                    symbol=position.get("symbol", "Unknown"),
+                    qty=position.get("quantity", 0),
+                    entry_price=position.get("entry_price", 0),
+                    exit_price=exit_price,
+                    pnl=pnl,
+                    exit_reason=reason,
+                    is_paper=is_paper
+                )
+            except Exception as e:
+                print(f"WhatsApp exit notification failed: {e}")
         
         return True
     return False
@@ -1055,7 +1557,7 @@ async def club_position_with_existing(
     save_positions(positions)
     
     # Mark the new position as closed (clubbed into existing)
-    close_position_by_id(new_entry_order_id, new_entry_price, 0, "CLUBBED")
+    await close_position_by_id(new_entry_order_id, new_entry_price, 0, "CLUBBED")
     
     # Return success message with any warnings
     msg = f"Clubbed: {old_qty} + {new_quantity} = {total_qty} shares @ ₹{avg_entry:.2f}"
@@ -1221,7 +1723,7 @@ async def sync_positions_with_kite(kite: KiteAPI) -> Dict[str, Any]:
     return result
 
 
-def force_close_position(position_id: str, exit_price: float, reason: str = "MANUAL_FORCE") -> bool:
+async def force_close_position(position_id: str, exit_price: float, reason: str = "MANUAL_FORCE") -> bool:
     """
     Force close a position without placing an order.
     Use this when position was already closed externally (e.g., from Kite).
@@ -1256,6 +1758,23 @@ def force_close_position(position_id: str, exit_price: float, reason: str = "MAN
         update_trade_pnl(entry_order_id, exit_price, pnl)
     
     print(f"📝 Force closed position {position_id} ({pos.get('symbol')}) at ₹{exit_price:.2f}")
+    
+    # Send WhatsApp notification for REAL trades
+    is_paper = pos.get("paper_trading", False)
+    if not is_paper:
+        try:
+            await notify_trade_exit(
+                symbol=pos.get("symbol", "Unknown"),
+                qty=qty,
+                entry_price=entry_price,
+                exit_price=exit_price,
+                pnl=pnl,
+                exit_reason=reason,
+                is_paper=is_paper
+            )
+        except Exception as e:
+            print(f"WhatsApp force-close notification failed: {e}")
+    
     return True
 
 
@@ -1431,6 +1950,166 @@ async def send_telegram_message(message: str):
         "message_preview": message[:100] if message else "",
         "last_error": str(last_error) if last_error else None
     })
+
+
+# ============================================================================
+# WhatsApp Notifications (Wasender API)
+# ============================================================================
+
+# Default Wasender API Configuration
+# Official documentation: https://docs.wasenderapi.com
+# API Endpoint: POST https://www.wasenderapi.com/api/send-message
+WASENDER_BASE_URL = "https://www.wasenderapi.com"
+
+async def send_whatsapp_message(message: str) -> bool:
+    """
+    Send WhatsApp notification via Wasender API.
+    Only sends for REAL trades (not paper trading).
+    
+    API Docs: POST https://www.wasenderapi.com/api/send-message
+    
+    Request Body:
+    {
+      "to": "212612345678",
+      "text": "Hello from WasenderAPI!"
+    }
+    """
+    config = load_config()
+    whatsapp = config.get("whatsapp", {})
+    
+    if not whatsapp.get("enabled"):
+        return False
+    
+    api_key = whatsapp.get("api_key", "")
+    recipient = whatsapp.get("recipient", "")
+    
+    if not api_key or not recipient:
+        return False
+    
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "to": recipient,
+        "text": message
+    }
+    
+    max_retries = 3
+    base_delay = 1.0
+    
+    for attempt in range(max_retries):
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    f"{WASENDER_BASE_URL}/api/send-message",
+                    headers=headers,
+                    json=payload,
+                    timeout=30.0
+                )
+                
+                if resp.status_code == 200:
+                    data = resp.json()
+                    print(f"✅ WhatsApp message sent successfully: {data.get('messageId', data.get('id', 'OK'))}")
+                    return True
+                elif resp.status_code == 401:
+                    error_msg = "Wasender API: Unauthorized - check API key"
+                    print(f"❌ {error_msg}")
+                    log_error("whatsapp", error_msg)
+                    return False
+                elif resp.status_code == 429:
+                    retry_after = int(resp.headers.get("Retry-After", 5))
+                    print(f"⚠️ WhatsApp rate limited, retrying after {retry_after}s")
+                    await asyncio.sleep(retry_after)
+                else:
+                    error_msg = f"Wasender API error: {resp.status_code}"
+                    print(f"❌ {error_msg} - {resp.text[:200]}")
+                    log_error("whatsapp", error_msg, {
+                        "status_code": resp.status_code,
+                        "response": resp.text[:200],
+                        "attempt": attempt + 1
+                    })
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(base_delay * (2 ** attempt))
+                        
+        except httpx.TimeoutException:
+            print(f"⚠️ WhatsApp timeout (attempt {attempt + 1}/{max_retries})")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(base_delay * (2 ** attempt))
+        except Exception as e:
+            error_msg = f"WhatsApp send error: {str(e)}"
+            print(f"❌ {error_msg}")
+            log_error("whatsapp", error_msg, {"attempt": attempt + 1})
+            if attempt < max_retries - 1:
+                await asyncio.sleep(base_delay * (2 ** attempt))
+    
+    return False
+
+
+async def notify_trade_entry(symbol: str, qty: int, entry_price: float, 
+                             sl_price: float, tp_price: float, 
+                             is_paper: bool = False):
+    """Send notification when a trade is entered."""
+    if is_paper:
+        return  # Only notify for REAL trades
+    
+    trade_type = "📊 PAPER TRADE" if is_paper else "🔴 LIVE TRADE"
+    
+    message = f"""*{trade_type} - ENTRY ALERT*
+
+*Symbol:* {symbol}
+*Quantity:* {qty}
+*Entry Price:* ₹{entry_price:.2f}
+*Stop Loss:* ₹{sl_price:.2f}
+*Target:* ₹{tp_price:.2f}
+
+*Risk per share:* ₹{entry_price - sl_price:.2f}
+*Potential Reward:* ₹{tp_price - entry_price:.2f}
+
+Good luck! 🚀"""
+
+    # Send both Telegram and WhatsApp
+    await send_telegram_message(message)
+    await send_whatsapp_message(message)
+
+
+async def notify_trade_exit(symbol: str, qty: int, entry_price: float, 
+                            exit_price: float, pnl: float, 
+                            exit_reason: str = "Manual", is_paper: bool = False):
+    """Send notification when a trade is exited with P&L."""
+    if is_paper:
+        return  # Only notify for REAL trades
+    
+    # Determine emoji based on P&L
+    if pnl > 0:
+        emoji = "🟢 PROFIT"
+        pnl_emoji = "✅"
+    elif pnl < 0:
+        emoji = "🔴 LOSS"
+        pnl_emoji = "❌"
+    else:
+        emoji = "⚪ BREAKEVEN"
+        pnl_emoji = "➖"
+    
+    trade_type = "📊 PAPER" if is_paper else "🔴 LIVE"
+    
+    message = f"""*{trade_type} - {emoji} BOOKED*
+
+*Symbol:* {symbol}
+*Quantity:* {qty}
+*Entry Price:* ₹{entry_price:.2f}
+*Exit Price:* ₹{exit_price:.2f}
+*Exit Reason:* {exit_reason}
+
+{pnl_emoji} *P&L: ₹{pnl:+.2f}*
+
+Keep learning! 📈"""
+
+    # Send both Telegram and WhatsApp
+    await send_telegram_message(message)
+    await send_whatsapp_message(message)
+
 
 # ============================================================================
 # Guard Checks
@@ -1867,70 +2546,148 @@ async def process_single_alert(
     print(f"   Price: ₹{current_ltp:.2f} | Qty: {trade_params.quantity} | Value: ₹{position_value:,.2f}")
     print(f"   SL: ₹{trade_params.stop_loss:.2f} | TP: ₹{trade_params.target:.2f} | R:R = 1:{trade_params.risk_reward:.1f}")
     
-    # 🔥 FIX #8: Paper Trading - Simulate orders without real money
-    if is_paper_trading:
-        print(f"📝 PAPER TRADING: Simulating market order for {symbol}")
-        
-        # 🔥 PAPER TRADING: Fixed ₹10,000 position size for signal accuracy testing
-        PAPER_TRADE_VALUE = 10000  # Fixed ₹10,000 per trade
-        paper_qty = max(1, round(PAPER_TRADE_VALUE / current_ltp))  # At least 1 share
-        paper_value = paper_qty * current_ltp
-        
-        # Calculate SL/TP based on ATR (same logic as live trading)
-        paper_sl = current_ltp - (atr * risk_config.get("atr_multiplier_sl", 1.5))
-        paper_tp = current_ltp + (atr * risk_config.get("atr_multiplier_tp", 3.0))
-        
-        # Create paper trade params object
-        from types import SimpleNamespace
-        paper_trade_params = SimpleNamespace(
-            quantity=paper_qty,
-            entry=current_ltp,
-            stop_loss=round(paper_sl, 2),
-            target=round(paper_tp, 2),
-            risk_amount=round((current_ltp - paper_sl) * paper_qty, 2),
-            risk_reward=3.0  # Fixed 1:3 R:R for paper trading
-        )
-        
-        print(f"   📝 PAPER: ₹{PAPER_TRADE_VALUE:,.0f} fixed | Qty: {paper_qty} | Value: ₹{paper_value:,.2f}")
-        
-        # Simulate successful market execution at current LTP
-        from kite import KiteOrder, Position
-        
-        # In paper trading, fill at current market price (LTP)
-        fill_price = quote.ltp
-        
-        entry_order = KiteOrder(
-            order_id=f"PAPER_{datetime.now().strftime('%H%M%S')}",
-            status="SUCCESS",
-            message=f"Paper trade executed at market price ₹{fill_price:.2f}",
-            variety="paper",
-            filled_quantity=paper_trade_params.quantity,
-            average_price=fill_price
-        )
-        
-        position = Position(
+    # 🔥 AUTO PAPER TRADING: Always paper trade for learning
+    # This happens regardless of live trading mode
+    print(f"📝 PAPER TRADING: Simulating market order for {symbol}")
+    
+    # 🔥 PAPER TRADING: Fixed ₹10,000 position size for signal accuracy testing
+    PAPER_TRADE_VALUE = 10000  # Fixed ₹10,000 per trade
+    paper_qty = max(1, round(PAPER_TRADE_VALUE / current_ltp))  # At least 1 share
+    paper_value = paper_qty * current_ltp
+    
+    # Calculate SL/TP based on ATR (same logic as live trading)
+    paper_sl = current_ltp - (atr * risk_config.get("atr_multiplier_sl", 1.5))
+    paper_tp = current_ltp + (atr * risk_config.get("atr_multiplier_tp", 3.0))
+    
+    # Create paper trade params object
+    from types import SimpleNamespace
+    from kite import KiteOrder, Position
+    
+    paper_trade_params = SimpleNamespace(
+        quantity=paper_qty,
+        entry=current_ltp,
+        stop_loss=round(paper_sl, 2),
+        target=round(paper_tp, 2),
+        risk_amount=round((current_ltp - paper_sl) * paper_qty, 2),
+        risk_reward=3.0  # Fixed 1:3 R:R for paper trading
+    )
+    
+    print(f"   📝 PAPER: ₹{PAPER_TRADE_VALUE:,.0f} fixed | Qty: {paper_qty} | Value: ₹{paper_value:,.2f}")
+    
+    # Simulate successful market execution at current LTP
+    paper_fill_price = quote.ltp
+    paper_timestamp = datetime.now().strftime('%H%M%S%f')[:-3]
+    
+    paper_entry_order = KiteOrder(
+        order_id=f"PAPER_{paper_timestamp}",
+        status="SUCCESS",
+        message=f"Paper trade executed at market price ₹{paper_fill_price:.2f}",
+        variety="paper",
+        filled_quantity=paper_trade_params.quantity,
+        average_price=paper_fill_price
+    )
+    
+    paper_position = Position(
+        symbol=symbol,
+        quantity=paper_trade_params.quantity,
+        entry_price=paper_fill_price,
+        entry_order_id=paper_entry_order.order_id,
+        sl_price=paper_trade_params.stop_loss,
+        tp_price=paper_trade_params.target,
+        sl_order_id=f"PAPER_SL_{symbol}_{paper_timestamp}",
+        tp_order_id=f"PAPER_TP_{symbol}_{paper_timestamp}",
+        status="OPEN",
+        paper_trading=True  # Mark as paper trade
+    )
+    
+    # Store paper position
+    paper_clubbed = False
+    if config.get("club_positions", False):
+        paper_clubbed, paper_club_msg, _ = await club_position_with_existing(
             symbol=symbol,
-            quantity=paper_trade_params.quantity,
-            entry_price=fill_price,
-            entry_order_id=entry_order.order_id,
-            sl_price=paper_trade_params.stop_loss,
-            tp_price=paper_trade_params.target,
-            sl_order_id=f"PAPER_SL_{symbol}",
-            tp_order_id=f"PAPER_TP_{symbol}",
-            status="OPEN",
-            paper_trading=True  # Mark as paper trade
+            new_entry_price=paper_fill_price,
+            new_quantity=paper_trade_params.quantity,
+            new_sl=paper_trade_params.stop_loss,
+            new_tp=paper_trade_params.target,
+            new_entry_order_id=paper_position.entry_order_id,
+            new_sl_order_id=paper_position.sl_order_id,
+            new_tp_order_id=paper_position.tp_order_id,
+            is_paper_trading=True,  # Always paper for this track
+            kite=kite
         )
-        
-        # Use paper trade params for the rest of the function
-        trade_params = paper_trade_params
-        
+        if paper_clubbed:
+            print(f"🔄 Paper: {paper_club_msg}")
+    
+    if not paper_clubbed:
+        paper_position.clubbed = True
+        store_position(paper_position)
+    
+    # Log paper trade
+    paper_trade_record = {
+        "id": f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{symbol}_PAPER",
+        "date": datetime.now().isoformat(),
+        "symbol": symbol,
+        "action": action,
+        "entry_price": paper_fill_price,
+        "stop_loss": paper_trade_params.stop_loss,
+        "target": paper_trade_params.target,
+        "quantity": paper_trade_params.quantity,
+        "risk_amount": paper_trade_params.risk_amount,
+        "risk_reward": paper_trade_params.risk_reward,
+        "atr": atr,
+        "order_id": paper_entry_order.order_id,
+        "order_status": "SUCCESS",
+        "sl_order_id": paper_position.sl_order_id,
+        "tp_order_id": paper_position.tp_order_id,
+        "status": "OPEN",
+        "pnl": 0,
+        "paper_trading": True
+    }
+    save_trade(paper_trade_record)
+    
+    # If in paper-only mode, we're done
+    if is_paper_trading:
+        return {
+            "status": "SUCCESS",
+            "symbol": symbol,
+            "order_id": paper_entry_order.order_id,
+            "message": f"Paper trade executed: {paper_qty} shares @ ₹{paper_fill_price:.2f}",
+            "paper_trading": True,
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    # 🔥 LIVE TRADING: Also execute live trade (if not paper-only mode)
+    print(f"🔴 LIVE TRADING: Executing real order for {symbol}")
+    
+    # 🔥 FIX #1: Use MARKET ORDER for immediate bracket execution
+    # entry_price=None forces market order - we want in NOW!
+    entry_order, position = await kite.place_bracket_order(
+        symbol=symbol,
+        transaction_type=transaction_type,
+        quantity=trade_params.quantity,
+        entry_price=None,  # None = Market Order for immediate fill
+        stop_loss=trade_params.stop_loss,
+        target=trade_params.target,
+        use_market_order=True  # Force market order
+    )
+    
+    # Determine final status
+    order_status = "FAILED"
+    trade_status = "FAILED"
+    actual_entry = quote.ltp
+    sl_order_id = None
+    tp_order_id = None
+    
+    if entry_order.status == "SUCCESS" and position:
         order_status = "SUCCESS"
         trade_status = "OPEN"
-        actual_entry = fill_price
+        actual_entry = position.entry_price  # Actual fill price from market
         sl_order_id = position.sl_order_id
         tp_order_id = position.tp_order_id
         
-        # 🔥 Check if clubbing is enabled and position exists
+        print(f"✅ FILLED: {symbol} at ₹{actual_entry:.2f} (qty: {trade_params.quantity})")
+        
+        # 🔥 Check if clubbing is enabled (pass is_paper_trading to prevent mixing)
         clubbed = False
         if config.get("club_positions", False):
             clubbed, club_msg, _ = await club_position_with_existing(
@@ -1942,117 +2699,81 @@ async def process_single_alert(
                 new_entry_order_id=position.entry_order_id,
                 new_sl_order_id=sl_order_id,
                 new_tp_order_id=tp_order_id,
-                is_paper_trading=is_paper_trading,  # Pass mode to prevent mixing
+                is_paper_trading=False,  # This is live trading
                 kite=kite
             )
             if clubbed:
                 print(f"🔄 {club_msg}")
         
         if not clubbed:
-            position.clubbed = True  # Mark as clubbable for future
+            position.clubbed = True
             store_position(position)
-        
-        # PAPER TRADING: Position is logged but NOT auto-closed
-        # In paper mode, you manually track P&L via dashboard
-        
     else:
-        # 🔥 FIX #1: Use MARKET ORDER for immediate bracket execution
-        # entry_price=None forces market order - we want in NOW!
-        entry_order, position = await kite.place_bracket_order(
-            symbol=symbol,
-            transaction_type=transaction_type,
-            quantity=trade_params.quantity,
-            entry_price=None,  # None = Market Order for immediate fill
-            stop_loss=trade_params.stop_loss,
-            target=trade_params.target,
-            use_market_order=True  # Force market order
-        )
-        
-        # Determine final status
-        if entry_order.status == "SUCCESS" and position:
-            order_status = "SUCCESS"
-            trade_status = "OPEN"
-            actual_entry = position.entry_price  # Actual fill price from market
-            sl_order_id = position.sl_order_id
-            tp_order_id = position.tp_order_id
-            
-            print(f"✅ FILLED: {symbol} at ₹{actual_entry:.2f} (qty: {trade_params.quantity})")
-            
-            # 🔥 Check if clubbing is enabled (pass is_paper_trading to prevent mixing)
-            clubbed = False
-            if config.get("club_positions", False):
-                clubbed, club_msg, _ = await club_position_with_existing(
-                    symbol=symbol,
-                    new_entry_price=actual_entry,
-                    new_quantity=trade_params.quantity,
-                    new_sl=trade_params.stop_loss,
-                    new_tp=trade_params.target,
-                    new_entry_order_id=position.entry_order_id,
-                    new_sl_order_id=sl_order_id,
-                    new_tp_order_id=tp_order_id,
-                    is_paper_trading=is_paper_trading,  # Pass mode to prevent mixing
-                    kite=kite
-                )
-                if clubbed:
-                    print(f"🔄 {club_msg}")
-            
-            if not clubbed:
-                position.clubbed = True
-                store_position(position)
-        else:
-            order_status = entry_order.status
-            trade_status = "FAILED"
-            actual_entry = quote.ltp  # Log attempted price
-            sl_order_id = None
-            tp_order_id = None
-            print(f"❌ FAILED: {symbol} - {entry_order.message}")
+        order_status = entry_order.status
+        print(f"❌ FAILED: {symbol} - {entry_order.message}")
     
-    # Log trade with bracket order details
-    trade_record = {
-        "id": f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{symbol}",
-        "date": datetime.now().isoformat(),
-        "symbol": symbol,
-        "action": action,
-        "entry_price": actual_entry,
-        "stop_loss": trade_params.stop_loss,
-        "target": trade_params.target,
-        "quantity": trade_params.quantity,
-        "risk_amount": trade_params.risk_amount,
-        "risk_reward": trade_params.risk_reward,
-        "atr": atr,
-        "order_id": entry_order.order_id,
-        "order_status": order_status,
-        "sl_order_id": sl_order_id,
-        "tp_order_id": tp_order_id,
-        "status": trade_status,
-        "pnl": 0,
-        "alert_name": scan_name,
-        "context": context,
-        "paper_trading": is_paper_trading  # Track if this was a paper trade
-    }
+    # Log LIVE trade with bracket order details
+    if not is_paper_trading:
+        live_trade_record = {
+            "id": f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{symbol}",
+            "date": datetime.now().isoformat(),
+            "symbol": symbol,
+            "action": action,
+            "entry_price": actual_entry,
+            "stop_loss": trade_params.stop_loss,
+            "target": trade_params.target,
+            "quantity": trade_params.quantity,
+            "risk_amount": trade_params.risk_amount,
+            "risk_reward": trade_params.risk_reward,
+            "atr": atr,
+            "order_id": entry_order.order_id,
+            "order_status": order_status,
+            "sl_order_id": sl_order_id,
+            "tp_order_id": tp_order_id,
+            "status": trade_status,
+            "pnl": 0,
+            "alert_name": scan_name,
+            "context": context,
+            "paper_trading": False  # This is a live trade
+        }
+        save_trade(live_trade_record)
+        store_alert_for_esp(symbol, actual_entry)
     
-    # Save trade record
-    save_trade(trade_record)
-    
-    # Store alert for ESP display
-    store_alert_for_esp(symbol, actual_entry)
-    
+    # Send notifications for successful trades
     if order_status == "SUCCESS":
-        # Send detailed Telegram notification with bracket info
-        emoji = "🟢"
-        scan_info = ""
-        if context.get('scan_url'):
-            scan_info = f"\n🔗 [View Scan](https://chartink.com/screener/{context['scan_url']})"
-        
-        sl_status = "✅" if sl_order_id else "❌"
-        tp_status = "✅" if tp_order_id else "❌"
-        paper_tag = "📝 PAPER | " if is_paper_trading else ""
-        
         # Calculate latency for message
         latency_ms = (datetime.now() - start_time).total_seconds() * 1000
         
-        msg = f"""
-{emoji} {paper_tag}*Market Order Executed*
+        # Telegram notification (both paper and live)
+        try:
+            emoji = "🟢"
+            scan_info = ""
+            if context.get('scan_url'):
+                scan_info = f"\n🔗 [View Scan](https://chartink.com/screener/{context['scan_url']})"
+            
+            sl_status = "✅" if sl_order_id else "❌"
+            tp_status = "✅" if tp_order_id else "❌"
+            
+            if is_paper_trading:
+                # Paper-only notification
+                msg = f"""
+{emoji} 📝 PAPER | *Market Order Executed*
+
+*Symbol:* {symbol}
+*Scan:* {scan_name}
+*Entry (Market):* ₹{paper_fill_price:.2f}
+*SL:* ₹{paper_trade_params.stop_loss:.2f}
+*Target:* ₹{paper_trade_params.target:.2f}
+*Qty:* {paper_trade_params.quantity}{scan_info}
+
+*Order ID:* `{paper_entry_order.order_id}`
+
+⏱️ Latency: {latency_ms:.0f}ms
+"""
+            else:
+                # Live trade notification
+                msg = f"""
+{emoji} 🔴 LIVE | *Market Order Executed*
 
 *Symbol:* {symbol}
 *Scan:* {scan_name}
@@ -2068,10 +2789,8 @@ async def process_single_alert(
 
 ⏱️ Latency: {latency_ms:.0f}ms
 """
-        # Handle Telegram notification with proper error handling
-        try:
+            
             telegram_task = asyncio.create_task(send_telegram_message(msg))
-            # Don't await - let it run in background, but add done callback for error logging
             def on_telegram_done(task):
                 try:
                     task.result()
@@ -2080,6 +2799,26 @@ async def process_single_alert(
             telegram_task.add_done_callback(on_telegram_done)
         except Exception as e:
             print(f"Failed to create Telegram task: {e}")
+        
+        # WhatsApp notification (live trades only)
+        if not is_paper_trading:
+            try:
+                whatsapp_task = asyncio.create_task(notify_trade_entry(
+                    symbol=symbol,
+                    qty=trade_params.quantity,
+                    entry_price=actual_entry,
+                    sl_price=trade_params.stop_loss,
+                    tp_price=trade_params.target,
+                    is_paper=False
+                ))
+                def on_whatsapp_done(task):
+                    try:
+                        task.result()
+                    except Exception as e:
+                        print(f"WhatsApp notification failed: {e}")
+                whatsapp_task.add_done_callback(on_whatsapp_done)
+            except Exception as e:
+                print(f"Failed to create WhatsApp task: {e}")
     
     # Calculate total latency
     total_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -2087,18 +2826,10 @@ async def process_single_alert(
     return {
         "status": order_status,
         "symbol": symbol,
-        "order_id": entry_order.order_id if entry_order else "",
-        "message": entry_order.message if entry_order else "Failed",
-        "sl_order_id": sl_order_id,
-        "tp_order_id": tp_order_id,
-        "trade_params": {
-            "entry": trade_params.entry,
-            "stop_loss": trade_params.stop_loss,
-            "target": trade_params.target,
-            "quantity": trade_params.quantity,
-            "risk_reward": trade_params.risk_reward,
-            "risk_amount": trade_params.risk_amount
-        },
+        "paper_order_id": paper_entry_order.order_id,
+        "live_order_id": entry_order.order_id if not is_paper_trading else None,
+        "message": "Paper + Live trade executed" if (not is_paper_trading and order_status == "SUCCESS") else (entry_order.message if is_paper_trading else entry_order.message),
+        "paper_trading": is_paper_trading,
         "latency_ms": round(total_ms, 2),
         "timestamp": datetime.now().isoformat()
     }
@@ -2712,6 +3443,14 @@ async def get_config():
         config["kite"]["access_token"] = "***" if config["kite"].get("access_token") else ""
     if "telegram" in config:
         config["telegram"]["bot_token"] = "***" if config["telegram"].get("bot_token") else ""
+    if "whatsapp" in config:
+        config["whatsapp"]["api_key"] = "***" if config["whatsapp"].get("api_key") else ""
+    if "analysis_engine" in config:
+        # Mask AI API keys but keep rest of config visible
+        if config["analysis_engine"].get("openai_api_key"):
+            config["analysis_engine"]["openai_api_key"] = "***"
+        if config["analysis_engine"].get("claude_api_key"):
+            config["analysis_engine"]["claude_api_key"] = "***"
     return config
 
 
@@ -2884,6 +3623,10 @@ async def update_config(update: ConfigUpdate):
         config["trading_hours"] = update.trading_hours
     if update.telegram is not None:
         config["telegram"] = update.telegram
+    if update.whatsapp is not None:
+        config["whatsapp"] = update.whatsapp
+    if update.analysis_engine is not None:
+        config["analysis_engine"] = update.analysis_engine
     if update.chartink is not None:
         config["chartink"] = update.chartink
     if update.risk_management is not None:
@@ -3079,7 +3822,7 @@ async def close_position_api(position_id: str):
             pnl = (exit_price - entry_price) * qty
             
             # Close position in our records
-            close_position_by_id(position_id, exit_price, pnl, "MANUAL")
+            await close_position_by_id(position_id, exit_price, pnl, "MANUAL")
             
             # Send notification
             await send_telegram_message(
@@ -3289,7 +4032,7 @@ async def force_close_position_api(position_id: str, exit_price: Optional[float]
         print(f"Warning: Could not delete TP GTT: {e}")
     
     # Force close the position
-    success = force_close_position(position_id, exit_price, reason="MANUAL_FORCE_CLOSE")
+    success = await force_close_position(position_id, exit_price, reason="MANUAL_FORCE_CLOSE")
     
     if success:
         entry_price = position.get("entry_price", 0)
@@ -3318,6 +4061,36 @@ async def test_telegram():
     """Send a test Telegram message."""
     await send_telegram_message("🧪 *Test Message*\n\nTrading bot is working correctly!")
     return {"status": "sent"}
+
+@app.post("/api/test-whatsapp")
+async def test_whatsapp():
+    """Send a test WhatsApp message via Wasender API."""
+    config = load_config()
+    whatsapp = config.get("whatsapp", {})
+    
+    message = """🧪 *Test Message*
+
+Trading bot WhatsApp integration is working!
+
+This is a test notification."""
+    
+    success = await send_whatsapp_message(message)
+    
+    result = {
+        "message_sent": success,
+        "config": {
+            "base_url": WASENDER_BASE_URL,
+            "recipient": whatsapp.get("recipient", ""),
+            "enabled": whatsapp.get("enabled", False),
+            "api_key_configured": bool(whatsapp.get("api_key"))
+        }
+    }
+    
+    if success:
+        return {"status": "success", "details": result}
+    else:
+        return {"status": "error", "message": "Failed to send WhatsApp message", "details": result}
+
 
 @app.get("/api/gtt-orders")
 async def get_gtt_orders():
@@ -3488,38 +4261,338 @@ async def esp_setup_page():
 
 @app.post("/api/reset-daily")
 async def reset_daily():
-    """Manually trigger daily reset (clears today's trades)."""
+    """
+    Reset dashboard for next trading day.
+    - Clears open positions (archives to insights)
+    - Resets daily counters
+    - PRESERVES all historical trade data and insights
+    """
     try:
-        # Get all trades
-        trades = load_all_trades()
-        
-        # Keep only trades before today 8 AM
         now = datetime.now()
+        
+        # 1. Archive any remaining open positions to insights before clearing
+        positions = load_positions()
+        closed_count = 0
+        for pos_id, pos in list(positions.items()):
+            if pos.get("status") == "OPEN":
+                # Mark as force-closed at current price
+                entry = pos.get("entry_price", 0)
+                qty = pos.get("quantity", 0)
+                # Simulate exit at entry price (breakeven) for daily reset
+                pnl = 0
+                
+                # Update insights
+                try:
+                    trade_record = {
+                        "symbol": pos.get("symbol"),
+                        "pnl": pnl,
+                        "paper_trading": pos.get("paper_trading", False),
+                        "date": now.isoformat(),
+                        "exit_reason": "DAILY_RESET"
+                    }
+                    update_trade_insights(trade_record)
+                except Exception as e:
+                    print(f"Failed to update insights during reset: {e}")
+                
+                closed_count += 1
+        
+        # 2. Clear positions file (but keep archived in trades)
+        with open(POSITIONS_FILE, "w") as f:
+            json.dump({}, f, indent=2)
+        
+        # 3. Reset today's trades file but keep historical
+        trades = load_all_trades()
         today_reset = datetime.strptime(f"{now.strftime('%Y-%m-%d')} 08:00:00", "%Y-%m-%d %H:%M:%S")
         
         if now < today_reset:
-            # Before 8 AM, keep trades before yesterday 8 AM
             yesterday = (now - timedelta(days=1)).strftime("%Y-%m-%d")
             yesterday_reset = datetime.strptime(f"{yesterday} 08:00:00", "%Y-%m-%d %H:%M:%S")
             filtered_trades = [t for t in trades if t.get("date") and 
                              datetime.fromisoformat(t.get("date")) < yesterday_reset]
         else:
-            # After 8 AM, keep trades before today 8 AM
             filtered_trades = [t for t in trades if t.get("date") and 
                              datetime.fromisoformat(t.get("date")) < today_reset]
         
-        # Save filtered trades
         with open(TRADES_FILE, "w") as f:
             json.dump(filtered_trades, f, indent=2)
         
+        # 4. Add daily stats to insights
+        insights = load_insights()
+        today_str = now.strftime("%Y-%m-%d")
+        
+        # Calculate today's stats
+        today_trades = [t for t in trades if t.get("date") and 
+                       datetime.fromisoformat(t.get("date")).strftime("%Y-%m-%d") == today_str]
+        
+        paper_pnl = sum(t.get("pnl", 0) for t in today_trades if t.get("paper_trading"))
+        live_pnl = sum(t.get("pnl", 0) for t in today_trades if not t.get("paper_trading"))
+        
+        if "daily_stats" not in insights:
+            insights["daily_stats"] = {}
+        
+        insights["daily_stats"][today_str] = {
+            "trades": len(today_trades),
+            "paper_pnl": round(paper_pnl, 2),
+            "live_pnl": round(live_pnl, 2),
+            "reset_time": now.isoformat()
+        }
+        save_insights(insights)
+        
         return {
             "status": "reset",
-            "message": f"Cleared {len(trades) - len(filtered_trades)} trades",
-            "remaining_trades": len(filtered_trades),
-            "reset_time": today_reset.isoformat()
+            "message": f"Day reset complete. Archived {closed_count} positions.",
+            "details": {
+                "closed_positions": closed_count,
+                "trades_cleared": len(trades) - len(filtered_trades),
+                "trades_preserved": len(filtered_trades),
+                "today_paper_pnl": round(paper_pnl, 2),
+                "today_live_pnl": round(live_pnl, 2),
+                "insights_preserved": True
+            },
+            "reset_time": now.isoformat()
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/insights")
+async def get_insights():
+    """Get trade insights and learning data."""
+    insights = load_insights()
+    recommendations = get_learning_recommendations()
+    
+    return {
+        "status": "success",
+        "symbols": insights.get("symbols", {}),
+        "daily_stats": insights.get("daily_stats", {}),
+        "recommendations": recommendations,
+        "last_updated": insights.get("last_updated")
+    }
+
+
+@app.get("/api/insights/{symbol}")
+async def get_symbol_insights_api(symbol: str):
+    """Get insights for a specific symbol."""
+    insights = get_symbol_insights(symbol.upper())
+    if not insights:
+        raise HTTPException(status_code=404, detail=f"No insights found for {symbol}")
+    return {
+        "status": "success",
+        "symbol": symbol.upper(),
+        "insights": insights
+    }
+
+
+@app.get("/api/strategy/analytics")
+async def get_strategy_analytics():
+    """Get comprehensive strategy analytics for optimization."""
+    optimizer = StrategyOptimizer()
+    
+    return {
+        "status": "success",
+        "time_performance": optimizer.analyze_time_performance(),
+        "risk_reward_analysis": optimizer.analyze_risk_reward_performance(),
+        "atr_analysis": optimizer.analyze_atr_multiplier_performance(),
+        "position_sizing_analysis": optimizer.analyze_position_sizing(),
+        "recommendations": optimizer.generate_strategy_recommendations(),
+        "total_trades_analyzed": len(optimizer.all_trades),
+        "generated_at": datetime.now().isoformat()
+    }
+
+
+@app.post("/api/strategy/apply")
+async def apply_strategy_recommendation(recommendation_idx: int):
+    """Apply a strategy recommendation to config."""
+    optimizer = StrategyOptimizer()
+    recommendations = optimizer.generate_strategy_recommendations()
+    
+    if recommendation_idx < 0 or recommendation_idx >= len(recommendations):
+        raise HTTPException(status_code=400, detail="Invalid recommendation index")
+    
+    rec = recommendations[recommendation_idx]
+    config = load_config()
+    
+    if not rec.get("actionable") or not rec.get("suggested_config"):
+        raise HTTPException(status_code=400, detail="Recommendation is not actionable")
+    
+    # Apply suggested config
+    suggested = rec["suggested_config"]
+    
+    # Track strategy changes
+    if "strategy_history" not in config:
+        config["strategy_history"] = []
+    
+    config["strategy_history"].append({
+        "date": datetime.now().isoformat(),
+        "reason": rec["title"],
+        "type": rec["type"],
+        "previous_values": {},
+        "new_values": suggested
+    })
+    
+    # Apply changes
+    if "risk_percent" in suggested:
+        config["risk_percent"] = suggested["risk_percent"]
+    if "trading_hours" in suggested:
+        config["trading_hours"] = suggested["trading_hours"]
+    if "min_risk_reward" in suggested:
+        if "risk_management" not in config:
+            config["risk_management"] = {}
+        config["risk_management"]["min_risk_reward"] = suggested["min_risk_reward"]
+    if "atr_multiplier_sl" in suggested:
+        if "risk_management" not in config:
+            config["risk_management"] = {}
+        config["risk_management"]["atr_multiplier_sl"] = suggested["atr_multiplier_sl"]
+    if "slippage_tolerance" in suggested:
+        if "signal_validation" not in config:
+            config["signal_validation"] = {}
+        config["signal_validation"]["max_slippage_percent"] = suggested["slippage_tolerance"]
+    
+    save_config(config)
+    
+    return {
+        "status": "success",
+        "message": f"Applied: {rec['title']}",
+        "changes": suggested,
+        "recommendation": rec
+    }
+
+
+@app.post("/api/strategy/custom")
+async def apply_custom_strategy(settings: Dict[str, Any]):
+    """Apply custom strategy settings."""
+    config = load_config()
+    
+    # Validate and apply settings
+    changes = []
+    
+    if "risk_percent" in settings:
+        new_risk = float(settings["risk_percent"])
+        if 0.1 <= new_risk <= 5.0:
+            old_risk = config.get("risk_percent", 1.0)
+            config["risk_percent"] = new_risk
+            changes.append(f"Risk percent: {old_risk}% → {new_risk}%")
+    
+    if "min_risk_reward" in settings:
+        new_rr = float(settings["min_risk_reward"])
+        if 1.0 <= new_rr <= 5.0:
+            if "risk_management" not in config:
+                config["risk_management"] = {}
+            old_rr = config["risk_management"].get("min_risk_reward", 2.0)
+            config["risk_management"]["min_risk_reward"] = new_rr
+            changes.append(f"Min R:R: {old_rr} → {new_rr}")
+    
+    if "atr_multiplier_sl" in settings:
+        new_sl = float(settings["atr_multiplier_sl"])
+        if 0.5 <= new_sl <= 3.0:
+            if "risk_management" not in config:
+                config["risk_management"] = {}
+            old_sl = config["risk_management"].get("atr_multiplier_sl", 1.5)
+            config["risk_management"]["atr_multiplier_sl"] = new_sl
+            changes.append(f"SL ATR Multiplier: {old_sl}x → {new_sl}x")
+    
+    if "atr_multiplier_tp" in settings:
+        new_tp = float(settings["atr_multiplier_tp"])
+        if 1.0 <= new_tp <= 5.0:
+            if "risk_management" not in config:
+                config["risk_management"] = {}
+            old_tp = config["risk_management"].get("atr_multiplier_tp", 3.0)
+            config["risk_management"]["atr_multiplier_tp"] = new_tp
+            changes.append(f"TP ATR Multiplier: {old_tp}x → {new_tp}x")
+    
+    if "max_slippage_percent" in settings:
+        new_slip = float(settings["max_slippage_percent"])
+        if 0.1 <= new_slip <= 2.0:
+            if "signal_validation" not in config:
+                config["signal_validation"] = {}
+            old_slip = config["signal_validation"].get("max_slippage_percent", 0.5)
+            config["signal_validation"]["max_slippage_percent"] = new_slip
+            changes.append(f"Max Slippage: {old_slip}% → {new_slip}%")
+    
+    if "trading_hours" in settings:
+        config["trading_hours"] = settings["trading_hours"]
+        changes.append(f"Trading hours updated")
+    
+    # Track strategy change
+    if changes:
+        if "strategy_history" not in config:
+            config["strategy_history"] = []
+        config["strategy_history"].append({
+            "date": datetime.now().isoformat(),
+            "reason": "Manual strategy adjustment",
+            "type": "custom",
+            "changes": changes
+        })
+        save_config(config)
+    
+    return {
+        "status": "success",
+        "changes": changes,
+        "message": f"Applied {len(changes)} strategy changes"
+    }
+
+
+@app.get("/api/strategy/history")
+async def get_strategy_history():
+    """Get history of strategy changes."""
+    config = load_config()
+    history = config.get("strategy_history", [])
+    
+    return {
+        "status": "success",
+        "history": history[-20:],  # Last 20 changes
+        "total_changes": len(history),
+        "current_config": {
+            "risk_percent": config.get("risk_percent", 1.0),
+            "risk_management": config.get("risk_management", {}),
+            "trading_hours": config.get("trading_hours", {}),
+            "signal_validation": config.get("signal_validation", {})
+        }
+    }
+
+
+@app.post("/api/strategy/reset")
+async def reset_strategy():
+    """Reset strategy to defaults while keeping insights."""
+    config = load_config()
+    
+    # Store old config in history
+    old_config = {
+        "risk_percent": config.get("risk_percent"),
+        "risk_management": config.get("risk_management", {}).copy(),
+    }
+    
+    # Reset to defaults
+    config["risk_percent"] = 1.0
+    config["risk_management"] = {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+    }
+    config["trading_hours"] = {"start": "09:15", "end": "15:30"}
+    config["signal_validation"] = {
+        "enabled": True,
+        "max_slippage_percent": 0.5
+    }
+    
+    if "strategy_history" not in config:
+        config["strategy_history"] = []
+    config["strategy_history"].append({
+        "date": datetime.now().isoformat(),
+        "reason": "Strategy reset to defaults",
+        "type": "reset",
+        "previous_config": old_config
+    })
+    
+    save_config(config)
+    
+    return {
+        "status": "success",
+        "message": "Strategy reset to default values",
+        "new_config": config["risk_management"]
+    }
+
 
 # ============================================================================
 # ESP8266 Hardware Display Endpoints

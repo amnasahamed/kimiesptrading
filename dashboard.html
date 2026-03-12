@@ -363,6 +363,12 @@
                     <span class="font-medium">Analytics</span>
                 </button>
                 
+                <button onclick="switchTab('learning')" id="nav-learning" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-dark-700 hover:text-gray-200 transition-all">
+                    <i class="fas fa-graduation-cap w-5"></i>
+                    <span class="font-medium">Learning</span>
+                    <span id="learning-badge" class="ml-auto px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full hidden">0</span>
+                </button>
+                
                 <button onclick="switchTab('alerts')" id="nav-alerts" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-dark-700 hover:text-gray-200 transition-all">
                     <i class="fas fa-bell w-5"></i>
                     <span class="font-medium">Incoming Alerts</span>
@@ -1160,6 +1166,225 @@
                     </div>
                 </div>
 
+                <!-- Learning Tab -->
+                <div id="tab-learning" class="tab-content hidden space-y-6">
+                    <!-- Strategy Optimization Header -->
+                    <div class="glass rounded-2xl p-6 border border-primary-500/20">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 class="text-2xl font-bold flex items-center gap-2">
+                                    <i class="fas fa-microscope text-primary-400"></i>
+                                    Strategy Optimizer
+                                </h2>
+                                <p class="text-gray-400 mt-1">AI-powered analysis to improve your trading performance</p>
+                            </div>
+                            <button onclick="loadStrategyAnalytics()" class="px-4 py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 border border-primary-500/30 rounded-lg transition-colors">
+                                <i class="fas fa-sync-alt mr-2"></i>Analyze Strategy
+                            </button>
+                        </div>
+                        
+                        <!-- Analytics Summary Cards -->
+                        <div id="strategy-summary" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-dark-800/50 rounded-lg p-4 text-center">
+                                <div class="text-2xl font-bold text-primary-400" id="analytics-total-trades">-</div>
+                                <div class="text-xs text-gray-500">Trades Analyzed</div>
+                            </div>
+                            <div class="bg-dark-800/50 rounded-lg p-4 text-center">
+                                <div class="text-2xl font-bold text-green-400" id="analytics-best-hour">-</div>
+                                <div class="text-xs text-gray-500">Best Hour</div>
+                            </div>
+                            <div class="bg-dark-800/50 rounded-lg p-4 text-center">
+                                <div class="text-2xl font-bold text-blue-400" id="analytics-optimal-rr">-</div>
+                                <div class="text-xs text-gray-500">Optimal R:R</div>
+                            </div>
+                            <div class="bg-dark-800/50 rounded-lg p-4 text-center">
+                                <div class="text-2xl font-bold text-purple-400" id="analytics-optimal-risk">-</div>
+                                <div class="text-xs text-gray-500">Optimal Risk</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Strategy Recommendations -->
+                    <div class="glass rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-xl flex items-center gap-2">
+                                <i class="fas fa-magic text-yellow-400"></i>
+                                AI Recommendations
+                            </h3>
+                            <span id="strategy-rec-count" class="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-sm rounded-full hidden">0 suggestions</span>
+                        </div>
+                        <div id="strategy-recommendations" class="space-y-3">
+                            <div class="text-center text-gray-500 py-8">
+                                <i class="fas fa-robot text-4xl mb-3"></i>
+                                <p>Click "Analyze Strategy" to generate recommendations</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Strategy Editor -->
+                    <div class="glass rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-xl flex items-center gap-2">
+                                <i class="fas fa-sliders-h text-green-400"></i>
+                                Strategy Editor
+                            </h3>
+                            <div class="flex gap-2">
+                                <button onclick="loadStrategyHistory()" class="text-sm text-gray-400 hover:text-white px-3 py-1 rounded-lg bg-dark-700">
+                                    <i class="fas fa-history mr-1"></i>History
+                                </button>
+                                <button onclick="resetStrategy()" class="text-sm text-red-400 hover:text-red-300 px-3 py-1 rounded-lg bg-red-500/10 border border-red-500/20">
+                                    <i class="fas fa-undo mr-1"></i>Reset to Default
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Risk Settings -->
+                            <div class="space-y-4">
+                                <h4 class="font-medium text-gray-300 flex items-center gap-2">
+                                    <i class="fas fa-shield-alt text-red-400"></i>
+                                    Risk Management
+                                </h4>
+                                
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Risk Per Trade (%)</label>
+                                    <input type="range" id="strategy-risk-percent" min="0.1" max="3" step="0.1" value="1" 
+                                           class="w-full accent-primary-500" oninput="updateStrategyPreview()">
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>0.1%</span>
+                                        <span id="strategy-risk-value" class="text-primary-400 font-bold">1.0%</span>
+                                        <span>3%</span>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Min Risk:Reward</label>
+                                    <select id="strategy-min-rr" class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-primary-500 focus:outline-none" onchange="updateStrategyPreview()">
+                                        <option value="1.5">1:1.5</option>
+                                        <option value="2.0" selected>1:2</option>
+                                        <option value="2.5">1:2.5</option>
+                                        <option value="3.0">1:3</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- ATR Settings -->
+                            <div class="space-y-4">
+                                <h4 class="font-medium text-gray-300 flex items-center gap-2">
+                                    <i class="fas fa-ruler text-blue-400"></i>
+                                    ATR Multipliers
+                                </h4>
+                                
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Stop Loss (x ATR)</label>
+                                    <select id="strategy-atr-sl" class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-primary-500 focus:outline-none" onchange="updateStrategyPreview()">
+                                        <option value="1.0">1.0x (Tight)</option>
+                                        <option value="1.5" selected>1.5x (Default)</option>
+                                        <option value="2.0">2.0x (Wide)</option>
+                                        <option value="2.5">2.5x (Very Wide)</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Take Profit (x ATR)</label>
+                                    <select id="strategy-atr-tp" class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-primary-500 focus:outline-none" onchange="updateStrategyPreview()">
+                                        <option value="2.0">2.0x</option>
+                                        <option value="2.5">2.5x</option>
+                                        <option value="3.0" selected>3.0x (Default)</option>
+                                        <option value="4.0">4.0x</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview & Apply -->
+                        <div class="mt-6 pt-4 border-t border-dark-600">
+                            <div class="bg-dark-800/50 rounded-lg p-4 mb-4">
+                                <h5 class="text-sm font-medium text-gray-400 mb-2">Strategy Preview</h5>
+                                <div id="strategy-preview" class="text-sm text-gray-300 space-y-1">
+                                    <div>• Risk per trade: <span class="text-primary-400">1%</span> of capital</div>
+                                    <div>• Minimum R:R: <span class="text-primary-400">1:2</span></div>
+                                    <div>• Stop Loss: <span class="text-red-400">1.5x ATR</span></div>
+                                    <div>• Take Profit: <span class="text-green-400">3.0x ATR</span></div>
+                                </div>
+                            </div>
+                            <button onclick="applyCustomStrategy()" class="w-full bg-primary-500 hover:bg-primary-600 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                                <i class="fas fa-save"></i>
+                                Apply Strategy Changes
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Trade Insights -->
+                        <div class="glass rounded-2xl p-6 space-y-6">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-xl flex items-center gap-2">
+                                    <i class="fas fa-brain text-purple-400"></i>
+                                    Symbol Performance
+                                </h3>
+                                <button onclick="loadInsights()" class="text-sm text-primary-400 hover:text-primary-300">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                            
+                            <div id="insights-symbols" class="space-y-3">
+                                <div class="text-center text-gray-500 py-8">
+                                    <i class="fas fa-chart-line text-3xl mb-2"></i>
+                                    <p>No insights yet. Start trading to build data.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Learning Recommendations -->
+                        <div class="glass rounded-2xl p-6 space-y-6">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-xl flex items-center gap-2">
+                                    <i class="fas fa-lightbulb text-yellow-400"></i>
+                                    Basic Recommendations
+                                </h3>
+                                <span id="rec-badge" class="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full hidden">0</span>
+                            </div>
+                            
+                            <div id="insights-recommendations" class="space-y-3">
+                                <div class="text-center text-gray-500 py-8">
+                                    <i class="fas fa-clipboard-list text-3xl mb-2"></i>
+                                    <p>No recommendations yet. Need more trade data.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Daily Performance -->
+                        <div class="glass rounded-2xl p-6 space-y-6 lg:col-span-2">
+                            <h3 class="font-semibold text-xl flex items-center gap-2">
+                                <i class="fas fa-calendar-day text-blue-400"></i>
+                                Daily Performance History
+                            </h3>
+                            
+                            <div id="insights-daily" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="text-center text-gray-500 py-4">
+                                    No daily data recorded yet.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Strategy Change History Modal -->
+                    <div id="strategy-history-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+                        <div class="glass rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-auto">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-xl font-semibold">Strategy Change History</h3>
+                                <button onclick="closeStrategyHistory()" class="text-gray-400 hover:text-white">
+                                    <i class="fas fa-times text-xl"></i>
+                                </button>
+                            </div>
+                            <div id="strategy-history-content" class="space-y-3">
+                                <!-- Dynamic content -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Config Tab -->
                 <div id="tab-config" class="tab-content hidden space-y-6">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1171,9 +1396,14 @@
                                     <i class="fas fa-key text-primary-400"></i>
                                     Kite Authentication
                                 </h3>
-                                <span id="kite-status-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-400">
-                                    Not Connected
-                                </span>
+                                <div class="flex gap-2">
+                                    <span id="kite-status-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-400">
+                                        Not Connected
+                                    </span>
+                                    <span id="whatsapp-status-badge" class="px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400" title="WhatsApp notifications enabled for live trades">
+                                        WhatsApp ✓
+                                    </span>
+                                </div>
                             </div>
                             
                             <!-- Step 1: Login -->
@@ -1358,6 +1588,220 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                                
+                                <!-- Notification Settings -->
+                                <div class="bg-dark-800/50 rounded-xl p-4 border border-dark-600">
+                                    <h4 class="font-medium flex items-center gap-2 mb-4">
+                                        <i class="fas fa-bell text-green-400"></i>
+                                        Notification Settings
+                                    </h4>
+                                    
+                                    <!-- Telegram -->
+                                    <div class="space-y-3 mb-4 pb-4 border-b border-dark-600">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fab fa-telegram text-blue-400"></i>
+                                                <span class="font-medium">Telegram Notifications</span>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="telegram-enabled" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-dark-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                                            </label>
+                                        </div>
+                                        <div id="telegram-config" class="space-y-3">
+                                            <div>
+                                                <label class="block text-xs text-gray-500 mb-1">Bot Token</label>
+                                                <input type="password" id="telegram-bot-token" 
+                                                       class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors font-mono text-sm"
+                                                       placeholder="123456789:ABCdefGHIjklMNOpqrSTUvwxyz">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs text-gray-500 mb-1">Chat ID</label>
+                                                <input type="text" id="telegram-chat-id" 
+                                                       class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors font-mono text-sm"
+                                                       placeholder="123456789">
+                                            </div>
+                                            <button onclick="testTelegram()" 
+                                                    class="text-sm bg-dark-700 hover:bg-dark-600 text-blue-400 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2">
+                                                <i class="fas fa-paper-plane"></i>
+                                                Send Test Message
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- WhatsApp -->
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fab fa-whatsapp text-green-400"></i>
+                                                <span class="font-medium">WhatsApp Notifications</span>
+                                                <span class="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">Live Only</span>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="whatsapp-enabled" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-dark-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                            </label>
+                                        </div>
+                                        <div id="whatsapp-config" class="space-y-3">
+                                            <div>
+                                                <label class="block text-xs text-gray-500 mb-1">API Key (WasenderAPI)</label>
+                                                <input type="password" id="whatsapp-api-key" 
+                                                       class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-green-500 focus:outline-none transition-colors font-mono text-sm"
+                                                       placeholder="your-api-key-from-wasenderapi">
+                                                <p class="text-xs text-gray-500 mt-1">Get from <a href="https://wasenderapi.com" target="_blank" class="text-green-400 hover:underline">wasenderapi.com</a></p>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs text-gray-500 mb-1">Recipient Number (with country code)</label>
+                                                <input type="text" id="whatsapp-recipient" 
+                                                       class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-green-500 focus:outline-none transition-colors font-mono text-sm"
+                                                       placeholder="919745010715">
+                                            </div>
+                                            <button onclick="testWhatsApp()" 
+                                                    class="text-sm bg-dark-700 hover:bg-dark-600 text-green-400 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2">
+                                                <i class="fab fa-whatsapp"></i>
+                                                Send Test Message
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Analysis Engine Settings -->
+                                <div class="bg-dark-800/50 rounded-xl p-4 border border-purple-500/30">
+                                    <h4 class="font-medium flex items-center gap-2 mb-4">
+                                        <i class="fas fa-microscope text-purple-400"></i>
+                                        Analysis Engine Configuration
+                                    </h4>
+                                    
+                                    <!-- Enable/Disable -->
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div>
+                                            <div class="text-sm font-medium">Enable Analysis</div>
+                                            <div class="text-xs text-gray-500">Generate insights from trade data</div>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="analysis-enabled" class="sr-only peer" onchange="toggleAnalysisConfig()">
+                                            <div class="w-11 h-6 bg-dark-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div id="analysis-config" class="space-y-4">
+                                        <!-- Engine Type -->
+                                        <div>
+                                            <label class="block text-xs text-gray-500 mb-1">Analysis Engine</label>
+                                            <select id="analysis-engine-type" class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-purple-500 focus:outline-none" onchange="toggleAIConfig()">
+                                                <option value="local">Local Rule-Based (Free)</option>
+                                                <option value="openai">OpenAI GPT</option>
+                                                <option value="claude">Claude (Anthropic)</option>
+                                            </select>
+                                            <p class="text-xs text-gray-500 mt-1" id="engine-description">
+                                                Uses built-in algorithms to analyze your trades
+                                            </p>
+                                        </div>
+                                        
+                                        <!-- OpenAI API Key -->
+                                        <div id="openai-config" class="hidden space-y-3">
+                                            <div>
+                                                <label class="block text-xs text-gray-500 mb-1">OpenAI API Key</label>
+                                                <input type="password" id="openai-api-key" 
+                                                       class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-purple-500 focus:outline-none font-mono text-sm"
+                                                       placeholder="sk-...">
+                                                <p class="text-xs text-gray-500 mt-1">Your API key is stored securely and never shared</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Claude API Key -->
+                                        <div id="claude-config" class="hidden space-y-3">
+                                            <div>
+                                                <label class="block text-xs text-gray-500 mb-1">Claude API Key</label>
+                                                <input type="password" id="claude-api-key" 
+                                                       class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-purple-500 focus:outline-none font-mono text-sm"
+                                                       placeholder="sk-ant-...">
+                                                <p class="text-xs text-gray-500 mt-1">Your API key is stored securely and never shared</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Thresholds -->
+                                        <div class="border-t border-dark-600 pt-3">
+                                            <h5 class="text-sm font-medium text-gray-300 mb-3">Recommendation Thresholds</h5>
+                                            
+                                            <div class="space-y-3">
+                                                <div>
+                                                    <label class="block text-xs text-gray-500 mb-1">
+                                                        Min Trades for Recommendation: 
+                                                        <span id="min-trades-value" class="text-purple-400">5</span>
+                                                    </label>
+                                                    <input type="range" id="analysis-min-trades" min="3" max="20" value="5" 
+                                                           class="w-full accent-purple-500" oninput="document.getElementById('min-trades-value').textContent = this.value">
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-xs text-gray-500 mb-1">
+                                                        Execution Gap Threshold: 
+                                                        <span id="gap-threshold-value" class="text-purple-400">20</span>%
+                                                    </label>
+                                                    <input type="range" id="analysis-gap-threshold" min="10" max="50" value="20" 
+                                                           class="w-full accent-purple-500" oninput="document.getElementById('gap-threshold-value').textContent = this.value">
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-xs text-gray-500 mb-1">
+                                                        Min Win Rate for "Good": 
+                                                        <span id="win-rate-value" class="text-purple-400">60</span>%
+                                                    </label>
+                                                    <input type="range" id="analysis-win-rate" min="50" max="80" value="60" 
+                                                           class="w-full accent-purple-500" oninput="document.getElementById('win-rate-value').textContent = this.value">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Metrics to Analyze -->
+                                        <div class="border-t border-dark-600 pt-3">
+                                            <h5 class="text-sm font-medium text-gray-300 mb-3">Metrics to Analyze</h5>
+                                            
+                                            <div class="space-y-2">
+                                                <label class="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" id="metric-time" checked class="accent-purple-500">
+                                                    <span class="text-sm">Time Performance</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" id="metric-risk-reward" checked class="accent-purple-500">
+                                                    <span class="text-sm">Risk/Reward Ratios</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" id="metric-atr" checked class="accent-purple-500">
+                                                    <span class="text-sm">ATR Multipliers</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" id="metric-sizing" checked class="accent-purple-500">
+                                                    <span class="text-sm">Position Sizing</span>
+                                                </label>
+                                                <label class="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" id="metric-execution" checked class="accent-purple-500">
+                                                    <span class="text-sm">Execution Gaps</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Daily Reset Button -->
+                                <div class="bg-dark-800/50 rounded-xl p-4 border border-yellow-500/30">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-sun text-yellow-400"></i>
+                                            <span class="font-medium">Daily Reset</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-400 mb-3">
+                                        Reset dashboard for next trading day. Archives positions to insights. 
+                                        <strong>Does NOT delete historical data.</strong>
+                                    </p>
+                                    <button onclick="resetDaily()" 
+                                            class="w-full bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/30 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                                        <i class="fas fa-redo"></i>
+                                        Reset for Next Trading Day
+                                    </button>
                                 </div>
                                 
                                 <div class="flex gap-3 pt-4 border-t border-dark-600">
@@ -2862,6 +3306,18 @@
             const apiKey = appData.config.kite?.api_key || '8zjbufhni9k0u2mx';
             document.getElementById('kite-api-key').value = apiKey;
             
+            // Telegram settings
+            const telegram = appData.config.telegram || {};
+            document.getElementById('telegram-enabled').checked = telegram.enabled || false;
+            document.getElementById('telegram-bot-token').value = telegram.bot_token || '';
+            document.getElementById('telegram-chat-id').value = telegram.chat_id || '';
+            
+            // WhatsApp settings
+            const whatsapp = appData.config.whatsapp || {};
+            document.getElementById('whatsapp-enabled').checked = whatsapp.enabled || false;
+            document.getElementById('whatsapp-api-key').value = whatsapp.api_key || '';
+            document.getElementById('whatsapp-recipient').value = whatsapp.recipient || '';
+            
             // Show/hide paper trading toggle - ENHANCED UI
             updatePaperTradingUI(appData.config.paper_trading || false);
             
@@ -2877,6 +3333,44 @@
                 badge.textContent = 'Not Connected';
                 badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-400';
             }
+            
+            // Update WhatsApp status badge
+            const whatsappBadge = document.getElementById('whatsapp-status-badge');
+            if (whatsappBadge) {
+                if (whatsapp.enabled && whatsapp.api_key && whatsapp.recipient) {
+                    whatsappBadge.textContent = 'WhatsApp ✓';
+                    whatsappBadge.className = 'px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400';
+                } else {
+                    whatsappBadge.textContent = 'WhatsApp ✗';
+                    whatsappBadge.className = 'px-2 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-400';
+                }
+            }
+            
+            // Analysis Engine settings
+            const analysisEngine = appData.config.analysis_engine || {};
+            document.getElementById('analysis-enabled').checked = analysisEngine.enabled !== false; // Default true
+            document.getElementById('analysis-engine-type').value = analysisEngine.engine_type || 'local';
+            
+            // Thresholds
+            const thresholds = analysisEngine.thresholds || {};
+            document.getElementById('analysis-min-trades').value = thresholds.min_trades_for_recommendation || 5;
+            document.getElementById('min-trades-value').textContent = thresholds.min_trades_for_recommendation || 5;
+            document.getElementById('analysis-gap-threshold').value = thresholds.execution_gap_threshold || 20;
+            document.getElementById('gap-threshold-value').textContent = thresholds.execution_gap_threshold || 20;
+            document.getElementById('analysis-win-rate').value = thresholds.min_win_rate_for_best || 60;
+            document.getElementById('win-rate-value').textContent = thresholds.min_win_rate_for_best || 60;
+            
+            // Metrics
+            const metrics = analysisEngine.metrics || {};
+            document.getElementById('metric-time').checked = metrics.analyze_time_performance !== false;
+            document.getElementById('metric-risk-reward').checked = metrics.analyze_risk_reward !== false;
+            document.getElementById('metric-atr').checked = metrics.analyze_atr_multipliers !== false;
+            document.getElementById('metric-sizing').checked = metrics.analyze_position_sizing !== false;
+            document.getElementById('metric-execution').checked = metrics.analyze_execution_gaps !== false;
+            
+            // Update UI state
+            toggleAnalysisConfig();
+            toggleAIConfig();
         }
 
         // Save Kite Token
@@ -2934,13 +3428,26 @@
             
             try {
                 const res = await fetch('/api/kite/funds?_=' + Date.now());
+                
+                // Debug logging
+                console.log('Kite funds response status:', res.status);
+                
+                if (!res.ok) {
+                    console.error('Kite funds HTTP error:', res.status, res.statusText);
+                    kiteBalanceEl.textContent = 'Error ' + res.status;
+                    kiteBalanceEl.className = 'font-mono font-semibold text-gray-500';
+                    return;
+                }
+                
                 const data = await res.json();
+                console.log('Kite funds data:', data);
                 
                 if (data.status === 'success' && data.funds) {
                     const available = data.funds.net_available || data.funds.available_cash || 0;
                     kiteBalanceEl.textContent = '₹' + available.toLocaleString('en-IN');
                     kiteBalanceEl.className = 'font-mono font-semibold text-primary-400';
                 } else {
+                    console.error('Kite funds error:', data.message || 'Unknown error');
                     kiteBalanceEl.textContent = 'Error';
                     kiteBalanceEl.className = 'font-mono font-semibold text-gray-500';
                 }
@@ -3067,9 +3574,16 @@
                 positions: 'Open Positions',
                 trades: 'Trade History',
                 analytics: 'Analytics',
+                learning: 'Learning & Insights',
+                alerts: 'Incoming Alerts',
                 config: 'Configuration'
             };
-            document.getElementById('page-title').textContent = titles[tab];
+            document.getElementById('page-title').textContent = titles[tab] || tab;
+            
+            // Load insights when switching to learning tab
+            if (tab === 'learning') {
+                loadInsights();
+            }
         }
 
         // Toggle trading
@@ -3135,6 +3649,380 @@
                 updateStats();
             } catch (err) {
                 showToast('Failed to refresh positions', 'error');
+            }
+        }
+
+        // Load trade insights
+        async function loadInsights() {
+            try {
+                const res = await fetch('/api/insights?_=' + Date.now());
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    updateInsightsUI(data);
+                }
+            } catch (err) {
+                console.error('Failed to load insights:', err);
+            }
+        }
+
+        // Update insights UI
+        function updateInsightsUI(data) {
+            const symbols = data.symbols || {};
+            const recommendations = data.recommendations || [];
+            const dailyStats = data.daily_stats || {};
+            
+            // Update symbols list
+            const symbolsContainer = document.getElementById('insights-symbols');
+            if (Object.keys(symbols).length === 0) {
+                symbolsContainer.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-chart-line text-3xl mb-2"></i>
+                        <p>No insights yet. Start trading to build data.</p>
+                    </div>`;
+            } else {
+                symbolsContainer.innerHTML = Object.entries(symbols).map(([symbol, stats]) => {
+                    const paper = stats.paper || {};
+                    const live = stats.live || {};
+                    const paperWinRate = paper.win_rate?.toFixed(0) || 0;
+                    const liveWinRate = live.win_rate?.toFixed(0) || 0;
+                    
+                    return `
+                        <div class="bg-dark-800/50 rounded-lg p-3 border border-dark-600">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-semibold text-lg">${symbol}</span>
+                                <span class="text-xs text-gray-500">${stats.first_seen ? new Date(stats.first_seen).toLocaleDateString() : ''}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div class="bg-dark-900/50 rounded p-2">
+                                    <div class="text-gray-400 text-xs">Paper Trades</div>
+                                    <div class="font-mono">${paper.trades || 0}</div>
+                                    <div class="text-xs ${paperWinRate >= 50 ? 'text-green-400' : 'text-red-400'}">${paperWinRate}% WR</div>
+                                </div>
+                                <div class="bg-dark-900/50 rounded p-2">
+                                    <div class="text-gray-400 text-xs">Live Trades</div>
+                                    <div class="font-mono">${live.trades || 0}</div>
+                                    <div class="text-xs ${liveWinRate >= 50 ? 'text-green-400' : 'text-red-400'}">${liveWinRate}% WR</div>
+                                </div>
+                            </div>
+                            ${paper.total_pnl ? `<div class="mt-2 text-sm ${paper.total_pnl >= 0 ? 'text-green-400' : 'text-red-400'}">Paper P&L: ₹${paper.total_pnl.toFixed(2)}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Update recommendations
+            const recContainer = document.getElementById('insights-recommendations');
+            const recBadge = document.getElementById('rec-badge');
+            
+            if (recommendations.length === 0) {
+                recBadge.classList.add('hidden');
+                recContainer.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-clipboard-list text-3xl mb-2"></i>
+                        <p>No recommendations yet. Need more trade data.</p>
+                    </div>`;
+            } else {
+                recBadge.textContent = recommendations.length;
+                recBadge.classList.remove('hidden');
+                document.getElementById('learning-badge').textContent = recommendations.length;
+                document.getElementById('learning-badge').classList.remove('hidden');
+                
+                recContainer.innerHTML = recommendations.map(rec => {
+                    const colors = {
+                        'execution_gap': 'border-yellow-500/30 bg-yellow-500/10',
+                        'strong_performer': 'border-green-500/30 bg-green-500/10',
+                        'avoid': 'border-red-500/30 bg-red-500/10'
+                    };
+                    const icons = {
+                        'execution_gap': '⚠️',
+                        'strong_performer': '🌟',
+                        'avoid': '🚫'
+                    };
+                    return `
+                        <div class="p-3 rounded-lg border ${colors[rec.type] || 'border-gray-600 bg-dark-800/50'}">
+                            <div class="flex items-start gap-2">
+                                <span>${icons[rec.type] || '💡'}</span>
+                                <div class="text-sm">${rec.message}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Update daily stats
+            const dailyContainer = document.getElementById('insights-daily');
+            const dailyEntries = Object.entries(dailyStats).slice(-7).reverse(); // Last 7 days
+            
+            if (dailyEntries.length === 0) {
+                dailyContainer.innerHTML = `<div class="text-center text-gray-500 py-4">No daily data recorded yet.</div>`;
+            } else {
+                dailyContainer.innerHTML = dailyEntries.map(([date, stats]) => `
+                    <div class="bg-dark-800/50 rounded-lg p-4 border border-dark-600">
+                        <div class="text-gray-400 text-xs mb-2">${date}</div>
+                        <div class="grid grid-cols-3 gap-2 text-sm">
+                            <div>
+                                <div class="text-gray-500 text-xs">Trades</div>
+                                <div class="font-mono">${stats.trades}</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500 text-xs">Paper P&L</div>
+                                <div class="font-mono ${stats.paper_pnl >= 0 ? 'text-green-400' : 'text-red-400'}">₹${stats.paper_pnl?.toFixed(0) || 0}</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500 text-xs">Live P&L</div>
+                                <div class="font-mono ${stats.live_pnl >= 0 ? 'text-green-400' : 'text-red-400'}">₹${stats.live_pnl?.toFixed(0) || 0}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Daily reset
+        async function resetDaily() {
+            if (!confirm(`Reset dashboard for next trading day?\n\nThis will:\n✓ Archive open positions to insights\n✓ Clear today's trade log\n✓ PRESERVE all historical data\n\nOnly do this at the end of trading day.`)) {
+                return;
+            }
+            
+            try {
+                showToast('Performing daily reset...', 'info');
+                const res = await fetch('/api/reset-daily', { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.status === 'reset') {
+                    showToast(`Reset complete! ${data.details.closed_positions} positions archived.`, 'success');
+                    await loadData();
+                    await loadInsights();
+                } else {
+                    showToast('Reset failed', 'error');
+                }
+            } catch (err) {
+                showToast('Reset failed: ' + err.message, 'error');
+            }
+        }
+
+        // Strategy Analytics
+        let strategyAnalytics = null;
+        
+        async function loadStrategyAnalytics() {
+            showToast('Analyzing strategy performance...', 'info');
+            try {
+                const res = await fetch('/api/strategy/analytics?_=' + Date.now());
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    strategyAnalytics = data;
+                    updateStrategyAnalyticsUI(data);
+                    showToast(`Analyzed ${data.total_trades_analyzed} trades`, 'success');
+                }
+            } catch (err) {
+                showToast('Failed to load analytics', 'error');
+            }
+        }
+        
+        function updateStrategyAnalyticsUI(data) {
+            // Update summary cards
+            document.getElementById('analytics-total-trades').textContent = data.total_trades_analyzed;
+            
+            const timePerf = data.time_performance || {};
+            if (timePerf.best_hour) {
+                document.getElementById('analytics-best-hour').textContent = timePerf.best_hour[0];
+            }
+            
+            const rrAnalysis = data.risk_reward_analysis || {};
+            if (rrAnalysis.best_rr_range) {
+                document.getElementById('analytics-optimal-rr').textContent = rrAnalysis.best_rr_range.replace(/_/g, ' ');
+            }
+            
+            const riskAnalysis = data.position_sizing_analysis || {};
+            if (riskAnalysis.optimal_risk_range) {
+                const riskText = {
+                    'low_0_5': '0.5%',
+                    'medium_0_5_1': '1%',
+                    'high_1_2': '1.5%',
+                    'aggressive_2_plus': 'Reduce'
+                };
+                document.getElementById('analytics-optimal-risk').textContent = riskText[riskAnalysis.optimal_risk_range] || '1%';
+            }
+            
+            // Update recommendations
+            const recs = data.recommendations || [];
+            const recContainer = document.getElementById('strategy-recommendations');
+            const recCount = document.getElementById('strategy-rec-count');
+            
+            if (recs.length === 0) {
+                recCount.classList.add('hidden');
+                recContainer.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-check-circle text-4xl mb-3 text-green-400"></i>
+                        <p>No optimizations suggested yet. Keep trading to build more data!</p>
+                    </div>`;
+            } else {
+                recCount.textContent = `${recs.length} suggestion${recs.length > 1 ? 's' : ''}`;
+                recCount.classList.remove('hidden');
+                
+                recContainer.innerHTML = recs.map((rec, idx) => {
+                    const priorityColors = {
+                        'high': 'border-red-500/30 bg-red-500/10',
+                        'medium': 'border-yellow-500/30 bg-yellow-500/10',
+                        'low': 'border-blue-500/30 bg-blue-500/10'
+                    };
+                    const priorityIcons = {
+                        'high': '🔴',
+                        'medium': '🟡',
+                        'low': '🔵'
+                    };
+                    return `
+                        <div class="p-4 rounded-lg border ${priorityColors[rec.priority] || 'border-gray-600 bg-dark-800/50'}">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">${priorityIcons[rec.priority] || '💡'}</span>
+                                    <span class="font-semibold">${rec.title}</span>
+                                </div>
+                                ${rec.actionable ? `
+                                    <button onclick="applyStrategyRecommendation(${idx})" 
+                                            class="text-sm bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 px-3 py-1 rounded-lg transition-colors">
+                                        <i class="fas fa-check mr-1"></i>Apply
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <p class="text-sm text-gray-300 mb-2">${rec.message}</p>
+                            ${rec.data ? `
+                                <div class="text-xs text-gray-500 bg-dark-900/50 rounded p-2 font-mono">
+                                    ${JSON.stringify(rec.data).substring(0, 200)}...
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        async function applyStrategyRecommendation(idx) {
+            if (!confirm('Apply this strategy recommendation? This will update your trading configuration.')) {
+                return;
+            }
+            
+            try {
+                showToast('Applying recommendation...', 'info');
+                const res = await fetch(`/api/strategy/apply?recommendation_idx=${idx}`, { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    showToast(`Applied: ${data.message}`, 'success');
+                    await loadData(); // Refresh config
+                    updateStrategyPreview(); // Update UI
+                } else {
+                    showToast('Failed to apply', 'error');
+                }
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        }
+        
+        function updateStrategyPreview() {
+            const riskPercent = document.getElementById('strategy-risk-percent').value;
+            const minRR = document.getElementById('strategy-min-rr').value;
+            const atrSL = document.getElementById('strategy-atr-sl').value;
+            const atrTP = document.getElementById('strategy-atr-tp').value;
+            
+            document.getElementById('strategy-risk-value').textContent = riskPercent + '%';
+            
+            document.getElementById('strategy-preview').innerHTML = `
+                <div>• Risk per trade: <span class="text-primary-400">${riskPercent}%</span> of capital</div>
+                <div>• Minimum R:R: <span class="text-primary-400">1:${minRR}</span></div>
+                <div>• Stop Loss: <span class="text-red-400">${atrSL}x ATR</span></div>
+                <div>• Take Profit: <span class="text-green-400">${atrTP}x ATR</span></div>
+            `;
+        }
+        
+        async function applyCustomStrategy() {
+            const settings = {
+                risk_percent: parseFloat(document.getElementById('strategy-risk-percent').value),
+                min_risk_reward: parseFloat(document.getElementById('strategy-min-rr').value),
+                atr_multiplier_sl: parseFloat(document.getElementById('strategy-atr-sl').value),
+                atr_multiplier_tp: parseFloat(document.getElementById('strategy-atr-tp').value)
+            };
+            
+            try {
+                showToast('Applying strategy...', 'info');
+                const res = await fetch('/api/strategy/custom', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    showToast(`Applied ${data.changes.length} changes`, 'success');
+                    await loadData();
+                } else {
+                    showToast('Failed to apply', 'error');
+                }
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        }
+        
+        async function loadStrategyHistory() {
+            try {
+                const res = await fetch('/api/strategy/history');
+                const data = await res.json();
+                
+                const modal = document.getElementById('strategy-history-modal');
+                const content = document.getElementById('strategy-history-content');
+                
+                if (data.history && data.history.length > 0) {
+                    content.innerHTML = data.history.slice().reverse().map(h => `
+                        <div class="bg-dark-800/50 rounded-lg p-3 border-l-2 border-primary-500">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-medium">${h.reason || h.type}</span>
+                                <span class="text-xs text-gray-500">${new Date(h.date).toLocaleString()}</span>
+                            </div>
+                            ${h.changes ? `
+                                <div class="text-xs text-gray-400 space-y-0.5">
+                                    ${h.changes.map(c => `<div>• ${c}</div>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('');
+                } else {
+                    content.innerHTML = `<div class="text-center text-gray-500 py-4">No strategy changes recorded yet.</div>`;
+                }
+                
+                modal.classList.remove('hidden');
+            } catch (err) {
+                showToast('Failed to load history', 'error');
+            }
+        }
+        
+        function closeStrategyHistory() {
+            document.getElementById('strategy-history-modal').classList.add('hidden');
+        }
+        
+        async function resetStrategy() {
+            if (!confirm('Reset strategy to default values?\n\nThis will revert:\n• Risk: 1%\n• Min R:R: 1:2\n• SL: 1.5x ATR\n• TP: 3x ATR')) {
+                return;
+            }
+            
+            try {
+                showToast('Resetting strategy...', 'info');
+                const res = await fetch('/api/strategy/reset', { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    showToast('Strategy reset to defaults', 'success');
+                    // Reset UI values
+                    document.getElementById('strategy-risk-percent').value = 1;
+                    document.getElementById('strategy-min-rr').value = 2;
+                    document.getElementById('strategy-atr-sl').value = 1.5;
+                    document.getElementById('strategy-atr-tp').value = 3;
+                    updateStrategyPreview();
+                    await loadData();
+                }
+            } catch (err) {
+                showToast('Reset failed', 'error');
             }
         }
 
@@ -3327,6 +4215,37 @@
             }).join('');
         }
 
+        // Analysis config toggle
+        function toggleAnalysisConfig() {
+            const enabled = document.getElementById('analysis-enabled').checked;
+            const configDiv = document.getElementById('analysis-config');
+            if (enabled) {
+                configDiv.classList.remove('hidden');
+            } else {
+                configDiv.classList.add('hidden');
+            }
+        }
+        
+        function toggleAIConfig() {
+            const engineType = document.getElementById('analysis-engine-type').value;
+            const openaiConfig = document.getElementById('openai-config');
+            const claudeConfig = document.getElementById('claude-config');
+            const desc = document.getElementById('engine-description');
+            
+            openaiConfig.classList.add('hidden');
+            claudeConfig.classList.add('hidden');
+            
+            if (engineType === 'openai') {
+                openaiConfig.classList.remove('hidden');
+                desc.textContent = 'Uses OpenAI GPT for advanced trade analysis and natural language insights';
+            } else if (engineType === 'claude') {
+                claudeConfig.classList.remove('hidden');
+                desc.textContent = 'Uses Claude by Anthropic for detailed strategy analysis';
+            } else {
+                desc.textContent = 'Uses built-in algorithms to analyze your trades (no API key needed)';
+            }
+        }
+        
         // Save config
         async function saveConfig() {
             const settings = {
@@ -3337,6 +4256,35 @@
                 trading_hours: {
                     start: document.getElementById('config-trading-start').value,
                     end: document.getElementById('config-trading-end').value
+                },
+                telegram: {
+                    enabled: document.getElementById('telegram-enabled').checked,
+                    bot_token: document.getElementById('telegram-bot-token').value,
+                    chat_id: document.getElementById('telegram-chat-id').value
+                },
+                whatsapp: {
+                    enabled: document.getElementById('whatsapp-enabled').checked,
+                    api_key: document.getElementById('whatsapp-api-key').value,
+                    recipient: document.getElementById('whatsapp-recipient').value
+                },
+                analysis_engine: {
+                    enabled: document.getElementById('analysis-enabled').checked,
+                    engine_type: document.getElementById('analysis-engine-type').value,
+                    openai_api_key: document.getElementById('openai-api-key').value,
+                    claude_api_key: document.getElementById('claude-api-key').value,
+                    thresholds: {
+                        min_trades_for_recommendation: parseInt(document.getElementById('analysis-min-trades').value),
+                        execution_gap_threshold: parseInt(document.getElementById('analysis-gap-threshold').value),
+                        min_win_rate_for_best: parseInt(document.getElementById('analysis-win-rate').value),
+                        max_win_rate_for_worst: 35
+                    },
+                    metrics: {
+                        analyze_time_performance: document.getElementById('metric-time').checked,
+                        analyze_risk_reward: document.getElementById('metric-risk-reward').checked,
+                        analyze_atr_multipliers: document.getElementById('metric-atr').checked,
+                        analyze_position_sizing: document.getElementById('metric-sizing').checked,
+                        analyze_execution_gaps: document.getElementById('metric-execution').checked
+                    }
                 }
             };
             
@@ -3347,27 +4295,116 @@
                     body: JSON.stringify(settings)
                 });
                 if (res.ok) {
-                    showToast('Settings saved', 'success');
+                    showToast('Settings saved successfully', 'success');
                     await loadData(); // Refresh to get updated data
+                } else {
+                    const err = await res.json();
+                    showToast(err.detail || 'Failed to save settings', 'error');
                 }
             } catch (err) {
-                showToast('Failed to save', 'error');
+                showToast('Failed to save settings', 'error');
             }
         }
 
         // Test connections
         async function testConnections() {
-            showToast('Testing APIs...', 'success');
+            showToast('Testing all APIs...', 'info');
             try {
-                const [kiteRes, telegramRes] = await Promise.all([
+                const [kiteRes, telegramRes, whatsappRes] = await Promise.all([
                     fetch('/api/test-kite', { method: 'POST' }),
-                    fetch('/api/test-telegram', { method: 'POST' })
+                    fetch('/api/test-telegram', { method: 'POST' }),
+                    fetch('/api/test-whatsapp', { method: 'POST' })
                 ]);
                 
                 const kiteData = await kiteRes.json();
-                showToast(`Kite: ${kiteData.message}`, kiteData.status === 'success' ? 'success' : 'error');
+                const telegramData = await telegramRes.json();
+                const whatsappData = await whatsappRes.json();
+                
+                showToast(`Kite: ${kiteData.message || kiteData.status}`, kiteData.status === 'success' ? 'success' : 'error');
+                showToast(`Telegram: ${telegramData.status}`, telegramData.status === 'sent' ? 'success' : 'error');
+                showToast(`WhatsApp: ${whatsappData.status}`, whatsappData.status === 'success' ? 'success' : 'error');
             } catch (err) {
                 showToast('API test failed', 'error');
+            }
+        }
+
+        // Test Telegram
+        async function testTelegram() {
+            const botToken = document.getElementById('telegram-bot-token').value;
+            const chatId = document.getElementById('telegram-chat-id').value;
+            
+            if (!botToken || !chatId) {
+                showToast('Please enter Bot Token and Chat ID', 'error');
+                return;
+            }
+            
+            showToast('Sending test Telegram message...', 'info');
+            
+            try {
+                // First save the settings
+                await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegram: {
+                            enabled: true,
+                            bot_token: botToken,
+                            chat_id: chatId
+                        }
+                    })
+                });
+                
+                // Then test
+                const res = await fetch('/api/test-telegram', { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.status === 'sent') {
+                    showToast('Test message sent! Check Telegram', 'success');
+                } else {
+                    showToast('Failed to send test message', 'error');
+                }
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        }
+
+        // Test WhatsApp
+        async function testWhatsApp() {
+            const apiKey = document.getElementById('whatsapp-api-key').value;
+            const recipient = document.getElementById('whatsapp-recipient').value;
+            
+            if (!apiKey || !recipient) {
+                showToast('Please enter API Key and Recipient number', 'error');
+                return;
+            }
+            
+            showToast('Sending test WhatsApp message...', 'info');
+            
+            try {
+                // First save the settings
+                await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        whatsapp: {
+                            enabled: true,
+                            api_key: apiKey,
+                            recipient: recipient
+                        }
+                    })
+                });
+                
+                // Then test
+                const res = await fetch('/api/test-whatsapp', { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    showToast('Test message sent! Check WhatsApp', 'success');
+                } else {
+                    showToast('Failed: ' + (data.message || 'Unknown error'), 'error');
+                }
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
             }
         }
 
