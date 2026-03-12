@@ -38,17 +38,28 @@
                             900: '#14532d',
                         },
                         danger: {
+                            400: '#f87171',
                             500: '#ef4444',
                             600: '#dc2626',
                         },
                         warning: {
+                            400: '#fbbf24',
                             500: '#f59e0b',
                         },
+                        accent: {
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        },
                         dark: {
-                            900: '#0a0a0f',
+                            900: '#0f1117',
+                            850: '#0a0a0f',
                             800: '#12121a',
+                            750: '#161a23',
                             700: '#1a1a25',
+                            650: '#1e2330',
                             600: '#252536',
+                            550: '#2a2f3d',
                             500: '#32324a',
                         }
                     },
@@ -175,6 +186,97 @@
         /* Table styles */
         .trades-table tr {
             transition: all 0.2s;
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .position-card-mobile {
+                padding: 1rem !important;
+            }
+            .position-card-mobile .text-2xl {
+                font-size: 1.75rem !important;
+            }
+            .position-card-mobile .text-lg {
+                font-size: 1.25rem !important;
+            }
+            .position-card-mobile .font-mono {
+                font-size: 1.1rem !important;
+            }
+            .position-card-mobile button {
+                min-height: 48px;
+                font-size: 1rem !important;
+            }
+            .mobile-stack {
+                flex-direction: column !important;
+                gap: 0.75rem !important;
+            }
+            .mobile-full-width {
+                width: 100% !important;
+            }
+        }
+        
+        /* Live Trade Feed Console */
+        .trade-feed-console {
+            font-family: 'JetBrains Mono', monospace;
+            background: #0a0a0f;
+            border: 1px solid #1a1a25;
+        }
+        .trade-feed-item {
+            border-left: 3px solid transparent;
+            padding-left: 0.75rem;
+        }
+        .trade-feed-item.signal { border-left-color: #3b82f6; }
+        .trade-feed-item.validation { border-left-color: #8b5cf6; }
+        .trade-feed-item.order { border-left-color: #f59e0b; }
+        .trade-feed-item.position { border-left-color: #22c55e; }
+        .trade-feed-item.exit { border-left-color: #ef4444; }
+        .trade-feed-item.error { border-left-color: #dc2626; background: rgba(220, 38, 38, 0.1); }
+        
+        /* Status Progress Steps */
+        .progress-step {
+            position: relative;
+        }
+        .progress-step::after {
+            content: '';
+            position: absolute;
+            top: 1.5rem;
+            left: 0.75rem;
+            width: 2px;
+            height: calc(100% - 1rem);
+            background: #1a1a25;
+        }
+        .progress-step:last-child::after {
+            display: none;
+        }
+        .progress-step.completed::after {
+            background: #22c55e;
+        }
+        .progress-step-dot {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            z-index: 1;
+        }
+        
+        /* Toast Animation */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        .toast-enter {
+            animation: slideInRight 0.3s ease forwards;
+        }
+        .toast-exit {
+            animation: slideOutRight 0.3s ease forwards;
+        }
         }
         .trades-table tr:hover {
             background: rgba(34, 197, 94, 0.05);
@@ -317,18 +419,68 @@
                         </button>
                     </div>
                     
-                    <!-- Paper Trading Badge -->
-                    <div id="paper-badge" class="hidden px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm font-medium border border-yellow-500/30">
-                        <i class="fas fa-flask mr-1"></i> Paper Trading
-                    </div>
+                    <!-- View Chart Button (Quick Access) -->
+                    <button onclick="openQuickChart()" class="hidden md:flex items-center gap-2 px-3 py-2 bg-dark-700 hover:bg-dark-600 rounded-lg text-sm text-gray-300 transition-colors" title="Open TradingView chart">
+                        <i class="fas fa-chart-line text-primary-400"></i>
+                        <span>Chart</span>
+                    </button>
                 </div>
             </header>
+            
+            <!-- 🔥 GLOBAL SYSTEM STATUS BAR -->
+            <div id="system-status-bar" class="px-6 py-2 border-b border-dark-600 flex items-center justify-between text-sm transition-all">
+                <div class="flex items-center gap-6">
+                    <!-- Trading Status -->
+                    <div class="flex items-center gap-2">
+                        <span id="status-trading-icon" class="text-lg">🔴</span>
+                        <span id="status-trading-text" class="font-medium text-gray-400">Trading Disabled</span>
+                    </div>
+                    
+                    <!-- Mode Badge -->
+                    <div id="status-mode-badge" class="flex items-center gap-2 px-3 py-1 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                        <span class="text-lg">🟡</span>
+                        <span class="font-semibold text-yellow-400">PAPER MODE</span>
+                    </div>
+                    
+                    <!-- Capital -->
+                    <div class="hidden md:flex items-center gap-2">
+                        <span class="text-gray-500">💰</span>
+                        <span class="text-gray-400">Capital:</span>
+                        <span id="status-capital" class="font-mono font-semibold text-gray-300">₹0</span>
+                    </div>
+                    
+                    <!-- Risk Used -->
+                    <div class="hidden lg:flex items-center gap-2">
+                        <span class="text-gray-500">⚠️</span>
+                        <span class="text-gray-400">Risk:</span>
+                        <span id="status-risk" class="font-mono font-semibold text-primary-400">0%</span>
+                    </div>
+                    
+                    <!-- Market Status -->
+                    <div class="hidden sm:flex items-center gap-2">
+                        <span class="text-gray-500">⏰</span>
+                        <span class="text-gray-400">Market:</span>
+                        <span id="status-market" class="font-medium text-gray-500">CLOSED</span>
+                    </div>
+                </div>
+                
+                <!-- Warning for Live Mode -->
+                <div id="live-warning" class="hidden items-center gap-2 px-4 py-1.5 bg-danger-500/20 border border-danger-500/40 rounded-lg">
+                    <span class="text-lg animate-pulse">⚠️</span>
+                    <span class="font-bold text-danger-400">LIVE TRADING - REAL MONEY AT RISK</span>
+                </div>
+            </div>
 
             <!-- Scrollable Content -->
             <div class="flex-1 overflow-y-auto p-6">
                 
                 <!-- Dashboard Tab -->
                 <div id="tab-dashboard" class="tab-content space-y-6">
+                    
+                    <!-- 🔥 SMART WARNING CARDS - Dynamic alerts -->
+                    <div id="smart-warning-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Cards will be dynamically inserted here -->
+                    </div>
                     
                     <!-- 🔥 RISK PANEL - Shows risk exposure at a glance -->
                     <div class="glass rounded-2xl p-6 border-l-4 border-primary-500">
@@ -395,13 +547,73 @@
                         </div>
                     </div>
                     
+                    <!-- 🔥 TRADING WINDOWS QUICK TOGGLE -->
+                    <div class="glass rounded-2xl p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold flex items-center gap-2">
+                                <i class="fas fa-clock text-accent-400"></i>
+                                Trading Windows
+                            </h3>
+                            <button onclick="saveTradingWindows()" class="px-3 py-1.5 bg-primary-500 hover:bg-primary-600 rounded-lg text-sm transition-colors">
+                                <i class="fas fa-save mr-1"></i>Save
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="trading-windows-container">
+                            <!-- Window 1 -->
+                            <div class="flex items-center gap-3 p-3 bg-dark-800/50 rounded-lg">
+                                <input type="checkbox" id="window-1-enabled" class="w-5 h-5 rounded border-dark-500 text-primary-500 focus:ring-primary-500" checked>
+                                <div class="flex-1 flex items-center gap-2">
+                                    <input type="time" id="window-1-start" value="09:15" class="flex-1 px-2 py-1.5 bg-dark-700 border border-dark-500 rounded text-sm font-mono">
+                                    <span class="text-gray-500">-</span>
+                                    <input type="time" id="window-1-end" value="11:30" class="flex-1 px-2 py-1.5 bg-dark-700 border border-dark-500 rounded text-sm font-mono">
+                                </div>
+                            </div>
+                            <!-- Window 2 -->
+                            <div class="flex items-center gap-3 p-3 bg-dark-800/50 rounded-lg">
+                                <input type="checkbox" id="window-2-enabled" class="w-5 h-5 rounded border-dark-500 text-primary-500 focus:ring-primary-500" checked>
+                                <div class="flex-1 flex items-center gap-2">
+                                    <input type="time" id="window-2-start" value="13:30" class="flex-1 px-2 py-1.5 bg-dark-700 border border-dark-500 rounded text-sm font-mono">
+                                    <span class="text-gray-500">-</span>
+                                    <input type="time" id="window-2-end" value="15:15" class="flex-1 px-2 py-1.5 bg-dark-700 border border-dark-500 rounded text-sm font-mono">
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Trades will only execute during enabled windows. Market hours: 09:15 - 15:30 IST
+                        </p>
+                    </div>
+                    
+                    <!-- 🔥 LIVE TRADE FEED CONSOLE -->
+                    <div class="glass rounded-2xl overflow-hidden">
+                        <div class="p-4 border-b border-dark-600 flex items-center justify-between bg-dark-800/30">
+                            <h3 class="font-semibold flex items-center gap-2">
+                                <i class="fas fa-terminal text-accent-400"></i>
+                                Live Trade Feed
+                            </h3>
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-2 w-2 relative">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+                                </span>
+                                <span class="text-xs text-gray-400">LIVE</span>
+                                <button onclick="clearTradeFeed()" class="ml-3 text-xs text-gray-500 hover:text-gray-300">
+                                    <i class="fas fa-trash-alt"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                        <div id="trade-feed-container" class="trade-feed-console max-h-64 overflow-y-auto p-4 space-y-2 text-sm">
+                            <div class="text-gray-500 text-center py-4">Waiting for trading activity...</div>
+                        </div>
+                    </div>
+                    
                     <!-- Stats Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <!-- P&L Card -->
+                        <!-- Total P&L Card -->
                         <div class="glass rounded-2xl p-5 animated-border">
                             <div class="flex items-start justify-between mb-3">
                                 <div>
-                                    <p class="text-sm text-gray-400">Today's P&L</p>
+                                    <p class="text-sm text-gray-400">Total P&L</p>
                                     <h3 id="stat-pnl" class="text-2xl font-bold font-mono mt-1">₹0.00</h3>
                                 </div>
                                 <div id="pnl-icon" class="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center">
@@ -458,6 +670,69 @@
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="text-sm text-gray-500">09:15 - 15:30 IST</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Paper vs Live Stats Breakdown -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Paper Trading Stats -->
+                        <div class="glass rounded-2xl p-5 border border-yellow-500/20 bg-yellow-500/5">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                                        <i class="fas fa-flask text-yellow-400"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-yellow-400">Paper Trading</h4>
+                                        <p class="text-xs text-yellow-400/70">Simulated - No real money</p>
+                                    </div>
+                                </div>
+                                <span id="paper-pnl" class="text-xl font-bold font-mono text-yellow-400">₹0.00</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 text-center">
+                                <div class="bg-dark-800/50 rounded-lg p-2">
+                                    <div id="paper-trades" class="text-lg font-bold text-yellow-400">0</div>
+                                    <div class="text-xs text-gray-500">Trades</div>
+                                </div>
+                                <div class="bg-dark-800/50 rounded-lg p-2">
+                                    <div id="paper-winrate" class="text-lg font-bold text-yellow-400">0%</div>
+                                    <div class="text-xs text-gray-500">Win Rate</div>
+                                </div>
+                                <div class="bg-dark-800/50 rounded-lg p-2">
+                                    <div id="paper-positions" class="text-lg font-bold text-yellow-400">0</div>
+                                    <div class="text-xs text-gray-500">Open Pos</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Live Trading Stats -->
+                        <div class="glass rounded-2xl p-5 border border-primary-500/20 bg-primary-500/5">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center">
+                                        <i class="fas fa-circle text-primary-400 text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-primary-400">Live Trading</h4>
+                                        <p class="text-xs text-primary-400/70">Real money at risk</p>
+                                    </div>
+                                </div>
+                                <span id="live-pnl" class="text-xl font-bold font-mono text-primary-400">₹0.00</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 text-center">
+                                <div class="bg-dark-800/50 rounded-lg p-2">
+                                    <div id="live-trades" class="text-lg font-bold text-primary-400">0</div>
+                                    <div class="text-xs text-gray-500">Trades</div>
+                                </div>
+                                <div class="bg-dark-800/50 rounded-lg p-2">
+                                    <div id="live-winrate" class="text-lg font-bold text-primary-400">0%</div>
+                                    <div class="text-xs text-gray-500">Win Rate</div>
+                                </div>
+                                <div class="bg-dark-800/50 rounded-lg p-2">
+                                    <div id="live-positions" class="text-lg font-bold text-primary-400">0</div>
+                                    <div class="text-xs text-gray-500">Open Pos</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -535,6 +810,7 @@
                                         <th class="px-5 py-3">Time</th>
                                         <th class="px-5 py-3">Symbol</th>
                                         <th class="px-5 py-3">Scan / Strategy</th>
+                                        <th class="px-5 py-3">Mode</th>
                                         <th class="px-5 py-3">Side</th>
                                         <th class="px-5 py-3">Entry</th>
                                         <th class="px-5 py-3">SL / Target</th>
@@ -555,28 +831,116 @@
                     </div>
                 </div>
 
-                <!-- Positions Tab -->
-                <div id="tab-positions" class="tab-content hidden space-y-6">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-xl font-semibold">Open Positions</h3>
-                        <div class="flex gap-2">
-                            <button onclick="syncKitePositions()" class="px-4 py-2 bg-warning-500/20 hover:bg-warning-500/30 text-warning-500 rounded-lg text-sm font-medium transition-colors" title="Sync positions from Kite app">
-                                <i class="fas fa-cloud-download-alt mr-2"></i>Sync from Kite
+                <!-- Positions Tab - REDESIGNED FOR MAXIMUM USABILITY -->
+                <div id="tab-positions" class="tab-content hidden">
+                    <!-- Positions Header Bar -->
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h3 class="text-2xl font-bold flex items-center gap-3">
+                                <i class="fas fa-briefcase text-primary-400"></i>
+                                Open Positions
+                                <span id="positions-count-badge" class="px-3 py-1 bg-dark-700 rounded-full text-sm font-mono text-gray-400">0</span>
+                            </h3>
+                            <p class="text-sm text-gray-500 mt-1">Manage your active trades and risk exposure</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <!-- Close All Button -->
+                            <button onclick="closeAllPositions()" id="close-all-btn" class="hidden px-4 py-2.5 bg-danger-500/20 hover:bg-danger-500/30 text-danger-400 rounded-lg text-sm font-semibold transition-colors border border-danger-500/30">
+                                <i class="fas fa-power-off mr-2"></i>Close All
                             </button>
-                            <button onclick="refreshPositions()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 rounded-lg text-sm font-medium transition-colors">
+                            <!-- Sync Button -->
+                            <button onclick="syncKitePositions()" class="px-4 py-2.5 bg-warning-500/10 hover:bg-warning-500/20 text-warning-400 rounded-lg text-sm font-medium transition-colors border border-warning-500/20" title="Sync positions from Kite app">
+                                <i class="fas fa-cloud-download-alt mr-2"></i>Sync Kite
+                            </button>
+                            <!-- Refresh Button -->
+                            <button onclick="refreshPositions()" class="px-4 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-primary-500/20">
                                 <i class="fas fa-sync-alt mr-2"></i>Refresh
                             </button>
                         </div>
                     </div>
                     
-                    <div id="positions-list" class="grid grid-cols-1 gap-4">
+                    <!-- Positions Summary Bar - Paper vs Live -->
+                    <div id="positions-summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <!-- Paper Trading Positions Summary -->
+                        <div class="glass rounded-xl p-4 border border-yellow-500/30 bg-yellow-500/5">
+                            <div class="flex items-center gap-2 mb-1">
+                                <i class="fas fa-flask text-yellow-400 text-xs"></i>
+                                <div class="text-xs text-yellow-400/70 uppercase tracking-wider">Paper Positions</div>
+                            </div>
+                            <div id="paper-positions-count" class="text-xl font-bold font-mono text-yellow-400">0</div>
+                            <div id="paper-positions-pnl" class="text-sm font-mono text-gray-400">₹0.00 P&L</div>
+                        </div>
+                        <!-- Live Trading Positions Summary -->
+                        <div class="glass rounded-xl p-4 border border-primary-500/30 bg-primary-500/5">
+                            <div class="flex items-center gap-2 mb-1">
+                                <i class="fas fa-circle text-primary-400 text-[8px]"></i>
+                                <div class="text-xs text-primary-400/70 uppercase tracking-wider">Live Positions</div>
+                            </div>
+                            <div id="live-positions-count" class="text-xl font-bold font-mono text-primary-400">0</div>
+                            <div id="live-positions-pnl" class="text-sm font-mono text-gray-400">₹0.00 P&L</div>
+                        </div>
+                        <div class="glass rounded-xl p-4 border border-dark-600">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider mb-1">Total Risk</div>
+                            <div id="positions-total-risk" class="text-2xl font-bold font-mono text-gray-400">₹0.00</div>
+                        </div>
+                        <div class="glass rounded-xl p-4 border border-dark-600">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider mb-1">Capital Used</div>
+                            <div id="positions-capital-used" class="text-2xl font-bold font-mono text-gray-400">₹0.00</div>
+                        </div>
+                    </div>
+                    
+                    <!-- View Mode Toggle & Filter -->
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
+                        <div class="flex items-center gap-2 bg-dark-800/50 rounded-lg p-1">
+                            <button onclick="setPositionsView('cards')" id="view-cards-btn" class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-dark-700 text-white">
+                                <i class="fas fa-th-large mr-2"></i>Cards
+                            </button>
+                            <button onclick="setPositionsView('list')" id="view-list-btn" class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-400 hover:text-white">
+                                <i class="fas fa-list mr-2"></i>List
+                            </button>
+                            <button onclick="setPositionsView('compact')" id="view-compact-btn" class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-400 hover:text-white">
+                                <i class="fas fa-compress mr-2"></i>Compact
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <!-- Mode Filter -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500">Mode:</span>
+                                <select id="positions-mode-filter" onchange="filterPositions()" class="px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm">
+                                    <option value="all">All Positions</option>
+                                    <option value="paper">🧪 Paper Only</option>
+                                    <option value="live">● Live Only</option>
+                                </select>
+                            </div>
+                            <!-- Sort -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500">Sort by:</span>
+                                <select id="positions-sort" onchange="sortPositions()" class="px-3 py-2 bg-dark-800 border border-dark-600 rounded-lg text-sm">
+                                    <option value="pnl">P&L (High to Low)</option>
+                                    <option value="pnl-asc">P&L (Low to High)</option>
+                                    <option value="symbol">Symbol (A-Z)</option>
+                                    <option value="time">Time in Trade</option>
+                                    <option value="risk">Risk Amount</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Positions Container -->
+                    <div id="positions-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4">
                         <!-- Dynamic position cards -->
                     </div>
                     
+                    <!-- No Positions State -->
                     <div id="no-positions" class="glass rounded-2xl p-12 text-center text-gray-500 hidden">
-                        <i class="fas fa-briefcase text-5xl mb-4 opacity-30"></i>
+                        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-dark-800 flex items-center justify-center">
+                            <i class="fas fa-briefcase text-4xl opacity-30"></i>
+                        </div>
                         <h3 class="text-xl font-semibold mb-2">No Open Positions</h3>
-                        <p>Positions will appear here when trades are executed</p>
+                        <p class="text-gray-500 max-w-md mx-auto">Positions will appear here when trades are executed. Use the dashboard to monitor for signals.</p>
+                        <button onclick="switchTab('dashboard')" class="mt-6 px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors">
+                            Go to Dashboard
+                        </button>
                     </div>
                 </div>
 
@@ -601,22 +965,75 @@
                 </div>
 
                 <!-- Trades Tab -->
-                <div id="tab-trades" class="tab-content hidden">
-                    <div class="glass rounded-2xl overflow-hidden">
-                        <div class="p-5 border-b border-dark-600">
-                            <h3 class="font-semibold text-xl">Complete Trade History</h3>
+                <div id="tab-trades" class="tab-content hidden space-y-6">
+                    <!-- Filters Bar -->
+                    <div class="glass rounded-xl p-4">
+                        <div class="flex flex-wrap items-end gap-4">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1.5">Date</label>
+                                <input type="date" id="trades-filter-date" onchange="applyTradesFilters()" 
+                                       class="px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-sm focus:border-primary-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1.5">Symbol</label>
+                                <input type="text" id="trades-filter-symbol" placeholder="e.g. INFY" oninput="applyTradesFilters()"
+                                       class="px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-sm focus:border-primary-500 focus:outline-none w-28">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1.5">Strategy</label>
+                                <select id="trades-filter-strategy" onchange="applyTradesFilters()"
+                                        class="px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-sm focus:border-primary-500 focus:outline-none">
+                                    <option value="">All Strategies</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1.5">Result</label>
+                                <select id="trades-filter-result" onchange="applyTradesFilters()"
+                                        class="px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-sm focus:border-primary-500 focus:outline-none">
+                                    <option value="">All</option>
+                                    <option value="win">Win</option>
+                                    <option value="loss">Loss</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1.5">Mode</label>
+                                <select id="trades-filter-mode" onchange="applyTradesFilters()"
+                                        class="px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-sm focus:border-primary-500 focus:outline-none">
+                                    <option value="">All</option>
+                                    <option value="paper">Paper</option>
+                                    <option value="live">Live</option>
+                                </select>
+                            </div>
+                            <div class="flex-1"></div>
+                            <button onclick="exportTradesCSV()" class="px-4 py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                                <i class="fas fa-file-csv"></i>Export CSV
+                            </button>
+                            <button onclick="resetTradesFilters()" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg text-sm font-medium transition-colors">
+                                <i class="fas fa-undo mr-1"></i>Reset
+                            </button>
                         </div>
+                        <div class="mt-3 pt-3 border-t border-dark-600 flex items-center justify-between">
+                            <span class="text-sm text-gray-500">
+                                Showing <span id="trades-showing-count" class="text-gray-300 font-semibold">0</span> of <span id="trades-total-count" class="text-gray-300">0</span> trades
+                            </span>
+                            <span id="trades-filter-summary" class="text-xs text-primary-400"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Trades Table -->
+                    <div class="glass rounded-2xl overflow-hidden">
                         <div class="overflow-x-auto">
                             <table class="w-full trades-table">
                                 <thead class="bg-dark-800/50">
                                     <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                        <th class="px-5 py-3">Time</th>
+                                        <th class="px-5 py-3">Date/Time</th>
                                         <th class="px-5 py-3">Symbol</th>
-                                        <th class="px-5 py-3">Scan</th>
+                                        <th class="px-5 py-3">Strategy</th>
+                                        <th class="px-5 py-3">Mode</th>
                                         <th class="px-5 py-3">Entry</th>
                                         <th class="px-5 py-3">Exit</th>
                                         <th class="px-5 py-3">Qty</th>
-                                        <th class="px-5 py-3">Status</th>
+                                        <th class="px-5 py-3">Result</th>
                                         <th class="px-5 py-3 text-right">P&L</th>
                                     </tr>
                                 </thead>
@@ -624,6 +1041,11 @@
                                     <!-- Dynamic content -->
                                 </tbody>
                             </table>
+                        </div>
+                        <div id="no-trades-filtered" class="p-8 text-center text-gray-500 hidden">
+                            <i class="fas fa-filter text-4xl mb-3 opacity-50"></i>
+                            <p>No trades match the selected filters</p>
+                            <button onclick="resetTradesFilters()" class="mt-3 text-primary-400 hover:text-primary-300 text-sm">Clear filters</button>
                         </div>
                     </div>
                 </div>
@@ -699,6 +1121,7 @@
                                         <th class="px-4 py-3">Scan/Alert</th>
                                         <th class="px-4 py-3">Symbols</th>
                                         <th class="px-4 py-3">Status</th>
+                                        <th class="px-4 py-3">Reason / Result</th>
                                         <th class="px-4 py-3">Source IP</th>
                                         <th class="px-4 py-3 text-right">Latency</th>
                                     </tr>
@@ -885,18 +1308,45 @@
                                 </div>
                                 
                                 <!-- Paper Trading Toggle -->
-                                <div class="bg-dark-800/50 rounded-xl p-4 flex items-center justify-between">
-                                    <div>
-                                        <h4 class="font-medium flex items-center gap-2">
-                                            <i class="fas fa-flask text-yellow-400"></i>
-                                            Paper Trading Mode
-                                        </h4>
-                                        <p class="text-sm text-gray-400 mt-1">Test strategies without real money</p>
+                                <div id="paper-trading-container" class="bg-dark-800/50 rounded-xl p-4 border-2 border-yellow-500/30 transition-all">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div class="flex items-center gap-3">
+                                            <div id="paper-mode-icon" class="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center text-xl">
+                                                🟡
+                                            </div>
+                                            <div>
+                                                <h4 id="paper-mode-title" class="font-bold text-lg text-yellow-400 flex items-center gap-2">
+                                                    PAPER TRADING MODE
+                                                </h4>
+                                                <p id="paper-mode-desc" class="text-sm text-yellow-400/70">No real orders will be placed</p>
+                                            </div>
+                                        </div>
+                                        <button id="paper-trading-toggle" onclick="togglePaperTradingEnhanced()" 
+                                                class="relative w-16 h-8 rounded-full bg-yellow-500 transition-colors duration-300 shadow-lg shadow-yellow-500/30">
+                                            <span id="paper-trading-dot" class="absolute left-1 top-1 w-6 h-6 rounded-full bg-white transition-transform duration-300 shadow-md" style="transform: translateX(32px);"></span>
+                                        </button>
                                     </div>
-                                    <button id="paper-trading-toggle" onclick="togglePaperTrading()" 
-                                            class="relative w-14 h-7 rounded-full bg-gray-600 transition-colors duration-300">
-                                        <span id="paper-trading-dot" class="absolute left-1 top-1 w-5 h-5 rounded-full bg-white transition-transform duration-300"></span>
-                                    </button>
+                                    
+                                    <!-- Safety Warning -->
+                                    <div id="live-warning-config" class="hidden mt-3 p-3 bg-danger-500/10 border border-danger-500/30 rounded-lg">
+                                        <div class="flex items-start gap-3">
+                                            <span class="text-2xl animate-pulse">⚠️</span>
+                                            <div>
+                                                <div class="font-bold text-danger-400">WARNING: SWITCHING TO LIVE MODE</div>
+                                                <div class="text-sm text-danger-300 mt-1">Real money will be at risk. Orders will be sent to the broker.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="paper-info-config" class="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                                        <div class="flex items-start gap-3">
+                                            <span class="text-xl">📝</span>
+                                            <div>
+                                                <div class="font-medium text-yellow-400">Safe Testing Environment</div>
+                                                <div class="text-sm text-yellow-400/70 mt-1">All trades are simulated. No real money is used.</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div class="flex gap-3 pt-4 border-t border-dark-600">
@@ -1012,6 +1462,8 @@
         // Update all UI
         function updateUI() {
             updateHeader();
+            updateSystemStatusBar();
+            updateSmartWarningCards();
             updateStats();
             updateCharts();
             updateTradesTable();
@@ -1019,6 +1471,7 @@
             updateGTT();
             updateConfigForm();
             updateSidebarConnectionStatus();
+            simulateTradeFeed();
         }
 
         // Update header
@@ -1038,17 +1491,125 @@
                 toggle.classList.remove('bg-primary-500');
                 dot.style.transform = 'translateX(0)';
             }
+        }
+        
+        // 🔥 Update Global System Status Bar
+        function updateSystemStatusBar() {
+            if (!appData.config) return;
             
-            // Show paper trading badge
-            if (appData.config.paper_trading) {
-                document.getElementById('paper-badge').classList.remove('hidden');
+            const statusBar = document.getElementById('system-status-bar');
+            const tradingIcon = document.getElementById('status-trading-icon');
+            const tradingText = document.getElementById('status-trading-text');
+            const modeBadge = document.getElementById('status-mode-badge');
+            const capitalEl = document.getElementById('status-capital');
+            const riskEl = document.getElementById('status-risk');
+            const marketEl = document.getElementById('status-market');
+            const liveWarning = document.getElementById('live-warning');
+            
+            const isEnabled = appData.config.system_enabled;
+            const isPaper = appData.config.paper_trading;
+            const capital = appData.config.capital || 0;
+            const withinHours = appData.stats?.within_trading_hours || false;
+            
+            // Trading status
+            if (isEnabled) {
+                tradingIcon.textContent = '🟢';
+                tradingText.textContent = 'Trading Enabled';
+                tradingText.className = 'font-medium text-primary-400';
+            } else {
+                tradingIcon.textContent = '🔴';
+                tradingText.textContent = 'Trading Disabled';
+                tradingText.className = 'font-medium text-gray-400';
             }
+            
+            // Mode badge
+            if (isPaper) {
+                modeBadge.className = 'flex items-center gap-2 px-3 py-1 rounded-lg bg-yellow-500/10 border border-yellow-500/30';
+                modeBadge.innerHTML = '<span class="text-lg">🟡</span><span class="font-semibold text-yellow-400">PAPER MODE</span>';
+                statusBar.className = 'px-6 py-2 border-b border-dark-600 flex items-center justify-between text-sm bg-yellow-500/5';
+                if (liveWarning) liveWarning.classList.add('hidden');
+                if (liveWarning) liveWarning.classList.remove('flex');
+            } else {
+                modeBadge.className = 'flex items-center gap-2 px-3 py-1 rounded-lg bg-danger-500/10 border border-danger-500/30';
+                modeBadge.innerHTML = '<span class="text-lg">🔴</span><span class="font-semibold text-danger-400">LIVE MODE</span>';
+                statusBar.className = 'px-6 py-2 border-b border-dark-600 flex items-center justify-between text-sm bg-danger-500/5';
+                if (liveWarning) {
+                    liveWarning.classList.remove('hidden');
+                    liveWarning.classList.add('flex');
+                }
+            }
+            
+            // Capital
+            if (capitalEl) {
+                capitalEl.textContent = '₹' + capital.toLocaleString('en-IN');
+            }
+            
+            // Risk calculation
+            if (riskEl && appData.positions) {
+                const totalRisk = appData.positions.reduce((sum, p) => {
+                    const riskPerShare = (p.entry_price || 0) - (p.sl_price || p.entry_price * 0.98);
+                    return sum + (riskPerShare * (p.quantity || 0));
+                }, 0);
+                const riskPercent = capital > 0 ? (totalRisk / capital) * 100 : 0;
+                riskEl.textContent = riskPercent.toFixed(1) + '%';
+                
+                // Color code risk
+                if (riskPercent > 3) {
+                    riskEl.className = 'font-mono font-semibold text-danger-400';
+                } else if (riskPercent > 2) {
+                    riskEl.className = 'font-mono font-semibold text-warning-500';
+                } else {
+                    riskEl.className = 'font-mono font-semibold text-primary-400';
+                }
+            }
+            
+            // Market status
+            if (marketEl) {
+                if (withinHours) {
+                    marketEl.textContent = 'OPEN';
+                    marketEl.className = 'font-medium text-primary-400';
+                } else {
+                    marketEl.textContent = 'CLOSED';
+                    marketEl.className = 'font-medium text-gray-500';
+                }
+            }
+        }
+        
+        // Open quick chart modal or TradingView
+        function openQuickChart() {
+            // Get first position symbol or default to NIFTY
+            let symbol = 'NIFTY';
+            if (appData.positions && appData.positions.length > 0) {
+                symbol = appData.positions[0].symbol.replace(/-EQ$/, '');
+            }
+            
+            const url = `https://www.tradingview.com/chart/?symbol=NSE:${symbol}`;
+            window.open(url, '_blank', 'width=1200,height=800');
         }
 
         // Update stats cards
         function updateStats() {
             if (!appData.stats) return;
             
+            // Calculate paper vs live breakdown
+            const allTrades = appData.trades || [];
+            const paperTrades = allTrades.filter(t => t.paper_trading === true);
+            const liveTrades = allTrades.filter(t => t.paper_trading !== true);
+            
+            const paperWins = paperTrades.filter(t => t.pnl > 0).length;
+            const paperLosses = paperTrades.filter(t => t.pnl < 0).length;
+            const paperPnl = paperTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+            const paperWinRate = paperTrades.length > 0 ? Math.round((paperWins / paperTrades.length) * 100) : 0;
+            
+            const liveWins = liveTrades.filter(t => t.pnl > 0).length;
+            const liveLosses = liveTrades.filter(t => t.pnl < 0).length;
+            const livePnl = liveTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+            const liveWinRate = liveTrades.length > 0 ? Math.round((liveWins / liveTrades.length) * 100) : 0;
+            
+            const paperPositions = (appData.positions || []).filter(p => p.paper_trading === true).length;
+            const livePositions = (appData.positions || []).filter(p => p.paper_trading !== true).length;
+            
+            // Total stats
             const pnl = appData.stats.today_pnl || 0;
             const trades = appData.stats.today_trades || 0;
             const wins = appData.stats.winning_trades || 0;
@@ -1091,6 +1652,32 @@
                 posBadge.classList.add('hidden');
             }
             
+            // Paper Trading Stats
+            const paperPnlEl = document.getElementById('paper-pnl');
+            if (paperPnlEl) {
+                paperPnlEl.textContent = (paperPnl >= 0 ? '+' : '') + '₹' + paperPnl.toFixed(2);
+                paperPnlEl.className = 'text-xl font-bold font-mono ' + (paperPnl >= 0 ? 'text-yellow-400' : 'text-danger-400');
+            }
+            const paperTradesEl = document.getElementById('paper-trades');
+            if (paperTradesEl) paperTradesEl.textContent = paperTrades.length;
+            const paperWinrateEl = document.getElementById('paper-winrate');
+            if (paperWinrateEl) paperWinrateEl.textContent = paperWinRate + '%';
+            const paperPositionsEl = document.getElementById('paper-positions');
+            if (paperPositionsEl) paperPositionsEl.textContent = paperPositions;
+            
+            // Live Trading Stats
+            const livePnlEl = document.getElementById('live-pnl');
+            if (livePnlEl) {
+                livePnlEl.textContent = (livePnl >= 0 ? '+' : '') + '₹' + livePnl.toFixed(2);
+                livePnlEl.className = 'text-xl font-bold font-mono ' + (livePnl >= 0 ? 'text-primary-400' : 'text-danger-400');
+            }
+            const liveTradesEl = document.getElementById('live-trades');
+            if (liveTradesEl) liveTradesEl.textContent = liveTrades.length;
+            const liveWinrateEl = document.getElementById('live-winrate');
+            if (liveWinrateEl) liveWinrateEl.textContent = liveWinRate + '%';
+            const livePositionsEl = document.getElementById('live-positions');
+            if (livePositionsEl) livePositionsEl.textContent = livePositions;
+            
             // Market Status
             const marketStatus = document.getElementById('market-status');
             if (appData.stats.within_trading_hours) {
@@ -1101,11 +1688,13 @@
                 marketStatus.className = 'text-2xl font-bold mt-1 text-gray-500';
             }
             
-            // Daily limit bar
+            // Daily limit bar (only applies to live trading)
             const maxTrades = appData.config?.max_trades_per_day || 10;
-            const pct = Math.min((trades / maxTrades) * 100, 100);
+            const isPaper = appData.config?.paper_trading;
+            const liveTradesCount = liveTrades.length;
+            const pct = isPaper ? 0 : Math.min((liveTradesCount / maxTrades) * 100, 100);
             document.getElementById('daily-limit-bar').style.width = pct + '%';
-            document.getElementById('daily-limit-used').textContent = `${trades}/${maxTrades}`;
+            document.getElementById('daily-limit-used').textContent = isPaper ? '∞' : `${liveTradesCount}/${maxTrades}`;
             
             // Quick stats
             document.getElementById('quick-total-trades').textContent = trades;
@@ -1335,6 +1924,9 @@
             }
         }
 
+        // Global variable to store filtered trades
+        let filteredTrades = [];
+        
         // Update trades table
         function updateTradesTable() {
             const recentBody = document.getElementById('recent-trades-body');
@@ -1342,6 +1934,9 @@
             const noMsg = document.getElementById('no-trades-message');
             
             const trades = [...(appData.trades || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Populate strategy filter dropdown
+            populateStrategyFilter(trades);
             
             if (trades.length === 0) {
                 if (noMsg) noMsg.classList.remove('hidden');
@@ -1352,143 +1947,858 @@
             
             if (noMsg) noMsg.classList.add('hidden');
             
-            const renderRow = (trade, isComplete = false) => {
-                const time = trade.date ? new Date(trade.date).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-                const pnl = trade.pnl || 0;
-                const side = trade.action || 'BUY';
-                const status = trade.status || 'PENDING';
-                
-                // 🔥 Get scan name from trade data
-                const scanName = trade.alert_name || trade.context?.scan_name || '-';
-                const scanDisplay = scanName.length > 20 ? scanName.substring(0, 20) + '...' : scanName;
-                
-                let statusClass = 'bg-gray-500/20 text-gray-400';
-                if (status === 'OPEN') statusClass = 'bg-blue-500/20 text-blue-400';
-                if (status === 'CLOSED' && pnl > 0) statusClass = 'bg-primary-500/20 text-primary-400';
-                if (status === 'CLOSED' && pnl < 0) statusClass = 'bg-danger-500/20 text-danger-400';
-                
-                // For complete history, show Exit price instead of Side/SL-TP
-                if (isComplete) {
-                    return `
-                        <tr class="border-b border-dark-600 hover:bg-dark-700/30">
-                            <td class="px-5 py-3 text-gray-400">${time}</td>
-                            <td class="px-5 py-3 font-semibold">${trade.symbol}</td>
-                            <td class="px-5 py-3">
-                                <span class="text-xs text-gray-400" title="${scanName}">${scanDisplay}</span>
-                            </td>
-                            <td class="px-5 py-3 font-mono">₹${(trade.entry_price || 0).toFixed(2)}</td>
-                            <td class="px-5 py-3 font-mono">${trade.exit_price ? '₹' + trade.exit_price.toFixed(2) : '-'}</td>
-                            <td class="px-5 py-3">${trade.quantity || 0}</td>
-                            <td class="px-5 py-3">
-                                <span class="px-2 py-1 rounded text-xs ${statusClass}">${status}</span>
-                            </td>
-                            <td class="px-5 py-3 text-right font-mono ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}">
-                                ${pnl !== 0 ? (pnl >= 0 ? '+' : '') + '₹' + pnl.toFixed(2) : '-'}
-                            </td>
-                        </tr>
-                    `;
+            // Store all trades and apply filters
+            filteredTrades = trades;
+            applyTradesFilters();
+            
+            // Update recent trades (always show unfiltered)
+            recentBody.innerHTML = trades.slice(0, 5).map(t => renderRecentTradeRow(t)).join('');
+        }
+        
+        // Render row for recent trades (dashboard view)
+        function renderRecentTradeRow(trade) {
+            const time = trade.date ? new Date(trade.date).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+            const pnl = trade.pnl || 0;
+            const side = trade.action || 'BUY';
+            const status = trade.status || 'PENDING';
+            const isPaper = trade.paper_trading || false;
+            
+            const scanName = trade.alert_name || trade.context?.scan_name || '-';
+            const scanDisplay = scanName.length > 20 ? scanName.substring(0, 20) + '...' : scanName;
+            
+            let statusClass = 'bg-gray-500/20 text-gray-400';
+            if (status === 'OPEN') statusClass = 'bg-blue-500/20 text-blue-400';
+            if (status === 'CLOSED' && pnl > 0) statusClass = 'bg-primary-500/20 text-primary-400';
+            if (status === 'CLOSED' && pnl < 0) statusClass = 'bg-danger-500/20 text-danger-400';
+            
+            // Mode badge for the dedicated column
+            const modeBadge = isPaper
+                ? '<span class="px-2 py-1 rounded text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"><i class="fas fa-flask mr-1"></i>Paper</span>'
+                : '<span class="px-2 py-1 rounded text-xs bg-primary-500/20 text-primary-400 border border-primary-500/30"><i class="fas fa-circle mr-1 text-[6px]"></i>Live</span>';
+            
+            // Row styling - paper trades get a subtle yellow left border
+            const rowClass = isPaper
+                ? 'border-b border-dark-600 hover:bg-yellow-500/5 border-l-4 border-l-yellow-500/50'
+                : 'border-b border-dark-600 hover:bg-dark-700/30 border-l-4 border-l-primary-500/50';
+            
+            return `
+                <tr class="${rowClass}">
+                    <td class="px-5 py-3 text-gray-400">${time}</td>
+                    <td class="px-5 py-3 font-semibold">${trade.symbol}</td>
+                    <td class="px-5 py-3">
+                        <span class="text-xs text-gray-400" title="${scanName}">${scanDisplay}</span>
+                    </td>
+                    <td class="px-5 py-3">${modeBadge}</td>
+                    <td class="px-5 py-3">
+                        <span class="px-2 py-1 rounded text-xs ${side === 'BUY' ? 'bg-primary-500/20 text-primary-400' : 'bg-danger-500/20 text-danger-400'}">
+                            ${side}
+                        </span>
+                    </td>
+                    <td class="px-5 py-3 font-mono">₹${(trade.entry_price || 0).toFixed(2)}</td>
+                    <td class="px-5 py-3 text-xs text-gray-400">
+                        SL: ₹${(trade.stop_loss || 0).toFixed(2)}<br>
+                        TP: ₹${(trade.target || 0).toFixed(2)}
+                    </td>
+                    <td class="px-5 py-3">${trade.quantity || 0}</td>
+                    <td class="px-5 py-3">
+                        <span class="px-2 py-1 rounded text-xs ${statusClass}">${status}</span>
+                    </td>
+                    <td class="px-5 py-3 text-right font-mono ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}">
+                        ${pnl !== 0 ? (pnl >= 0 ? '+' : '') + '₹' + pnl.toFixed(2) : '-'}
+                    </td>
+                </tr>
+            `;
+        }
+        
+        // Render row for complete trade history
+        function renderTradeHistoryRow(trade) {
+            const date = trade.date ? new Date(trade.date) : null;
+            const dateStr = date ? date.toLocaleDateString('en-IN', {day: '2-digit', month: 'short'}) : '--';
+            const timeStr = date ? date.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+            const pnl = trade.pnl || 0;
+            const status = trade.status || 'PENDING';
+            const isPaper = trade.paper_trading || false;
+            
+            const scanName = trade.alert_name || trade.context?.scan_name || '-';
+            const scanDisplay = scanName.length > 25 ? scanName.substring(0, 25) + '...' : scanName;
+            
+            // Determine result
+            let resultBadge = '';
+            if (status === 'CLOSED') {
+                if (pnl > 0) {
+                    resultBadge = '<span class="px-2 py-1 rounded text-xs bg-primary-500/20 text-primary-400"><i class="fas fa-check mr-1"></i>Win</span>';
+                } else if (pnl < 0) {
+                    resultBadge = '<span class="px-2 py-1 rounded text-xs bg-danger-500/20 text-danger-400"><i class="fas fa-times mr-1"></i>Loss</span>';
+                } else {
+                    resultBadge = '<span class="px-2 py-1 rounded text-xs bg-gray-500/20 text-gray-400">Breakeven</span>';
+                }
+            } else if (status === 'OPEN') {
+                resultBadge = '<span class="px-2 py-1 rounded text-xs bg-blue-500/20 text-blue-400">Open</span>';
+            } else {
+                resultBadge = '<span class="px-2 py-1 rounded text-xs bg-gray-500/20 text-gray-400">Pending</span>';
+            }
+            
+            // Mode badge with icon
+            const modeBadge = isPaper 
+                ? '<span class="px-2 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" title="Paper Trading - No real money"><i class="fas fa-flask mr-1"></i>Paper</span>'
+                : '<span class="px-2 py-0.5 rounded text-xs bg-primary-500/20 text-primary-400 border border-primary-500/30" title="Live Trading - Real money"><i class="fas fa-circle mr-1 text-[8px]"></i>Live</span>';
+            
+            // Row styling - paper trades get a subtle yellow left border
+            const rowClass = isPaper
+                ? 'border-b border-dark-600 hover:bg-yellow-500/5 border-l-4 border-l-yellow-500/50'
+                : 'border-b border-dark-600 hover:bg-dark-700/30 border-l-4 border-l-primary-500/50';
+            
+            return `
+                <tr class="${rowClass}">
+                    <td class="px-5 py-3">
+                        <div class="text-gray-400 text-xs">${dateStr}</div>
+                        <div class="text-gray-300">${timeStr}</div>
+                    </td>
+                    <td class="px-5 py-3 font-semibold">${trade.symbol}</td>
+                    <td class="px-5 py-3">
+                        <span class="text-xs text-gray-400" title="${scanName}">${scanDisplay}</span>
+                    </td>
+                    <td class="px-5 py-3">${modeBadge}</td>
+                    <td class="px-5 py-3 font-mono">₹${(trade.entry_price || 0).toFixed(2)}</td>
+                    <td class="px-5 py-3 font-mono">${trade.exit_price ? '₹' + trade.exit_price.toFixed(2) : '-'}</td>
+                    <td class="px-5 py-3">${trade.quantity || 0}</td>
+                    <td class="px-5 py-3">${resultBadge}</td>
+                    <td class="px-5 py-3 text-right font-mono ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}">
+                        ${pnl !== 0 ? (pnl >= 0 ? '+' : '') + '₹' + pnl.toFixed(2) : '-'}
+                    </td>
+                </tr>
+            `;
+        }
+        
+        // Populate strategy filter dropdown
+        function populateStrategyFilter(trades) {
+            const select = document.getElementById('trades-filter-strategy');
+            if (!select || select.options.length > 1) return; // Already populated
+            
+            const strategies = new Set();
+            trades.forEach(t => {
+                const strategy = t.alert_name || t.context?.scan_name;
+                if (strategy) strategies.add(strategy);
+            });
+            
+            Array.from(strategies).sort().forEach(strategy => {
+                const option = document.createElement('option');
+                option.value = strategy;
+                option.textContent = strategy.length > 30 ? strategy.substring(0, 30) + '...' : strategy;
+                select.appendChild(option);
+            });
+        }
+        
+        // Apply filters to trades
+        function applyTradesFilters() {
+            const dateFilter = document.getElementById('trades-filter-date')?.value;
+            const symbolFilter = document.getElementById('trades-filter-symbol')?.value.toUpperCase().trim();
+            const strategyFilter = document.getElementById('trades-filter-strategy')?.value;
+            const resultFilter = document.getElementById('trades-filter-result')?.value;
+            const modeFilter = document.getElementById('trades-filter-mode')?.value;
+            
+            filteredTrades = (appData.trades || []).filter(trade => {
+                // Date filter
+                if (dateFilter && trade.date) {
+                    const tradeDate = new Date(trade.date).toISOString().split('T')[0];
+                    if (tradeDate !== dateFilter) return false;
                 }
                 
-                // For recent trades, show Side and SL/Target
-                return `
-                    <tr class="border-b border-dark-600 hover:bg-dark-700/30">
-                        <td class="px-5 py-3 text-gray-400">${time}</td>
-                        <td class="px-5 py-3 font-semibold">${trade.symbol}</td>
-                        <td class="px-5 py-3">
-                            <span class="text-xs text-gray-400" title="${scanName}">${scanDisplay}</span>
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="px-2 py-1 rounded text-xs ${side === 'BUY' ? 'bg-primary-500/20 text-primary-400' : 'bg-danger-500/20 text-danger-400'}">
-                                ${side}
-                            </span>
-                        </td>
-                        <td class="px-5 py-3 font-mono">₹${(trade.entry_price || 0).toFixed(2)}</td>
-                        <td class="px-5 py-3 text-xs text-gray-400">
-                            SL: ₹${(trade.stop_loss || 0).toFixed(2)}<br>
-                            TP: ₹${(trade.target || 0).toFixed(2)}
-                        </td>
-                        <td class="px-5 py-3">${trade.quantity || 0}</td>
-                        <td class="px-5 py-3">
-                            <span class="px-2 py-1 rounded text-xs ${statusClass}">${status}</span>
-                        </td>
-                        <td class="px-5 py-3 text-right font-mono ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}">
-                            ${pnl !== 0 ? (pnl >= 0 ? '+' : '') + '₹' + pnl.toFixed(2) : '-'}
-                        </td>
-                    </tr>
-                `;
-            };
+                // Symbol filter
+                if (symbolFilter && trade.symbol) {
+                    if (!trade.symbol.toUpperCase().includes(symbolFilter)) return false;
+                }
+                
+                // Strategy filter
+                if (strategyFilter) {
+                    const tradeStrategy = trade.alert_name || trade.context?.scan_name || '';
+                    if (tradeStrategy !== strategyFilter) return false;
+                }
+                
+                // Result filter
+                if (resultFilter && trade.status === 'CLOSED') {
+                    const pnl = trade.pnl || 0;
+                    if (resultFilter === 'win' && pnl <= 0) return false;
+                    if (resultFilter === 'loss' && pnl >= 0) return false;
+                } else if (resultFilter && trade.status !== 'CLOSED') {
+                    return false;
+                }
+                
+                // Mode filter
+                if (modeFilter) {
+                    const isPaper = trade.paper_trading || false;
+                    if (modeFilter === 'paper' && !isPaper) return false;
+                    if (modeFilter === 'live' && isPaper) return false;
+                }
+                
+                return true;
+            }).sort((a, b) => new Date(b.date) - new Date(a.date));
             
-            recentBody.innerHTML = trades.slice(0, 5).map(t => renderRow(t, false)).join('');
-            allBody.innerHTML = trades.map(t => renderRow(t, true)).join('');
+            renderFilteredTrades();
+        }
+        
+        // Render filtered trades
+        function renderFilteredTrades() {
+            const allBody = document.getElementById('all-trades-body');
+            const noFiltered = document.getElementById('no-trades-filtered');
+            const showingCount = document.getElementById('trades-showing-count');
+            const totalCount = document.getElementById('trades-total-count');
+            const filterSummary = document.getElementById('trades-filter-summary');
+            
+            if (!allBody) return;
+            
+            const total = (appData.trades || []).length;
+            
+            if (filteredTrades.length === 0) {
+                allBody.innerHTML = '';
+                if (noFiltered) noFiltered.classList.remove('hidden');
+            } else {
+                if (noFiltered) noFiltered.classList.add('hidden');
+                allBody.innerHTML = filteredTrades.map(t => renderTradeHistoryRow(t)).join('');
+            }
+            
+            // Update counts
+            if (showingCount) showingCount.textContent = filteredTrades.length;
+            if (totalCount) totalCount.textContent = total;
+            
+            // Update filter summary
+            const activeFilters = [];
+            if (document.getElementById('trades-filter-date')?.value) activeFilters.push('Date');
+            if (document.getElementById('trades-filter-symbol')?.value) activeFilters.push('Symbol');
+            if (document.getElementById('trades-filter-strategy')?.value) activeFilters.push('Strategy');
+            if (document.getElementById('trades-filter-result')?.value) activeFilters.push('Result');
+            if (document.getElementById('trades-filter-mode')?.value) activeFilters.push('Mode');
+            
+            if (filterSummary) {
+                filterSummary.textContent = activeFilters.length > 0 
+                    ? `Filtered by: ${activeFilters.join(', ')}` 
+                    : '';
+            }
+        }
+        
+        // Reset all trades filters
+        function resetTradesFilters() {
+            const dateEl = document.getElementById('trades-filter-date');
+            const symbolEl = document.getElementById('trades-filter-symbol');
+            const strategyEl = document.getElementById('trades-filter-strategy');
+            const resultEl = document.getElementById('trades-filter-result');
+            const modeEl = document.getElementById('trades-filter-mode');
+            
+            if (dateEl) dateEl.value = '';
+            if (symbolEl) symbolEl.value = '';
+            if (strategyEl) strategyEl.value = '';
+            if (resultEl) resultEl.value = '';
+            if (modeEl) modeEl.value = '';
+            
+            applyTradesFilters();
+        }
+        
+        // Export trades to CSV
+        function exportTradesCSV() {
+            const tradesToExport = filteredTrades.length > 0 ? filteredTrades : (appData.trades || []);
+            
+            if (tradesToExport.length === 0) {
+                showToast('No trades to export', 'error');
+                return;
+            }
+            
+            // CSV Header
+            const headers = ['Date', 'Time', 'Symbol', 'Strategy', 'Mode', 'Entry Price', 'Exit Price', 'Quantity', 'Status', 'P&L', 'P&L %'];
+            
+            // CSV Rows
+            const rows = tradesToExport.map(trade => {
+                const date = trade.date ? new Date(trade.date) : null;
+                const dateStr = date ? date.toLocaleDateString('en-IN') : '';
+                const timeStr = date ? date.toLocaleTimeString('en-IN') : '';
+                const scanName = trade.alert_name || trade.context?.scan_name || '';
+                const mode = trade.paper_trading ? 'Paper' : 'Live';
+                const pnl = trade.pnl || 0;
+                const pnlPct = trade.pnl_percent || 0;
+                
+                return [
+                    dateStr,
+                    timeStr,
+                    trade.symbol || '',
+                    scanName,
+                    mode,
+                    trade.entry_price || 0,
+                    trade.exit_price || '',
+                    trade.quantity || 0,
+                    trade.status || '',
+                    pnl,
+                    pnlPct.toFixed(2)
+                ];
+            });
+            
+            // Combine header and rows
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+            ].join('\n');
+            
+            // Download CSV
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `trades_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast(`Exported ${tradesToExport.length} trades to CSV`, 'success');
         }
 
-        // Update positions
+        // Positions view mode, sort state, and filter
+        let positionsViewMode = 'cards';
+        let positionsSortBy = 'pnl';
+        let positionsModeFilter = 'all';
+        
+        // Update positions - REDESIGNED with Paper/Live segregation
         function updatePositions() {
             const container = document.getElementById('positions-list');
             const noPos = document.getElementById('no-positions');
+            const countBadge = document.getElementById('positions-count-badge');
+            const closeAllBtn = document.getElementById('close-all-btn');
             
-            if (!appData.positions || appData.positions.length === 0) {
+            // Filter positions based on mode
+            let filteredPositions = [...(appData.positions || [])];
+            if (positionsModeFilter === 'paper') {
+                filteredPositions = filteredPositions.filter(p => p.paper_trading === true);
+            } else if (positionsModeFilter === 'live') {
+                filteredPositions = filteredPositions.filter(p => p.paper_trading !== true);
+            }
+            
+            // Update count badge (shows filtered count)
+            const posCount = filteredPositions.length;
+            const totalCount = appData.positions?.length || 0;
+            if (countBadge) {
+                countBadge.textContent = positionsModeFilter === 'all' ? posCount : `${posCount}/${totalCount}`;
+                countBadge.className = posCount > 0 
+                    ? 'px-3 py-1 bg-primary-500/20 text-primary-400 rounded-full text-sm font-mono border border-primary-500/30'
+                    : 'px-3 py-1 bg-dark-700 rounded-full text-sm font-mono text-gray-400';
+            }
+            
+            // Show/hide Close All button (only for filtered positions)
+            if (closeAllBtn) {
+                if (posCount > 1) {
+                    closeAllBtn.classList.remove('hidden');
+                } else {
+                    closeAllBtn.classList.add('hidden');
+                }
+            }
+            
+            // Update summary (always shows total paper vs live)
+            updatePositionsSummary();
+            
+            if (!filteredPositions || filteredPositions.length === 0) {
                 container.innerHTML = '';
                 noPos.classList.remove('hidden');
+                // Update no positions message based on filter
+                const noPosText = noPos.querySelector('p');
+                if (noPosText) {
+                    if (positionsModeFilter === 'paper') {
+                        noPosText.textContent = 'No paper trading positions. Switch to "All" or "Live" to see other positions.';
+                    } else if (positionsModeFilter === 'live') {
+                        noPosText.textContent = 'No live trading positions. Switch to "All" or "Paper" to see other positions.';
+                    } else {
+                        noPosText.textContent = 'Positions will appear here when trades are executed. Use the dashboard to monitor for signals.';
+                    }
+                }
                 return;
             }
             
             noPos.classList.add('hidden');
             
-            container.innerHTML = appData.positions.map(pos => {
-                const pnl = pos.unrealized_pnl || 0;
-                const pnlPct = pos.pnl_percent || 0;
-                const isProfit = pnl >= 0;
+            // Sort positions
+            let sortedPositions = [...filteredPositions];
+            switch(positionsSortBy) {
+                case 'pnl':
+                    sortedPositions.sort((a, b) => (b.unrealized_pnl || 0) - (a.unrealized_pnl || 0));
+                    break;
+                case 'pnl-asc':
+                    sortedPositions.sort((a, b) => (a.unrealized_pnl || 0) - (b.unrealized_pnl || 0));
+                    break;
+                case 'symbol':
+                    sortedPositions.sort((a, b) => (a.symbol || '').localeCompare(b.symbol || ''));
+                    break;
+                case 'time':
+                    sortedPositions.sort((a, b) => new Date(b.entry_time || 0) - new Date(a.entry_time || 0));
+                    break;
+                case 'risk':
+                    sortedPositions.sort((a, b) => calculatePositionRisk(b) - calculatePositionRisk(a));
+                    break;
+            }
+            
+            // Render based on view mode
+            switch(positionsViewMode) {
+                case 'list':
+                    container.className = 'space-y-3';
+                    container.innerHTML = sortedPositions.map(pos => renderPositionListView(pos)).join('');
+                    break;
+                case 'compact':
+                    container.className = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3';
+                    container.innerHTML = sortedPositions.map(pos => renderPositionCompactView(pos)).join('');
+                    break;
+                default: // cards
+                    container.className = 'grid grid-cols-1 xl:grid-cols-2 gap-4';
+                    container.innerHTML = sortedPositions.map(pos => renderPositionCardView(pos)).join('');
+            }
+        }
+        
+        // Filter positions by mode
+        function filterPositions() {
+            const filterEl = document.getElementById('positions-mode-filter');
+            if (filterEl) {
+                positionsModeFilter = filterEl.value;
+                updatePositions();
+            }
+        }
+        
+        // Calculate position risk amount
+        function calculatePositionRisk(pos) {
+            const entry = pos.entry_price || 0;
+            const sl = pos.sl_price || entry * 0.98;
+            return (entry - sl) * (pos.quantity || 0);
+        }
+        
+        // Render position card view (detailed)
+        function renderPositionCardView(pos) {
+            const pnl = pos.unrealized_pnl || 0;
+            const pnlPct = pos.pnl_percent || 0;
+            const isProfit = pnl >= 0;
+            const isExternal = pos.external || pos.source === 'KITE_APP';
+            const externalBadge = isExternal ? '<span class="ml-2 px-2 py-0.5 bg-warning-500/20 text-warning-500 text-xs rounded-full border border-warning-500/30">Kite</span>' : '';
+            
+            // Paper trading mode badge
+            const isPaper = pos.paper_trading || false;
+            const modeBadge = isPaper
+                ? '<span class="ml-2 px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full border border-yellow-500/30" title="Paper Trade"><i class="fas fa-flask mr-1"></i>Paper</span>'
+                : '<span class="ml-2 px-2 py-0.5 bg-primary-500/20 text-primary-400 text-xs rounded-full border border-primary-500/30" title="Live Trade"><i class="fas fa-circle mr-1 text-[6px]"></i>Live</span>';
+            
+            // Card border color based on mode
+            const cardBorderClass = isPaper
+                ? 'border-yellow-500/30 hover:border-yellow-500/50'
+                : 'border-dark-600 hover:border-primary-500/50';
+            
+            const entry = pos.entry_price || 0;
+            const ltp = pos.ltp || entry;
+            const sl = pos.sl_price || entry * 0.98;
+            const tp = pos.tp_price || entry * 1.04;
+            
+            const ltpChange = ltp - entry;
+            const ltpChangePct = entry > 0 ? (ltpChange / entry) * 100 : 0;
+            
+            const risk = entry - sl;
+            const reward = tp - entry;
+            const rrRatio = risk > 0 ? (reward / risk).toFixed(1) : '2.0';
+            
+            const totalRange = tp - sl;
+            const ltpProgress = totalRange > 0 ? ((ltp - sl) / totalRange) * 100 : 50;
+            const entryProgress = totalRange > 0 ? ((entry - sl) / totalRange) * 100 : 50;
+            
+            let timeInTrade = 'Just now';
+            if (pos.entry_time) {
+                const entryTime = new Date(pos.entry_time);
+                const now = new Date();
+                const diffMs = now - entryTime;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMins / 60);
                 
-                const isExternal = pos.external || pos.source === 'KITE_APP';
-                const externalBadge = isExternal ? '<span class="ml-2 px-2 py-0.5 bg-warning-500/20 text-warning-500 text-xs rounded">Kite App</span>' : '';
-                const cardBorder = isExternal ? 'border-warning-500/30' : '';
-                
-                return `
-                    <div class="glass rounded-xl p-5 animated-border ${cardBorder}" style="${isExternal ? 'border: 1px solid rgba(245, 158, 11, 0.3);' : ''}">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${isExternal ? 'from-warning-500 to-warning-700' : 'from-primary-500 to-primary-700'} flex items-center justify-center text-white font-bold text-lg">
-                                    ${pos.symbol[0]}
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-lg">${pos.symbol}${externalBadge}</h4>
-                                    <p class="text-sm text-gray-400">${pos.quantity} shares @ ₹${pos.entry_price.toFixed(2)} ${isExternal ? '(Manual)' : ''}</p>
-                                </div>
+                if (diffHours > 0) {
+                    timeInTrade = `${diffHours}h ${diffMins % 60}m`;
+                } else if (diffMins > 0) {
+                    timeInTrade = `${diffMins}m`;
+                }
+            }
+            
+            // Risk amount
+            const riskAmount = risk * (pos.quantity || 0);
+            
+            return `
+                <div class="glass rounded-xl p-5 border ${cardBorderClass} transition-all position-card-mobile group ${isPaper ? 'bg-yellow-500/5' : ''}">
+                    <!-- Header -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-14 h-14 rounded-xl bg-gradient-to-br ${isExternal ? 'from-warning-500 to-warning-700' : isPaper ? 'from-yellow-500 to-yellow-700' : 'from-primary-500 to-primary-700'} flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                                ${pos.symbol[0]}
                             </div>
-                            <div class="text-right">
-                                <div class="text-2xl font-bold font-mono ${isProfit ? 'text-primary-400' : 'text-danger-500'}">
-                                    ${isProfit ? '+' : ''}₹${pnl.toFixed(2)}
-                                </div>
-                                <div class="text-sm ${isProfit ? 'text-primary-400' : 'text-danger-500'}">
-                                    ${isProfit ? '+' : ''}${pnlPct.toFixed(2)}%
-                                </div>
+                            <div>
+                                <h4 class="font-bold text-2xl flex items-center">${pos.symbol}${modeBadge}${externalBadge}</h4>
+                                <p class="text-base text-gray-400">${pos.quantity} shares @ ₹${entry.toFixed(2)}</p>
                             </div>
                         </div>
-                        
-                        <div class="grid grid-cols-3 gap-4 mb-4 text-sm">
-                            <div class="bg-dark-800/50 rounded-lg p-3">
-                                <div class="text-gray-400 mb-1">LTP</div>
-                                <div class="font-mono font-semibold">₹${(pos.ltp || 0).toFixed(2)}</div>
+                        <div class="text-left sm:text-right">
+                            <div class="text-4xl font-bold font-mono ${isProfit ? 'text-primary-400' : 'text-danger-500'}">
+                                ${isProfit ? '+' : ''}₹${pnl.toFixed(2)}
                             </div>
-                            <div class="bg-dark-800/50 rounded-lg p-3">
-                                <div class="text-gray-400 mb-1">Stop Loss</div>
-                                <div class="font-mono font-semibold text-danger-500">₹${pos.sl_price.toFixed(2)}</div>
+                            <div class="text-lg ${isProfit ? 'text-primary-400' : 'text-danger-500'}">
+                                ${isProfit ? '+' : ''}${pnlPct.toFixed(2)}%
                             </div>
-                            <div class="bg-dark-800/50 rounded-lg p-3">
-                                <div class="text-gray-400 mb-1">Target</div>
-                                <div class="font-mono font-semibold text-primary-400">₹${pos.tp_price.toFixed(2)}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="flex gap-2">
-                            <button onclick="closePosition('${pos.id}', '${pos.symbol}', ${pos.quantity})" class="flex-1 bg-danger-500/20 hover:bg-danger-500/30 text-danger-500 py-2 rounded-lg font-medium transition-colors text-sm">
-                                <i class="fas fa-times mr-2"></i>Close Position
-                            </button>
                         </div>
                     </div>
-                `;
-            }).join('');
+                    
+                    <!-- Price Row -->
+                    <div class="grid grid-cols-3 gap-2 mb-4 p-3 bg-dark-800/50 rounded-lg">
+                        <div class="text-center">
+                            <div class="text-xs text-gray-500 mb-1">Entry</div>
+                            <div class="font-mono font-semibold text-lg">₹${entry.toFixed(2)}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs text-gray-500 mb-1">LTP</div>
+                            <div class="font-mono font-bold text-2xl ${ltpChange >= 0 ? 'text-primary-400' : 'text-danger-500'}">
+                                ₹${ltp.toFixed(2)}
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs text-gray-500 mb-1">Change</div>
+                            <div class="font-mono font-semibold ${ltpChange >= 0 ? 'text-primary-400' : 'text-danger-500'}">
+                                ${ltpChange >= 0 ? '+' : ''}₹${ltpChange.toFixed(2)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- SL/TP Row -->
+                    <div class="flex items-center justify-between mb-4 px-2">
+                        <div class="text-center">
+                            <div class="text-xs text-danger-500 mb-1">Stop Loss</div>
+                            <div class="font-mono font-bold text-lg text-danger-400">₹${sl.toFixed(2)}</div>
+                            <div class="text-xs text-gray-500">Risk: ₹${riskAmount.toFixed(0)}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs text-primary-500 mb-1">Target</div>
+                            <div class="font-mono font-bold text-lg text-primary-400">₹${tp.toFixed(2)}</div>
+                            <div class="text-xs text-gray-500">RR: 1:${rrRatio}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="mb-4">
+                        <div class="relative h-4 bg-dark-700 rounded-full overflow-visible">
+                            <div class="absolute top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gray-400 z-10" style="left: ${entryProgress}%;"></div>
+                            <div class="absolute left-0 top-0 h-full rounded-full ${ltpProgress >= entryProgress ? 'bg-gradient-to-r from-danger-500 via-primary-500 to-primary-400' : 'bg-gradient-to-r from-danger-500 to-orange-500'}"
+                                 style="width: ${Math.min(Math.max(ltpProgress, 0), 100)}%;"></div>
+                            <div class="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full border-3 ${ltpChange >= 0 ? 'border-primary-500' : 'border-danger-500'} shadow-lg z-20"
+                                 style="left: calc(${Math.min(Math.max(ltpProgress, 0), 100)}% - 10px);"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 mt-2">
+                            <span>SL ₹${sl.toFixed(0)}</span>
+                            <span class="text-gray-400">${timeInTrade}</span>
+                            <span>TP ₹${tp.toFixed(0)}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="closePosition('${pos.id}', '${pos.symbol}', ${pos.quantity})" 
+                                class="col-span-2 bg-danger-500 hover:bg-danger-600 text-white py-3 rounded-lg font-bold transition-colors flex items-center justify-center gap-2">
+                            <i class="fas fa-times"></i>Close
+                        </button>
+                        <button onclick="moveStopLoss('${pos.id}', '${pos.symbol}', ${pos.quantity}, ${sl}, ${entry})" 
+                                class="bg-warning-500/20 hover:bg-warning-500/30 text-warning-400 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-1">
+                            <i class="fas fa-arrow-up"></i><span class="hidden sm:inline">Move SL</span>
+                        </button>
+                        <button onclick="trailStopLoss('${pos.id}', '${pos.symbol}', ${pos.quantity}, ${sl}, ${entry}, ${ltp})" 
+                                class="bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-1">
+                            <i class="fas fa-chart-line"></i><span class="hidden sm:inline">Trail</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Footer Actions -->
+                    <div class="mt-3 pt-3 border-t border-dark-600 flex items-center justify-between">
+                        <a href="https://www.tradingview.com/chart/?symbol=NSE:${pos.symbol.replace(/-EQ$/, '')}" target="_blank"
+                           class="text-sm text-accent-400 hover:text-accent-300 flex items-center gap-1">
+                            <i class="fas fa-chart-line"></i> View Chart
+                        </a>
+                        <button onclick="showPositionDetails('${pos.id}')" class="text-sm text-gray-400 hover:text-white flex items-center gap-1">
+                            <i class="fas fa-ellipsis-h"></i> Details
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Render position list view
+        function renderPositionListView(pos) {
+            const pnl = pos.unrealized_pnl || 0;
+            const pnlPct = pos.pnl_percent || 0;
+            const isProfit = pnl >= 0;
+            const entry = pos.entry_price || 0;
+            const ltp = pos.ltp || entry;
+            const sl = pos.sl_price || entry * 0.98;
+            const tp = pos.tp_price || entry * 1.04;
+            
+            // Paper trading mode
+            const isPaper = pos.paper_trading || false;
+            const modeBadge = isPaper
+                ? '<span class="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded border border-yellow-500/30"><i class="fas fa-flask mr-1"></i>Paper</span>'
+                : '<span class="px-2 py-0.5 bg-primary-500/20 text-primary-400 text-xs rounded border border-primary-500/30"><i class="fas fa-circle mr-1 text-[6px]"></i>Live</span>';
+            
+            const borderClass = isPaper ? 'border-yellow-500/30 hover:border-yellow-500/50' : 'border-dark-600 hover:border-primary-500/30';
+            const bgClass = isPaper ? 'bg-yellow-500/5' : '';
+            
+            return `
+                <div class="glass rounded-lg p-4 border ${borderClass} transition-all flex flex-wrap items-center gap-4 ${bgClass}">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br ${isPaper ? 'from-yellow-500 to-yellow-700' : isProfit ? 'from-primary-500 to-primary-700' : 'from-danger-500 to-danger-700'} flex items-center justify-center text-white font-bold">
+                        ${pos.symbol[0]}
+                    </div>
+                    <div class="flex-1 min-w-[120px]">
+                        <div class="font-bold text-lg flex items-center gap-2">${pos.symbol} ${modeBadge}</div>
+                        <div class="text-sm text-gray-400">${pos.quantity} shares</div>
+                    </div>
+                    <div class="text-center min-w-[100px]">
+                        <div class="text-sm text-gray-500">LTP</div>
+                        <div class="font-mono font-bold">₹${ltp.toFixed(2)}</div>
+                    </div>
+                    <div class="text-center min-w-[100px]">
+                        <div class="text-sm text-gray-500">SL / TP</div>
+                        <div class="font-mono text-sm">₹${sl.toFixed(0)} / ₹${tp.toFixed(0)}</div>
+                    </div>
+                    <div class="text-right min-w-[120px]">
+                        <div class="text-xl font-bold font-mono ${isProfit ? 'text-primary-400' : 'text-danger-500'}">
+                            ${isProfit ? '+' : ''}₹${pnl.toFixed(2)}
+                        </div>
+                        <div class="text-sm ${isProfit ? 'text-primary-400' : 'text-danger-500'}">
+                            ${isProfit ? '+' : ''}${pnlPct.toFixed(2)}%
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <button onclick="closePosition('${pos.id}', '${pos.symbol}', ${pos.quantity})" 
+                                class="px-4 py-2 bg-danger-500/20 hover:bg-danger-500 text-danger-400 hover:text-white rounded-lg text-sm font-medium transition-all">
+                            Close
+                        </button>
+                        <a href="https://www.tradingview.com/chart/?symbol=NSE:${pos.symbol.replace(/-EQ$/, '')}" target="_blank"
+                           class="px-3 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg text-sm">
+                            <i class="fas fa-chart-line"></i>
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Render position compact view
+        function renderPositionCompactView(pos) {
+            const pnl = pos.unrealized_pnl || 0;
+            const pnlPct = pos.pnl_percent || 0;
+            const isProfit = pnl >= 0;
+            const entry = pos.entry_price || 0;
+            const ltp = pos.ltp || entry;
+            
+            // Paper trading mode
+            const isPaper = pos.paper_trading || false;
+            const modeIcon = isPaper
+                ? '<i class="fas fa-flask text-yellow-400 text-xs" title="Paper Trade"></i>'
+                : '<i class="fas fa-circle text-primary-400 text-[6px]" title="Live Trade"></i>';
+            
+            const borderClass = isPaper ? 'border-yellow-500/30 hover:border-yellow-500/50' : 'border-dark-600 hover:border-primary-500/30';
+            const bgClass = isPaper ? 'bg-yellow-500/5' : '';
+            
+            return `
+                <div class="glass rounded-lg p-3 border ${borderClass} transition-all ${bgClass}">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="font-bold text-lg flex items-center gap-2">${modeIcon} ${pos.symbol}</div>
+                        <div class="text-lg font-bold font-mono ${isProfit ? 'text-primary-400' : 'text-danger-500'}">
+                            ${isProfit ? '+' : ''}₹${pnl.toFixed(0)}
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-sm text-gray-400 mb-3">
+                        <span>${pos.quantity} shares</span>
+                        <span class="font-mono">₹${ltp.toFixed(2)}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="closePosition('${pos.id}', '${pos.symbol}', ${pos.quantity})" 
+                                class="bg-danger-500/20 hover:bg-danger-500 text-danger-400 hover:text-white py-2 rounded text-sm font-medium transition-all">
+                            Close
+                        </button>
+                        <a href="https://www.tradingview.com/chart/?symbol=NSE:${pos.symbol.replace(/-EQ$/, '')}" target="_blank"
+                           class="bg-dark-700 hover:bg-dark-600 text-gray-300 py-2 rounded text-sm text-center">
+                            Chart
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Update positions summary - Paper vs Live segregation
+        function updatePositionsSummary() {
+            const positions = appData.positions || [];
+            
+            // Split into paper and live
+            const paperPositions = positions.filter(p => p.paper_trading === true);
+            const livePositions = positions.filter(p => p.paper_trading !== true);
+            
+            // Paper stats
+            const paperPnl = paperPositions.reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0);
+            const paperCount = paperPositions.length;
+            
+            // Live stats
+            const livePnl = livePositions.reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0);
+            const liveCount = livePositions.length;
+            
+            // Total stats
+            const totalRisk = positions.reduce((sum, p) => {
+                const entry = p.entry_price || 0;
+                const sl = p.sl_price || entry * 0.98;
+                return sum + ((entry - sl) * (p.quantity || 0));
+            }, 0);
+            const capitalUsed = positions.reduce((sum, p) => sum + ((p.entry_price || 0) * (p.quantity || 0)), 0);
+            
+            // Update Paper Positions Summary
+            const paperCountEl = document.getElementById('paper-positions-count');
+            const paperPnlEl = document.getElementById('paper-positions-pnl');
+            if (paperCountEl) paperCountEl.textContent = paperCount;
+            if (paperPnlEl) {
+                paperPnlEl.textContent = (paperPnl >= 0 ? '+' : '') + '₹' + paperPnl.toFixed(2) + ' P&L';
+                paperPnlEl.className = 'text-sm font-mono ' + (paperPnl >= 0 ? 'text-yellow-400' : 'text-danger-400');
+            }
+            
+            // Update Live Positions Summary
+            const liveCountEl = document.getElementById('live-positions-count');
+            const livePnlEl = document.getElementById('live-positions-pnl');
+            if (liveCountEl) liveCountEl.textContent = liveCount;
+            if (livePnlEl) {
+                livePnlEl.textContent = (livePnl >= 0 ? '+' : '') + '₹' + livePnl.toFixed(2) + ' P&L';
+                livePnlEl.className = 'text-sm font-mono ' + (livePnl >= 0 ? 'text-primary-400' : 'text-danger-400');
+            }
+            
+            // Update Total Stats
+            const totalRiskEl = document.getElementById('positions-total-risk');
+            const capitalUsedEl = document.getElementById('positions-capital-used');
+            if (totalRiskEl) totalRiskEl.textContent = '₹' + totalRisk.toFixed(2);
+            if (capitalUsedEl) capitalUsedEl.textContent = '₹' + capitalUsed.toLocaleString('en-IN');
+        }
+        
+        // Set positions view mode
+        function setPositionsView(mode) {
+            positionsViewMode = mode;
+            
+            // Update button styles
+            ['cards', 'list', 'compact'].forEach(m => {
+                const btn = document.getElementById(`view-${m}-btn`);
+                if (btn) {
+                    if (m === mode) {
+                        btn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-dark-700 text-white';
+                    } else {
+                        btn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-400 hover:text-white';
+                    }
+                }
+            });
+            
+            updatePositions();
+        }
+        
+        // Sort positions
+        function sortPositions() {
+            const select = document.getElementById('positions-sort');
+            if (select) {
+                positionsSortBy = select.value;
+                updatePositions();
+            }
+        }
+        
+        // Show position details modal
+        function showPositionDetails(positionId) {
+            const pos = appData.positions.find(p => p.id === positionId);
+            if (!pos) return;
+            
+            const pnl = pos.unrealized_pnl || 0;
+            const entry = pos.entry_price || 0;
+            const ltp = pos.ltp || entry;
+            
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="glass rounded-2xl p-6 max-w-md w-full border border-dark-600">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold">${pos.symbol} Details</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-white">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-3 bg-dark-800/50 rounded-lg">
+                                <div class="text-xs text-gray-500">Quantity</div>
+                                <div class="font-mono font-bold">${pos.quantity}</div>
+                            </div>
+                            <div class="p-3 bg-dark-800/50 rounded-lg">
+                                <div class="text-xs text-gray-500">Entry Price</div>
+                                <div class="font-mono font-bold">₹${entry.toFixed(2)}</div>
+                            </div>
+                            <div class="p-3 bg-dark-800/50 rounded-lg">
+                                <div class="text-xs text-gray-500">Current Price</div>
+                                <div class="font-mono font-bold">₹${ltp.toFixed(2)}</div>
+                            </div>
+                            <div class="p-3 bg-dark-800/50 rounded-lg">
+                                <div class="text-xs text-gray-500">Unrealized P&L</div>
+                                <div class="font-mono font-bold ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}">${pnl >= 0 ? '+' : ''}₹${pnl.toFixed(2)}</div>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-dark-800/50 rounded-lg">
+                            <div class="text-xs text-gray-500 mb-2">Position ID</div>
+                            <div class="font-mono text-xs text-gray-400 break-all">${pos.id}</div>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex gap-3">
+                        <button onclick="closePosition('${pos.id}', '${pos.symbol}', ${pos.quantity}); this.closest('.fixed').remove();" 
+                                class="flex-1 bg-danger-500 hover:bg-danger-600 text-white py-3 rounded-lg font-bold transition-colors">
+                            Close Position
+                        </button>
+                        <a href="https://www.tradingview.com/chart/?symbol=NSE:${pos.symbol.replace(/-EQ$/, '')}" target="_blank"
+                           class="px-4 py-3 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-chart-line"></i>
+                        </a>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        // Close all positions
+        async function closeAllPositions() {
+            const positions = appData.positions || [];
+            if (positions.length === 0) return;
+            
+            const totalPnl = positions.reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0);
+            
+            const confirmed = confirm(
+                `⚠️ CLOSE ALL POSITIONS ⚠️\n\n` +
+                `You are about to close ${positions.length} positions.\n\n` +
+                `Estimated P&L: ${totalPnl >= 0 ? '+' : ''}₹${totalPnl.toFixed(2)}\n\n` +
+                `Are you sure you want to continue?`
+            );
+            
+            if (!confirmed) return;
+            
+            showToast(`Closing ${positions.length} positions...`, 'info');
+            
+            let closed = 0;
+            let failed = 0;
+            
+            for (const pos of positions) {
+                try {
+                    const res = await fetch(`/api/positions/${pos.id}/close`, { method: 'POST' });
+                    if (res.ok) {
+                        closed++;
+                    } else {
+                        failed++;
+                    }
+                } catch (err) {
+                    failed++;
+                }
+            }
+            
+            if (failed === 0) {
+                showToast(`✅ Closed ${closed} positions successfully`, 'success');
+            } else {
+                showToast(`⚠️ Closed ${closed}, ${failed} failed`, 'warning');
+            }
+            
+            refreshPositions();
         }
 
         // Update sidebar connection status
@@ -1534,19 +2844,8 @@
             const apiKey = appData.config.kite?.api_key || '8zjbufhni9k0u2mx';
             document.getElementById('kite-api-key').value = apiKey;
             
-            // Show/hide paper trading toggle
-            const isPaper = appData.config.paper_trading || false;
-            const paperToggle = document.getElementById('paper-trading-toggle');
-            const paperDot = document.getElementById('paper-trading-dot');
-            if (isPaper) {
-                paperToggle.classList.remove('bg-gray-600');
-                paperToggle.classList.add('bg-yellow-500');
-                paperDot.style.transform = 'translateX(28px)';
-            } else {
-                paperToggle.classList.add('bg-gray-600');
-                paperToggle.classList.remove('bg-yellow-500');
-                paperDot.style.transform = 'translateX(0)';
-            }
+            // Show/hide paper trading toggle - ENHANCED UI
+            updatePaperTradingUI(appData.config.paper_trading || false);
             
             // Update Kite status badge
             // Token is "***" when masked (exists) or a real token with length > 10
@@ -1610,9 +2909,33 @@
             }
         }
 
-        // Toggle Paper Trading
-        async function togglePaperTrading() {
-            const newState = !appData.config.paper_trading;
+        // Toggle Paper Trading - ENHANCED with safety confirmation
+        async function togglePaperTradingEnhanced() {
+            const currentState = appData.config.paper_trading;
+            const newState = !currentState;
+            
+            // If switching to LIVE mode, show confirmation
+            if (!newState) {
+                const confirmed = confirm(
+                    '⚠️ SWITCHING TO LIVE TRADING ⚠️\n\n' +
+                    'You are about to switch from PAPER to LIVE mode.\n\n' +
+                    '✅ In LIVE mode:\n' +
+                    '   • Real orders will be sent to your broker\n' +
+                    '   • Real money will be at risk\n' +
+                    '   • Trades will affect your actual account\n\n' +
+                    'Are you absolutely sure you want to continue?'
+                );
+                if (!confirmed) return;
+                
+                // Double confirm for extra safety
+                const doubleConfirmed = confirm(
+                    '🔴 FINAL CONFIRMATION 🔴\n\n' +
+                    'This is your last chance to cancel.\n\n' +
+                    'Click OK to enable LIVE TRADING with REAL MONEY.\n' +
+                    'Click Cancel to stay in Paper mode.'
+                );
+                if (!doubleConfirmed) return;
+            }
             
             try {
                 const res = await fetch('/api/config', {
@@ -1623,11 +2946,59 @@
                 
                 if (res.ok) {
                     appData.config.paper_trading = newState;
-                    updateConfigForm();
-                    showToast(newState ? 'Paper Trading Enabled' : 'Paper Trading Disabled', 'success');
+                    updatePaperTradingUI(newState);
+                    updateSystemStatusBar(); // Update the global status bar
+                    
+                    if (newState) {
+                        showToast('🟡 Paper Trading Enabled - Safe Mode', 'success');
+                    } else {
+                        showToast('🔴 LIVE TRADING ENABLED - REAL MONEY AT RISK', 'error');
+                    }
                 }
             } catch (err) {
                 showToast('Failed to toggle paper trading', 'error');
+            }
+        }
+        
+        // Update Paper Trading UI elements
+        function updatePaperTradingUI(isPaper) {
+            const container = document.getElementById('paper-trading-container');
+            const icon = document.getElementById('paper-mode-icon');
+            const title = document.getElementById('paper-mode-title');
+            const desc = document.getElementById('paper-mode-desc');
+            const toggle = document.getElementById('paper-trading-toggle');
+            const dot = document.getElementById('paper-trading-dot');
+            const liveWarning = document.getElementById('live-warning-config');
+            const paperInfo = document.getElementById('paper-info-config');
+            
+            if (isPaper) {
+                // Paper Mode styling
+                container.className = 'bg-dark-800/50 rounded-xl p-4 border-2 border-yellow-500/30 transition-all';
+                icon.className = 'w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center text-xl';
+                icon.textContent = '🟡';
+                title.className = 'font-bold text-lg text-yellow-400 flex items-center gap-2';
+                title.innerHTML = 'PAPER TRADING MODE';
+                desc.textContent = 'No real orders will be placed';
+                desc.className = 'text-sm text-yellow-400/70';
+                toggle.className = 'relative w-16 h-8 rounded-full bg-yellow-500 transition-colors duration-300 shadow-lg shadow-yellow-500/30';
+                dot.style.transform = 'translateX(32px)';
+                
+                if (liveWarning) liveWarning.classList.add('hidden');
+                if (paperInfo) paperInfo.classList.remove('hidden');
+            } else {
+                // Live Mode styling - DANGER
+                container.className = 'bg-dark-800/50 rounded-xl p-4 border-2 border-danger-500/50 transition-all';
+                icon.className = 'w-10 h-10 rounded-xl bg-danger-500/20 flex items-center justify-center text-xl';
+                icon.textContent = '🔴';
+                title.className = 'font-bold text-lg text-danger-400 flex items-center gap-2';
+                title.innerHTML = '🔴 LIVE TRADING MODE';
+                desc.textContent = 'REAL MONEY AT RISK';
+                desc.className = 'text-sm text-danger-400 font-semibold animate-pulse';
+                toggle.className = 'relative w-16 h-8 rounded-full bg-danger-500 transition-colors duration-300 shadow-lg shadow-danger-500/30';
+                dot.style.transform = 'translateX(0)';
+                
+                if (liveWarning) liveWarning.classList.remove('hidden');
+                if (paperInfo) paperInfo.classList.add('hidden');
             }
         }
 
@@ -1722,6 +3093,98 @@
                 updateStats();
             } catch (err) {
                 showToast('Failed to refresh positions', 'error');
+            }
+        }
+
+        // Move Stop Loss to breakeven or custom price
+        async function moveStopLoss(positionId, symbol, quantity, currentSL, entryPrice) {
+            // Default to entry price (breakeven)
+            const suggestedSL = entryPrice.toFixed(2);
+            
+            const newSL = prompt(
+                `Move Stop Loss for ${symbol}\n\nCurrent SL: ₹${currentSL.toFixed(2)}\nEntry Price: ₹${entryPrice.toFixed(2)}\n\nEnter new SL price (suggested: ₹${suggestedSL} for breakeven):`,
+                suggestedSL
+            );
+            
+            if (newSL === null || newSL === '') return;
+            
+            const slPrice = parseFloat(newSL);
+            if (isNaN(slPrice) || slPrice <= 0) {
+                showToast('Invalid stop loss price', 'error');
+                return;
+            }
+            
+            if (slPrice >= entryPrice) {
+                if (!confirm(`Warning: New SL (₹${slPrice}) is above your entry price (₹${entryPrice}). This may result in a loss if hit. Continue?`)) {
+                    return;
+                }
+            }
+            
+            try {
+                const res = await fetch(`/api/positions/${positionId}/modify-sl`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sl_price: slPrice })
+                });
+                
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    showToast(`✅ SL moved to ₹${slPrice.toFixed(2)}`, 'success');
+                    refreshPositions();
+                } else {
+                    showToast(`Failed: ${data.message}`, 'error');
+                }
+            } catch (err) {
+                showToast('Network error - please try again', 'error');
+                console.error('Move SL error:', err);
+            }
+        }
+
+        // Trail Stop Loss - automatically move SL closer to LTP
+        async function trailStopLoss(positionId, symbol, quantity, currentSL, entryPrice, ltp) {
+            // Calculate new SL - trail by 50% of the profit
+            const profit = ltp - entryPrice;
+            
+            if (profit <= 0) {
+                showToast('Cannot trail SL - position is not in profit', 'error');
+                return;
+            }
+            
+            // Trail SL to lock in 50% of current profit
+            const lockInProfit = profit * 0.5;
+            const suggestedSL = entryPrice + lockInProfit;
+            
+            // Round to nearest 0.5 for stocks
+            const roundedSL = Math.round(suggestedSL * 2) / 2;
+            
+            if (roundedSL <= currentSL) {
+                showToast(`SL already at optimal level (₹${currentSL.toFixed(2)})`, 'info');
+                return;
+            }
+            
+            if (!confirm(`Trail Stop Loss for ${symbol}?\n\nCurrent SL: ₹${currentSL.toFixed(2)}\nSuggested SL: ₹${roundedSL.toFixed(2)}\nProfit locked: ₹${(roundedSL - entryPrice).toFixed(2)} per share\n\nThis will lock in approximately 50% of your current unrealized profit.`)) {
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/api/positions/${positionId}/modify-sl`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sl_price: roundedSL, trail: true })
+                });
+                
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    showToast(`🎯 SL trailed to ₹${roundedSL.toFixed(2)}`, 'success');
+                    refreshPositions();
+                } else {
+                    showToast(`Failed: ${data.message}`, 'error');
+                }
+            } catch (err) {
+                showToast('Network error - please try again', 'error');
+                console.error('Trail SL error:', err);
             }
         }
 
@@ -1873,10 +3336,17 @@
             
             const colors = {
                 success: 'bg-primary-500/20 border-primary-500/30 text-primary-400',
-                error: 'bg-danger-500/20 border-danger-500/30 text-danger-400'
+                error: 'bg-danger-500/20 border-danger-500/30 text-danger-400',
+                info: 'bg-blue-500/20 border-blue-500/30 text-blue-400'
             };
             
-            const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+            const icons = {
+                success: 'check-circle',
+                error: 'exclamation-circle',
+                info: 'info-circle'
+            };
+            
+            const icon = icons[type] || icons.success;
             
             toast.className = `toast glass ${colors[type]} border px-4 py-3 rounded-xl flex items-center gap-3 shadow-lg`;
             toast.innerHTML = `
@@ -1894,6 +3364,289 @@
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
+        }
+
+        // ============================================================================
+        // Execution Feedback - Show trade execution toast
+        // ============================================================================
+        function showExecutionToast(trade) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const isBuy = trade.action === 'BUY';
+            const typeColor = isBuy ? 'bg-primary-500/20 border-primary-500/30 text-primary-400' : 'bg-danger-500/20 border-danger-500/30 text-danger-400';
+            const icon = isBuy ? 'fa-arrow-up' : 'fa-arrow-down';
+            
+            toast.className = `toast glass ${typeColor} border px-4 py-3 rounded-xl shadow-lg toast-enter`;
+            toast.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="mt-0.5">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-sm">${isBuy ? '✅ ORDER EXECUTED' : '🔴 POSITION CLOSED'}</div>
+                        <div class="font-mono font-bold text-lg mt-1">${trade.symbol}</div>
+                        <div class="text-sm mt-1">
+                            <span class="opacity-75">${isBuy ? 'BUY' : 'SELL'}</span> 
+                            <span class="font-mono">${trade.quantity}</span> @ 
+                            <span class="font-mono">₹${(trade.entry_price || trade.exit_price || 0).toFixed(2)}</span>
+                        </div>
+                        ${trade.pnl ? `
+                        <div class="font-mono font-bold mt-1 ${trade.pnl >= 0 ? 'text-primary-400' : 'text-danger-400'}">
+                            ${trade.pnl >= 0 ? '+' : ''}₹${trade.pnl.toFixed(2)}
+                        </div>` : ''}
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Remove after 5s (longer for execution toasts)
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+            
+            // Also add to trade feed
+            addToTradeFeed({
+                type: isBuy ? 'order' : 'exit',
+                symbol: trade.symbol,
+                message: `${isBuy ? 'BUY' : 'SELL'} ${trade.quantity} @ ₹${(trade.entry_price || trade.exit_price || 0).toFixed(2)}`,
+                time: new Date(),
+                pnl: trade.pnl
+            });
+        }
+
+        // ============================================================================
+        // Smart Warning Cards
+        // ============================================================================
+        function updateSmartWarningCards() {
+            const container = document.getElementById('smart-warning-cards');
+            if (!container || !appData.config || !appData.stats) return;
+            
+            const cards = [];
+            const pnl = appData.stats.today_pnl || 0;
+            const capital = appData.config.capital || 100000;
+            const riskPercent = appData.config.risk_percent || 1;
+            const trades = appData.stats.today_trades || 0;
+            const maxTrades = appData.config.max_trades_per_day || 10;
+            const positions = appData.positions?.length || 0;
+            const maxPositions = appData.config.paper_trading ? 
+                (appData.config.paper_trading_filters?.max_positions || 20) : 
+                (appData.config.signal_validation?.max_open_positions || 3);
+            
+            // Daily loss limit warning
+            const dailyLossPct = (pnl / capital) * 100;
+            const lossLimit = -(appData.config.max_loss_per_day || 3);
+            if (dailyLossPct <= lossLimit * 0.8 && dailyLossPct < 0) {
+                cards.push({
+                    type: 'danger',
+                    icon: '⚠️',
+                    title: 'Daily Loss Limit Near',
+                    message: `Current: ${dailyLossPct.toFixed(1)}% | Limit: ${lossLimit}%`,
+                    action: 'Review Risk Settings'
+                });
+            }
+            
+            // Trade limit warning
+            if (trades >= maxTrades * 0.8) {
+                cards.push({
+                    type: 'warning',
+                    icon: '📊',
+                    title: 'Daily Trade Limit Near',
+                    message: `${trades} / ${maxTrades} trades used`,
+                    action: null
+                });
+            }
+            
+            // Position limit warning
+            if (positions >= maxPositions * 0.8) {
+                cards.push({
+                    type: positions >= maxPositions ? 'danger' : 'warning',
+                    icon: '📈',
+                    title: positions >= maxPositions ? 'Max Positions Reached' : 'Position Limit Near',
+                    message: `${positions} / ${maxPositions} positions open`,
+                    action: null
+                });
+            }
+            
+            // Market closed warning
+            if (!appData.stats.within_trading_hours) {
+                cards.push({
+                    type: 'info',
+                    icon: '🕐',
+                    title: 'Market Closed',
+                    message: 'Trading suspended until 09:15 IST',
+                    action: null
+                });
+            }
+            
+            // Live mode warning (always show when in live mode)
+            if (!appData.config.paper_trading) {
+                cards.push({
+                    type: 'danger',
+                    icon: '🔴',
+                    title: 'LIVE TRADING ACTIVE',
+                    message: 'Real money at risk',
+                    action: null
+                });
+            }
+            
+            // Render cards
+            if (cards.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            container.innerHTML = cards.map(card => {
+                const bgColors = {
+                    danger: 'bg-danger-500/10 border-danger-500/30',
+                    warning: 'bg-warning-500/10 border-warning-500/30',
+                    info: 'bg-blue-500/10 border-blue-500/30'
+                };
+                const textColors = {
+                    danger: 'text-danger-400',
+                    warning: 'text-warning-400',
+                    info: 'text-blue-400'
+                };
+                
+                return `
+                    <div class="${bgColors[card.type]} border rounded-xl p-4 flex items-start gap-3">
+                        <span class="text-2xl">${card.icon}</span>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold ${textColors[card.type]}">${card.title}</div>
+                            <div class="text-sm text-gray-400 mt-0.5">${card.message}</div>
+                            ${card.action ? `
+                            <button onclick="switchTab('config')" class="mt-2 text-xs ${textColors[card.type]} hover:underline">
+                                ${card.action} →
+                            </button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ============================================================================
+        // Trading Windows
+        // ============================================================================
+        function saveTradingWindows() {
+            const windows = [];
+            
+            for (let i = 1; i <= 2; i++) {
+                const enabled = document.getElementById(`window-${i}-enabled`)?.checked;
+                const start = document.getElementById(`window-${i}-start`)?.value;
+                const end = document.getElementById(`window-${i}-end`)?.value;
+                
+                if (enabled && start && end) {
+                    windows.push({ start, end });
+                }
+            }
+            
+            // Save to config
+            fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ trading_windows: windows })
+            }).then(res => {
+                if (res.ok) {
+                    showToast('Trading windows saved', 'success');
+                    addToTradeFeed({
+                        type: 'validation',
+                        symbol: 'SYSTEM',
+                        message: `Trading windows updated: ${windows.length} active`,
+                        time: new Date()
+                    });
+                } else {
+                    showToast('Failed to save windows', 'error');
+                }
+            }).catch(() => {
+                showToast('Network error', 'error');
+            });
+        }
+
+        // ============================================================================
+        // Live Trade Feed
+        // ============================================================================
+        let tradeFeedItems = [];
+        const MAX_FEED_ITEMS = 50;
+        
+        function addToTradeFeed(item) {
+            const container = document.getElementById('trade-feed-container');
+            if (!container) return;
+            
+            // Remove placeholder if exists
+            if (tradeFeedItems.length === 0) {
+                container.innerHTML = '';
+            }
+            
+            tradeFeedItems.unshift(item);
+            if (tradeFeedItems.length > MAX_FEED_ITEMS) {
+                tradeFeedItems.pop();
+            }
+            
+            renderTradeFeed();
+        }
+        
+        function renderTradeFeed() {
+            const container = document.getElementById('trade-feed-container');
+            if (!container) return;
+            
+            if (tradeFeedItems.length === 0) {
+                container.innerHTML = '<div class="text-gray-500 text-center py-4">Waiting for trading activity...</div>';
+                return;
+            }
+            
+            container.innerHTML = tradeFeedItems.map(item => {
+                const time = item.time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const typeIcons = {
+                    signal: '📡',
+                    validation: '✓',
+                    order: '📤',
+                    position: '📥',
+                    exit: '🏁',
+                    error: '❌'
+                };
+                const typeColors = {
+                    signal: 'text-blue-400',
+                    validation: 'text-purple-400',
+                    order: 'text-warning-400',
+                    position: 'text-primary-400',
+                    exit: 'text-danger-400',
+                    error: 'text-danger-400'
+                };
+                
+                return `
+                    <div class="trade-feed-item ${item.type} flex items-start gap-3 py-1.5">
+                        <span class="text-gray-600 font-mono text-xs">${time}</span>
+                        <span class="${typeColors[item.type]}">${typeIcons[item.type]}</span>
+                        <div class="flex-1 min-w-0">
+                            <span class="font-medium text-gray-300">${item.symbol}</span>
+                            <span class="text-gray-400 ml-2">${item.message}</span>
+                            ${item.pnl ? `
+                            <span class="ml-2 font-mono ${item.pnl >= 0 ? 'text-primary-400' : 'text-danger-400'}">
+                                ${item.pnl >= 0 ? '+' : ''}₹${item.pnl.toFixed(2)}
+                            </span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Auto-scroll to top
+            container.scrollTop = 0;
+        }
+        
+        function clearTradeFeed() {
+            tradeFeedItems = [];
+            renderTradeFeed();
+            showToast('Trade feed cleared', 'info');
+        }
+        
+        // Simulate feed items for demo (remove in production)
+        function simulateTradeFeed() {
+            if (tradeFeedItems.length === 0) {
+                addToTradeFeed({ type: 'signal', symbol: 'SYSTEM', message: 'Trading system initialized', time: new Date() });
+            }
         }
 
         // ============================================================================
@@ -1963,7 +3716,7 @@
             const noAlertsMsg = document.getElementById('no-alerts-message');
             
             if (!incomingAlertsData || incomingAlertsData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">No alerts received yet today</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">No alerts received yet today</td></tr>';
                 if (noAlertsMsg) noAlertsMsg.classList.remove('hidden');
                 return;
             }
@@ -1975,13 +3728,41 @@
                     hour: '2-digit', minute: '2-digit', second: '2-digit'
                 });
                 
-                const statusColors = {
-                    pending: 'bg-gray-500/20 text-gray-400',
-                    processing: 'bg-blue-500/20 text-blue-400',
-                    processed: 'bg-primary-500/20 text-primary-400',
-                    rejected: 'bg-yellow-500/20 text-yellow-400',
-                    error: 'bg-danger-500/20 text-danger-400'
+                // Status display with color-coded icons
+                const statusConfig = {
+                    processed: {
+                        icon: '🟢',
+                        label: 'Executed',
+                        bgClass: 'bg-primary-500/10',
+                        textClass: 'text-primary-400'
+                    },
+                    rejected: {
+                        icon: '🟡',
+                        label: 'Filtered',
+                        bgClass: 'bg-yellow-500/10',
+                        textClass: 'text-yellow-400'
+                    },
+                    error: {
+                        icon: '🔴',
+                        label: 'Error',
+                        bgClass: 'bg-danger-500/10',
+                        textClass: 'text-danger-400'
+                    },
+                    pending: {
+                        icon: '⏳',
+                        label: 'Pending',
+                        bgClass: 'bg-gray-500/10',
+                        textClass: 'text-gray-400'
+                    },
+                    processing: {
+                        icon: '⚙️',
+                        label: 'Processing',
+                        bgClass: 'bg-blue-500/10',
+                        textClass: 'text-blue-400'
+                    }
                 };
+                
+                const status = statusConfig[alert.processing_status] || statusConfig.pending;
                 
                 const typeIcons = {
                     json: 'fa-code',
@@ -1997,6 +3778,17 @@
                 const scanName = alert.scan_name || alert.alert_name || '-';
                 const scanDisplay = scanName.length > 25 ? scanName.substring(0, 25) + '...' : scanName;
                 
+                // Extract reject reason from processing_result
+                let reasonDisplay = '-';
+                if (alert.processing_status === 'rejected' && alert.processing_result) {
+                    reasonDisplay = formatRejectReason(alert.processing_result);
+                } else if (alert.processing_status === 'processed' && alert.processed_trades) {
+                    const tradeCount = Array.isArray(alert.processed_trades) ? alert.processed_trades.length : 0;
+                    reasonDisplay = `<span class="text-primary-400">${tradeCount} trade${tradeCount !== 1 ? 's' : ''} executed</span>`;
+                } else if (alert.processing_status === 'error' && alert.processing_result) {
+                    reasonDisplay = `<span class="text-danger-400">${alert.processing_result}</span>`;
+                }
+                
                 return `
                     <tr class="border-b border-dark-600 hover:bg-dark-700/30 cursor-pointer transition-colors"
                         onclick="showAlertDetails('${alert.id}')">
@@ -2010,17 +3802,51 @@
                         <td class="px-4 py-3" title="${scanName}">${scanDisplay}</td>
                         <td class="px-4 py-3 font-mono text-xs">${symbolDisplay || '-'}</td>
                         <td class="px-4 py-3">
-                            <span class="px-2 py-1 rounded text-xs font-medium ${statusColors[alert.processing_status] || 'bg-gray-500/20'}">
-                                ${alert.processing_status}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${status.bgClass} ${status.textClass}">
+                                <span>${status.icon}</span>
+                                <span>${status.label}</span>
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-xs text-gray-400">${alert.source_ip || '-'}</td>
+                        <td class="px-4 py-3 text-xs">${reasonDisplay}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400 font-mono">${alert.source_ip || '-'}</td>
                         <td class="px-4 py-3 text-right font-mono text-xs">
                             ${alert.total_latency_ms ? Math.round(alert.total_latency_ms) + 'ms' : '-'}
                         </td>
                     </tr>
                 `;
             }).join('');
+        }
+        
+        // Format reject reason for display
+        function formatRejectReason(result) {
+            if (!result) return '<span class="text-gray-500">Unknown reason</span>';
+            
+            // Extract the main reason from common rejection patterns
+            const lowerResult = result.toLowerCase();
+            
+            // Common rejection patterns and their display text
+            const patterns = [
+                { pattern: /outside trading hours|after market|before market/, text: 'Outside time window' },
+                { pattern: /slippage|price changed|price moved/, text: 'Slippage too high' },
+                { pattern: /max positions|position limit|too many positions/, text: 'Max positions reached' },
+                { pattern: /daily limit|max trades|trade limit/, text: 'Daily trade limit' },
+                { pattern: /risk|risk percent|risk limit/, text: 'Risk limit exceeded' },
+                { pattern: /capital|insufficient funds|not enough/, text: 'Insufficient capital' },
+                { pattern: /spread|bid.?ask/, text: 'Spread too wide' },
+                { pattern: /volume|liquidity/, text: 'Low volume' },
+                { pattern: /filter|filtered|did not pass/, text: 'Did not pass filter' },
+                { pattern: /symbol|instrument|not found/, text: 'Symbol not found' }
+            ];
+            
+            for (const { pattern, text } of patterns) {
+                if (pattern.test(lowerResult)) {
+                    return `<span class="text-yellow-400" title="${result}">${text}</span>`;
+                }
+            }
+            
+            // If no pattern matches, truncate and show raw result
+            const shortResult = result.length > 35 ? result.substring(0, 35) + '...' : result;
+            return `<span class="text-yellow-400" title="${result}">${shortResult}</span>`;
         }
         
         // Show alert details modal
@@ -2034,11 +3860,63 @@
             const time = new Date(alert.received_at).toLocaleString('en-IN');
             const symbols = alert.symbols?.join(', ') || '-';
             
+            // Status display config
+            const statusConfig = {
+                processed: { icon: '🟢', label: 'Executed', color: 'text-primary-400' },
+                rejected: { icon: '🟡', label: 'Filtered', color: 'text-yellow-400' },
+                error: { icon: '🔴', label: 'Error', color: 'text-danger-400' },
+                pending: { icon: '⏳', label: 'Pending', color: 'text-gray-400' },
+                processing: { icon: '⚙️', label: 'Processing', color: 'text-blue-400' }
+            };
+            const status = statusConfig[alert.processing_status] || statusConfig.pending;
+            
+            // Format processing result/reason
+            let reasonSection = '';
+            if (alert.processing_status === 'rejected' && alert.processing_result) {
+                const formattedReason = formatRejectReason(alert.processing_result);
+                reasonSection = `
+                <div class="border-t border-dark-600 pt-4">
+                    <div class="text-gray-400 text-xs mb-2">Filter Reason</div>
+                    <div class="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                        <div class="flex items-start gap-2">
+                            <span class="text-lg">🚫</span>
+                            <div>
+                                <div class="text-yellow-400 font-medium">${formattedReason}</div>
+                                <div class="text-xs text-gray-500 mt-1">${alert.processing_result}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            } else if (alert.processing_status === 'processed') {
+                const tradeCount = alert.processed_trades ? (Array.isArray(alert.processed_trades) ? alert.processed_trades.length : 0) : 0;
+                reasonSection = `
+                <div class="border-t border-dark-600 pt-4">
+                    <div class="text-gray-400 text-xs mb-2">Execution Result</div>
+                    <div class="p-3 bg-primary-500/10 border border-primary-500/20 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">✅</span>
+                            <span class="text-primary-400 font-medium">${tradeCount} trade${tradeCount !== 1 ? 's' : ''} executed successfully</span>
+                        </div>
+                    </div>
+                </div>`;
+            } else if (alert.processing_status === 'error' && alert.processing_result) {
+                reasonSection = `
+                <div class="border-t border-dark-600 pt-4">
+                    <div class="text-gray-400 text-xs mb-2">Error Details</div>
+                    <div class="p-3 bg-danger-500/10 border border-danger-500/20 rounded-lg">
+                        <div class="flex items-start gap-2">
+                            <span class="text-lg">⚠️</span>
+                            <div class="text-danger-400">${alert.processing_result}</div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            
             content.innerHTML = `
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <div class="text-gray-400 text-xs mb-1">Alert ID</div>
-                        <div class="font-mono">${alert.id}</div>
+                        <div class="font-mono text-xs">${alert.id}</div>
                     </div>
                     <div>
                         <div class="text-gray-400 text-xs mb-1">Received At</div>
@@ -2050,7 +3928,10 @@
                     </div>
                     <div>
                         <div class="text-gray-400 text-xs mb-1">Status</div>
-                        <div class="capitalize font-medium ${alert.processing_status === 'processed' ? 'text-primary-400' : alert.processing_status === 'rejected' ? 'text-yellow-400' : ''}">${alert.processing_status}</div>
+                        <div class="flex items-center gap-2 ${status.color}">
+                            <span class="text-lg">${status.icon}</span>
+                            <span class="font-medium">${status.label}</span>
+                        </div>
                     </div>
                     <div>
                         <div class="text-gray-400 text-xs mb-1">Source IP</div>
@@ -2079,12 +3960,7 @@
                 </div>
                 ` : ''}
                 
-                ${alert.processing_result ? `
-                <div class="border-t border-dark-600 pt-4">
-                    <div class="text-gray-400 text-xs mb-2">Processing Result</div>
-                    <div class="text-sm ${alert.processing_status === 'rejected' ? 'text-yellow-400' : ''}">${alert.processing_result}</div>
-                </div>
-                ` : ''}
+                ${reasonSection}
                 
                 <div class="border-t border-dark-600 pt-4">
                     <div class="text-gray-400 text-xs mb-2">Raw Payload</div>
@@ -2112,7 +3988,7 @@
     </script>
 </body>
 </html>
-<!-- Cache buster: 1773139734 -->
+<!-- Cache buster: 1773139738 -->
 <!-- Production: 1773139940 -->
 <!-- ESP: 1773143289 -->
 <!-- ESP Subpage: 1773143769 -->

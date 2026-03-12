@@ -58,6 +58,7 @@ class Position:
     exit_price: Optional[float] = None
     exit_time: Optional[datetime] = None
     exit_reason: Optional[str] = None  # SL_HIT, TP_HIT, MANUAL
+    paper_trading: bool = False  # Whether this is a paper trade
     partial_exits: List[Dict] = field(default_factory=list)
 
 
@@ -384,14 +385,15 @@ class KiteAPI:
         
         actual_entry = entry_order.average_price or entry_price
         
-        # Step 3: Create position object
+        # Step 3: Create position object (live trading - paper_trading=False)
         position = Position(
             symbol=symbol,
             quantity=entry_order.filled_quantity,
             entry_price=actual_entry,
             entry_order_id=entry_order.order_id,
             sl_price=stop_loss,
-            tp_price=target
+            tp_price=target,
+            paper_trading=False  # Live trading position
         )
         
         # 🔥 STEP 4: Place SL GTT with RETRY LOGIC (CRITICAL!)

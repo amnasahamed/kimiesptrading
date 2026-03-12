@@ -860,7 +860,8 @@ def store_position(position: Position):
         "sl_order_id": position.sl_order_id,
         "tp_order_id": position.tp_order_id,
         "status": position.status,
-        "entry_time": position.entry_time.isoformat() if position.entry_time else None
+        "entry_time": position.entry_time.isoformat() if position.entry_time else None,
+        "paper_trading": position.paper_trading
     }
     save_positions(positions)
     return position_id
@@ -1893,7 +1894,8 @@ async def process_single_alert(
             tp_price=paper_trade_params.target,
             sl_order_id=f"PAPER_SL_{symbol}",
             tp_order_id=f"PAPER_TP_{symbol}",
-            status="OPEN"
+            status="OPEN",
+            paper_trading=True  # Mark as paper trade
         )
         
         # Use paper trade params for the rest of the function
@@ -2000,7 +2002,8 @@ async def process_single_alert(
         "status": trade_status,
         "pnl": 0,
         "alert_name": scan_name,
-        "context": context
+        "context": context,
+        "paper_trading": is_paper_trading  # Track if this was a paper trade
     }
     
     # Save trade record
@@ -2143,14 +2146,8 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
             print(f"🚫 Signal rejected: {symbol} - {reason}")
             continue
         
-        # Check max trades before processing (configurable in paper trading)
-        paper_filters = config.get("paper_trading_filters", {})
-        max_trades_check = True
-        if is_paper_trading:
-            # In paper trading, check if daily loss limit filter is enabled
-            max_trades_check = not paper_filters.get("daily_loss_limit", False)
-        
-        if max_trades_check and count_today_trades() >= config.get("max_trades_per_day", 10):
+        # Check max trades before processing (SKIPPED in paper trading - unlimited orders)
+        if not is_paper_trading and count_today_trades() >= config.get("max_trades_per_day", 10):
             reason = "Max daily trades reached"
             record_signal(symbol, "REJECTED", reason=reason)
             results.append({
@@ -2948,8 +2945,14 @@ async def test_kite():
 
 @app.get("/api/trades")
 async def get_trades():
-    """Get today's trades."""
-    return load_trades()
+    """Get today's trades with backward compatibility for paper_trading field."""
+    trades = load_trades()
+    # Ensure paper_trading field exists for all trades (backward compatibility)
+    for trade in trades:
+        if "paper_trading" not in trade:
+            # Old trades without paper_trading flag default to live (False)
+            trade["paper_trading"] = False
+    return trades
 
 @app.get("/api/positions")
 async def get_positions():
@@ -2968,6 +2971,11 @@ async def get_positions():
         symbol = pos.get("symbol")
         if not symbol:
             continue
+        
+        # Ensure paper_trading field exists (backward compatibility for old positions)
+        # If not set, assume live trading (safer default)
+        if "paper_trading" not in pos:
+            pos["paper_trading"] = False
             
         quote = await kite.get_quote(symbol)
         if quote:
@@ -3368,7 +3376,7 @@ async def sync_kite_positions():
             if existing:
                 continue
             
-            # Add as external position
+            # Add as external position (from Kite app = live trading)
             position_id = f"EXTERNAL_{symbol}_{datetime.now().strftime('%H%M%S')}"
             
             positions = load_positions()
@@ -3385,7 +3393,8 @@ async def sync_kite_positions():
                 "status": "OPEN",
                 "entry_time": datetime.now().isoformat(),
                 "external": True,  # Mark as external/manual trade
-                "source": "KITE_APP"
+                "source": "KITE_APP",
+                "paper_trading": False  # Kite app positions are always live trades
             }
             save_positions(positions)
             synced_count += 1
@@ -3697,6 +3706,65 @@ async def list_uploaded_files():
             })
     
     return {"files": files}
+
+@app.get("/api/debug/paper-live-classification")
+async def debug_paper_live_classification():
+    """
+    Debug endpoint to verify paper vs live trade/position classification.
+    Helps diagnose classification issues.
+    """
+    config = load_config()
+    positions = load_positions()
+    trades = load_all_trades()
+    
+    # Categorize positions
+    open_positions = {k: v for k, v in positions.items() if v.get("status") == "OPEN"}
+    paper_positions = {k: v for k, v in open_positions.items() if v.get("paper_trading") == True}
+    live_positions = {k: v for k, v in open_positions.items() if v.get("paper_trading") != True}
+    unknown_positions = {k: v for k, v in open_positions.items() if "paper_trading" not in v}
+    
+    # Categorize today's trades
+    today_trades = load_trades()
+    paper_trades = [t for t in today_trades if t.get("paper_trading") == True]
+    live_trades = [t for t in today_trades if t.get("paper_trading") != True]
+    unknown_trades = [t for t in today_trades if "paper_trading" not in t]
+    
+    # All trades (historical)
+    all_paper_trades = [t for t in trades if t.get("paper_trading") == True]
+    all_live_trades = [t for t in trades if t.get("paper_trading") != True]
+    
+    return {
+        "system_mode": {
+            "paper_trading_enabled": config.get("paper_trading", False),
+            "timestamp": datetime.now().isoformat()
+        },
+        "open_positions": {
+            "total": len(open_positions),
+            "paper": len(paper_positions),
+            "live": len(live_positions),
+            "unknown_classification": len(unknown_positions),
+            "paper_details": [{"id": k, "symbol": v.get("symbol"), "paper_trading": v.get("paper_trading")} for k, v in paper_positions.items()],
+            "live_details": [{"id": k, "symbol": v.get("symbol"), "paper_trading": v.get("paper_trading")} for k, v in live_positions.items()],
+            "unknown_details": [{"id": k, "symbol": v.get("symbol")} for k, v in unknown_positions.items()]
+        },
+        "today_trades": {
+            "total": len(today_trades),
+            "paper": len(paper_trades),
+            "live": len(live_trades),
+            "unknown_classification": len(unknown_trades)
+        },
+        "all_trades_ever": {
+            "total": len(trades),
+            "paper": len(all_paper_trades),
+            "live": len(all_live_trades)
+        },
+        "classification_logic": {
+            "paper_condition": "paper_trading === true",
+            "live_condition": "paper_trading !== true (includes false, null, undefined)",
+ "note": "Unknown positions are treated as LIVE for safety"
+        }
+    }
+
 
 if __name__ == "__main__":
     import uvicorn
