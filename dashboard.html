@@ -330,6 +330,71 @@
                 <!-- Dashboard Tab -->
                 <div id="tab-dashboard" class="tab-content space-y-6">
                     
+                    <!-- 🔥 RISK PANEL - Shows risk exposure at a glance -->
+                    <div class="glass rounded-2xl p-6 border-l-4 border-primary-500">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold flex items-center gap-2">
+                                <i class="fas fa-shield-alt text-primary-400"></i>
+                                Risk Overview
+                            </h3>
+                            <div class="flex items-center gap-2">
+                                <span id="system-mode-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                                    <i class="fas fa-circle text-xs mr-1"></i> LOADING
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <!-- P&L -->
+                            <div class="bg-dark-800/50 rounded-xl p-4">
+                                <div class="text-xs text-gray-400 mb-1">Today's P&L</div>
+                                <div id="risk-pnl" class="text-2xl font-bold font-mono">₹0</div>
+                                <div id="risk-pnl-pct" class="text-xs mt-1">0%</div>
+                            </div>
+                            
+                            <!-- Capital Used -->
+                            <div class="bg-dark-800/50 rounded-xl p-4">
+                                <div class="text-xs text-gray-400 mb-1">Capital Used</div>
+                                <div class="text-2xl font-bold font-mono">
+                                    <span id="risk-capital-used">₹0</span>
+                                    <span class="text-sm text-gray-500">/ <span id="risk-capital-total">₹0</span></span>
+                                </div>
+                                <div class="w-full bg-dark-700 rounded-full h-1.5 mt-2">
+                                    <div id="risk-capital-bar" class="bg-blue-500 h-1.5 rounded-full transition-all" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Risk Used -->
+                            <div class="bg-dark-800/50 rounded-xl p-4">
+                                <div class="text-xs text-gray-400 mb-1">Risk Used</div>
+                                <div class="text-2xl font-bold font-mono">
+                                    <span id="risk-used">0%</span>
+                                    <span class="text-sm text-gray-500">/ <span id="risk-max">3%</span></span>
+                                </div>
+                                <div class="w-full bg-dark-700 rounded-full h-1.5 mt-2">
+                                    <div id="risk-bar" class="bg-primary-500 h-1.5 rounded-full transition-all" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Open Positions -->
+                            <div class="bg-dark-800/50 rounded-xl p-4">
+                                <div class="text-xs text-gray-400 mb-1">Open Positions</div>
+                                <div class="text-2xl font-bold font-mono">
+                                    <span id="risk-positions">0</span>
+                                    <span class="text-sm text-gray-500">/ <span id="risk-max-positions">3</span></span>
+                                </div>
+                                <div class="text-xs mt-1" id="risk-position-status">Safe</div>
+                            </div>
+                            
+                            <!-- Win Rate Today -->
+                            <div class="bg-dark-800/50 rounded-xl p-4">
+                                <div class="text-xs text-gray-400 mb-1">Win Rate (Today)</div>
+                                <div id="risk-winrate" class="text-2xl font-bold font-mono">0%</div>
+                                <div id="risk-win-stats" class="text-xs mt-1">0W / 0L</div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Stats Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <!-- P&L Card -->
@@ -399,18 +464,25 @@
 
                     <!-- Charts Section -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <!-- P&L Chart -->
+                        <!-- Equity Curve Chart -->
                         <div class="lg:col-span-2 glass rounded-2xl p-5">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="font-semibold">P&L Performance</h3>
-                                <select class="bg-dark-700 border border-dark-500 rounded-lg px-3 py-1 text-sm text-gray-400">
-                                    <option>Today</option>
-                                    <option>This Week</option>
-                                    <option>This Month</option>
-                                </select>
+                                <h3 class="font-semibold flex items-center gap-2">
+                                    <i class="fas fa-chart-line text-primary-400"></i>
+                                    Equity Curve (Today's Capital)
+                                </h3>
+                                <div class="flex items-center gap-2">
+                                    <span id="equity-start" class="text-xs text-gray-500">Start: ₹0</span>
+                                    <span class="text-gray-600">|</span>
+                                    <span id="equity-current" class="text-xs text-primary-400">Now: ₹0</span>
+                                </div>
                             </div>
                             <div class="h-64">
-                                <canvas id="pnl-chart"></canvas>
+                                <canvas id="equity-chart"></canvas>
+                            </div>
+                            <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
+                                <span><i class="fas fa-info-circle mr-1"></i>Shows capital growth throughout the day</span>
+                                <span id="equity-return">Return: 0%</span>
                             </div>
                         </div>
 
@@ -462,6 +534,7 @@
                                     <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                         <th class="px-5 py-3">Time</th>
                                         <th class="px-5 py-3">Symbol</th>
+                                        <th class="px-5 py-3">Scan / Strategy</th>
                                         <th class="px-5 py-3">Side</th>
                                         <th class="px-5 py-3">Entry</th>
                                         <th class="px-5 py-3">SL / Target</th>
@@ -1036,59 +1109,197 @@
             
             // Quick stats
             document.getElementById('quick-total-trades').textContent = trades;
+            
+            // 🔥 UPDATE RISK PANEL
+            updateRiskPanel();
+        }
+        
+        // 🔥 RISK PANEL - Shows risk exposure at a glance
+        function updateRiskPanel() {
+            if (!appData.stats || !appData.config) return;
+            
+            const pnl = appData.stats.today_pnl || 0;
+            const capital = appData.config.capital || 100000;
+            const trades = appData.stats.today_trades || 0;
+            const wins = appData.stats.winning_trades || 0;
+            const losses = appData.stats.losing_trades || 0;
+            const total = wins + losses;
+            const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+            
+            // Calculate capital used in open positions
+            const capitalUsed = appData.positions.reduce((sum, p) => {
+                return sum + (p.quantity * p.entry_price);
+            }, 0);
+            
+            // Calculate total risk (sum of all position risks)
+            const totalRisk = appData.positions.reduce((sum, p) => {
+                const riskPerShare = p.entry_price - (p.sl_price || p.entry_price * 0.98);
+                return sum + (riskPerShare * p.quantity);
+            }, 0);
+            const riskPercent = (totalRisk / capital) * 100;
+            
+            // Max positions (different for paper vs live)
+            const isPaper = appData.config.paper_trading;
+            const maxPositions = isPaper ? 
+                (appData.config.paper_trading_filters?.max_positions || 20) : 
+                (appData.config.signal_validation?.max_open_positions || 3);
+            const openPos = appData.positions.length;
+            
+            // Update System Mode Badge
+            const modeBadge = document.getElementById('system-mode-badge');
+            if (isPaper) {
+                modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+                modeBadge.innerHTML = '<i class="fas fa-flask text-xs mr-1"></i> PAPER TRADING';
+            } else if (appData.config.system_enabled) {
+                modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-primary-500/20 text-primary-400 border border-primary-500/30';
+                modeBadge.innerHTML = '<i class="fas fa-circle text-xs mr-1"></i> LIVE TRADING';
+            } else {
+                modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-400';
+                modeBadge.innerHTML = '<i class="fas fa-pause text-xs mr-1"></i> SYSTEM PAUSED';
+            }
+            
+            // P&L
+            const pnlEl = document.getElementById('risk-pnl');
+            pnlEl.textContent = (pnl >= 0 ? '+' : '') + '₹' + Math.abs(pnl).toLocaleString('en-IN');
+            pnlEl.className = 'text-2xl font-bold font-mono ' + (pnl >= 0 ? 'text-primary-400' : 'text-danger-500');
+            
+            const pnlPct = ((pnl / capital) * 100).toFixed(2);
+            document.getElementById('risk-pnl-pct').textContent = (pnl >= 0 ? '+' : '') + pnlPct + '%';
+            document.getElementById('risk-pnl-pct').className = 'text-xs mt-1 ' + (pnl >= 0 ? 'text-primary-400' : 'text-danger-500');
+            
+            // Capital Used
+            document.getElementById('risk-capital-used').textContent = '₹' + capitalUsed.toLocaleString('en-IN');
+            document.getElementById('risk-capital-total').textContent = '₹' + capital.toLocaleString('en-IN');
+            const capitalPct = Math.min((capitalUsed / capital) * 100, 100);
+            document.getElementById('risk-capital-bar').style.width = capitalPct + '%';
+            
+            // Risk Used
+            const maxRiskPercent = 3; // 3% max risk
+            document.getElementById('risk-used').textContent = riskPercent.toFixed(1) + '%';
+            document.getElementById('risk-max').textContent = maxRiskPercent + '%';
+            const riskPctBar = Math.min((riskPercent / maxRiskPercent) * 100, 100);
+            const riskBar = document.getElementById('risk-bar');
+            riskBar.style.width = riskPctBar + '%';
+            // Color code risk bar
+            if (riskPercent > maxRiskPercent * 0.8) {
+                riskBar.className = 'h-1.5 rounded-full transition-all bg-danger-500';
+            } else if (riskPercent > maxRiskPercent * 0.5) {
+                riskBar.className = 'h-1.5 rounded-full transition-all bg-warning-500';
+            } else {
+                riskBar.className = 'h-1.5 rounded-full transition-all bg-primary-500';
+            }
+            
+            // Open Positions
+            document.getElementById('risk-positions').textContent = openPos;
+            document.getElementById('risk-max-positions').textContent = maxPositions;
+            const posStatus = document.getElementById('risk-position-status');
+            if (openPos >= maxPositions) {
+                posStatus.textContent = 'Max Reached';
+                posStatus.className = 'text-xs mt-1 text-danger-500';
+            } else if (openPos >= maxPositions * 0.8) {
+                posStatus.textContent = 'Near Limit';
+                posStatus.className = 'text-xs mt-1 text-warning-500';
+            } else {
+                posStatus.textContent = 'Safe';
+                posStatus.className = 'text-xs mt-1 text-primary-400';
+            }
+            
+            // Win Rate
+            document.getElementById('risk-winrate').textContent = winRate + '%';
+            document.getElementById('risk-win-stats').textContent = `${wins}W / ${losses}L`;
         }
 
         // Update charts
         function updateCharts() {
-            // P&L Chart
-            const pnlCtx = document.getElementById('pnl-chart');
-            if (pnlCtx && appData.trades.length > 0) {
-                if (charts.pnl) charts.pnl.destroy();
+            // 🔥 EQUITY CURVE CHART - Shows capital growth throughout the day
+            const equityCtx = document.getElementById('equity-chart');
+            if (equityCtx) {
+                if (charts.equity) charts.equity.destroy();
                 
-                const tradeData = [...appData.trades].reverse().slice(-20);
-                const labels = tradeData.map(t => new Date(t.date).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'}));
-                const data = tradeData.map((t, i) => {
-                    let sum = 0;
-                    for (let j = 0; j <= i; j++) sum += tradeData[j].pnl || 0;
-                    return sum;
+                const capital = appData.config?.capital || 100000;
+                const trades = [...appData.trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                // Build equity curve data
+                let equity = capital;
+                const labels = ['Start'];
+                const data = [capital];
+                
+                trades.forEach(trade => {
+                    if (trade.status === 'CLOSED') {
+                        equity += (trade.pnl || 0);
+                        labels.push(new Date(trade.date).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'}));
+                        data.push(equity);
+                    }
                 });
                 
-                charts.pnl = new Chart(pnlCtx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Cumulative P&L',
-                            data: data,
-                            borderColor: '#22c55e',
-                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                            fill: true,
-                            tension: 0.4,
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
+                // Add current equity if there are open positions
+                const unrealized = appData.positions.reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0);
+                const currentEquity = equity + unrealized;
+                if (unrealized !== 0) {
+                    labels.push('Now');
+                    data.push(currentEquity);
+                }
+                
+                // Update equity stats
+                document.getElementById('equity-start').textContent = 'Start: ₹' + capital.toLocaleString('en-IN');
+                document.getElementById('equity-current').textContent = 'Now: ₹' + currentEquity.toLocaleString('en-IN');
+                const totalReturn = ((currentEquity - capital) / capital * 100).toFixed(2);
+                document.getElementById('equity-return').textContent = 'Return: ' + (totalReturn >= 0 ? '+' : '') + totalReturn + '%';
+                document.getElementById('equity-return').className = totalReturn >= 0 ? 'text-primary-400' : 'text-danger-500';
+                
+                // Only show chart if we have data points or trades
+                if (data.length > 1 || trades.length > 0) {
+                    charts.equity = new Chart(equityCtx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Equity',
+                                data: data,
+                                borderColor: data[data.length - 1] >= data[0] ? '#22c55e' : '#ef4444',
+                                backgroundColor: data[data.length - 1] >= data[0] ? 
+                                    'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointRadius: 3,
+                                pointBackgroundColor: data[data.length - 1] >= data[0] ? '#22c55e' : '#ef4444'
+                            }]
                         },
-                        scales: {
-                            x: {
-                                grid: { color: 'rgba(255,255,255,0.05)' },
-                                ticks: { color: '#6b7280', font: { size: 10 } }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (context) => '₹' + context.parsed.y.toLocaleString('en-IN')
+                                    }
+                                }
                             },
-                            y: {
-                                grid: { color: 'rgba(255,255,255,0.05)' },
-                                ticks: { 
-                                    color: '#6b7280', 
-                                    font: { size: 10 },
-                                    callback: v => '₹' + v.toFixed(0)
+                            scales: {
+                                x: {
+                                    grid: { color: 'rgba(255,255,255,0.05)' },
+                                    ticks: { color: '#6b7280', font: { size: 10 } }
+                                },
+                                y: {
+                                    grid: { color: 'rgba(255,255,255,0.05)' },
+                                    ticks: { 
+                                        color: '#6b7280', 
+                                        font: { size: 10 },
+                                        callback: v => '₹' + (v / 1000).toFixed(0) + 'K'
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                } else {
+                    // Show empty state
+                    equityCtx.style.display = 'flex';
+                    equityCtx.style.alignItems = 'center';
+                    equityCtx.style.justifyContent = 'center';
+                    equityCtx.innerHTML = '<div class="text-gray-500 text-sm">No trades yet today<br>Equity curve will appear here</div>';
+                }
             }
             
             // Win/Loss Chart
@@ -1141,21 +1352,51 @@
             
             if (noMsg) noMsg.classList.add('hidden');
             
-            const renderRow = (trade) => {
+            const renderRow = (trade, isComplete = false) => {
                 const time = trade.date ? new Date(trade.date).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'}) : '--:--';
                 const pnl = trade.pnl || 0;
                 const side = trade.action || 'BUY';
                 const status = trade.status || 'PENDING';
+                
+                // 🔥 Get scan name from trade data
+                const scanName = trade.alert_name || trade.context?.scan_name || '-';
+                const scanDisplay = scanName.length > 20 ? scanName.substring(0, 20) + '...' : scanName;
                 
                 let statusClass = 'bg-gray-500/20 text-gray-400';
                 if (status === 'OPEN') statusClass = 'bg-blue-500/20 text-blue-400';
                 if (status === 'CLOSED' && pnl > 0) statusClass = 'bg-primary-500/20 text-primary-400';
                 if (status === 'CLOSED' && pnl < 0) statusClass = 'bg-danger-500/20 text-danger-400';
                 
+                // For complete history, show Exit price instead of Side/SL-TP
+                if (isComplete) {
+                    return `
+                        <tr class="border-b border-dark-600 hover:bg-dark-700/30">
+                            <td class="px-5 py-3 text-gray-400">${time}</td>
+                            <td class="px-5 py-3 font-semibold">${trade.symbol}</td>
+                            <td class="px-5 py-3">
+                                <span class="text-xs text-gray-400" title="${scanName}">${scanDisplay}</span>
+                            </td>
+                            <td class="px-5 py-3 font-mono">₹${(trade.entry_price || 0).toFixed(2)}</td>
+                            <td class="px-5 py-3 font-mono">${trade.exit_price ? '₹' + trade.exit_price.toFixed(2) : '-'}</td>
+                            <td class="px-5 py-3">${trade.quantity || 0}</td>
+                            <td class="px-5 py-3">
+                                <span class="px-2 py-1 rounded text-xs ${statusClass}">${status}</span>
+                            </td>
+                            <td class="px-5 py-3 text-right font-mono ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}">
+                                ${pnl !== 0 ? (pnl >= 0 ? '+' : '') + '₹' + pnl.toFixed(2) : '-'}
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                // For recent trades, show Side and SL/Target
                 return `
-                    <tr class="border-b border-dark-600">
+                    <tr class="border-b border-dark-600 hover:bg-dark-700/30">
                         <td class="px-5 py-3 text-gray-400">${time}</td>
                         <td class="px-5 py-3 font-semibold">${trade.symbol}</td>
+                        <td class="px-5 py-3">
+                            <span class="text-xs text-gray-400" title="${scanName}">${scanDisplay}</span>
+                        </td>
                         <td class="px-5 py-3">
                             <span class="px-2 py-1 rounded text-xs ${side === 'BUY' ? 'bg-primary-500/20 text-primary-400' : 'bg-danger-500/20 text-danger-400'}">
                                 ${side}
@@ -1177,8 +1418,8 @@
                 `;
             };
             
-            recentBody.innerHTML = trades.slice(0, 5).map(renderRow).join('');
-            allBody.innerHTML = trades.map(renderRow).join('');
+            recentBody.innerHTML = trades.slice(0, 5).map(t => renderRow(t, false)).join('');
+            allBody.innerHTML = trades.map(t => renderRow(t, true)).join('');
         }
 
         // Update positions
