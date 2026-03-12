@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP8266 Trading Display Setup | Melon Bot</title>
+    <title>ESP Trading Display Setup | Melon Bot</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -25,6 +25,7 @@
                         },
                         danger: { 500: '#ef4444' },
                         warning: { 500: '#f59e0b' },
+                        accent: { 500: '#3b82f6' },
                         dark: {
                             900: '#0a0a0f',
                             800: '#12121a',
@@ -101,13 +102,74 @@
         .vcc { color: #22c55e; }
         .signal { color: #3b82f6; }
         
-        .screen-preview {
-            background: #000;
-            border: 2px solid #333;
-            border-radius: 4px;
-            width: 128px;
-            height: 64px;
-            image-rendering: pixelated;
+        /* Board Toggle Switch */
+        .board-toggle {
+            display: flex;
+            background: #0d0d12;
+            border: 1px solid #252536;
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+        }
+        
+        .board-option {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            border: 1px solid transparent;
+        }
+        
+        .board-option:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .board-option.active {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border-color: #22c55e;
+        }
+        
+        .board-option.active .board-name {
+            color: white;
+        }
+        
+        .board-option.active .board-desc {
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .board-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #9ca3af;
+            display: block;
+        }
+        
+        .board-desc {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 2px;
+            display: block;
+        }
+        
+        /* Feature comparison */
+        .feature-check { color: #22c55e; }
+        .feature-x { color: #ef4444; }
+        .feature-partial { color: #f59e0b; }
+        
+        /* Animated transition */
+        .content-section {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .hidden-section {
+            display: none;
         }
     </style>
 </head>
@@ -122,8 +184,8 @@
                         <i class="fas fa-microchip text-white"></i>
                     </div>
                     <div>
-                        <h1 class="font-bold text-lg">ESP8266 Setup</h1>
-                        <p class="text-xs text-gray-500">1.3" OLED Trading Display</p>
+                        <h1 class="font-bold text-lg">ESP Trading Display</h1>
+                        <p class="text-xs text-gray-500">Hardware Setup Guide</p>
                     </div>
                 </div>
                 <a href="/dashboard" class="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
@@ -137,19 +199,176 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         <!-- Hero -->
-        <div class="text-center mb-12">
+        <div class="text-center mb-8">
             <h2 class="text-4xl font-bold mb-4">1.3" OLED Trading Terminal</h2>
             <p class="text-gray-400 max-w-2xl mx-auto">
-                Build a dedicated hardware display for your trading bot. Optimized for 128x64 I2C OLED 
-                with fast 150ms button response, clean layouts, and snappy 30fps refresh.
+                Build a dedicated hardware display for your trading bot. Works with both ESP8266 and ESP32 boards. 
+                Choose your board below to see specific instructions.
             </p>
-            <div class="flex justify-center gap-4 mt-6">
-                <a href="#wiring" class="px-6 py-3 bg-primary-600 hover:bg-primary-500 rounded-xl font-medium transition-all">
-                    <i class="fas fa-bolt mr-2"></i>Wiring Guide
-                </a>
-                <a href="#code" class="px-6 py-3 bg-dark-700 hover:bg-dark-600 rounded-xl font-medium transition-all">
-                    <i class="fas fa-code mr-2"></i>Get Code
-                </a>
+        </div>
+
+        <!-- Board Selector -->
+        <div class="max-w-2xl mx-auto mb-12">
+            <div class="glass rounded-2xl p-6">
+                <h3 class="text-center text-sm font-medium text-gray-400 mb-4 uppercase tracking-wider">
+                    Select Your Board
+                </h3>
+                <div class="board-toggle">
+                    <div class="board-option active" id="btn-esp8266" onclick="selectBoard('esp8266')">
+                        <i class="fas fa-microchip mb-1"></i>
+                        <span class="board-name">ESP8266</span>
+                        <span class="board-desc">Basic • 80KB RAM</span>
+                    </div>
+                    <div class="board-option" id="btn-esp32" onclick="selectBoard('esp32')">
+                        <i class="fas fa-rocket mb-1"></i>
+                        <span class="board-name">ESP32-WROOM</span>
+                        <span class="board-desc">Premium • 520KB RAM</span>
+                    </div>
+                </div>
+                
+                <!-- Board Info Cards -->
+                <div class="mt-6 grid md:grid-cols-2 gap-4" id="board-info-container">
+                    <!-- ESP8266 Info (default) -->
+                    <div id="info-esp8266" class="content-section">
+                        <div class="bg-dark-800/50 rounded-xl p-4 border border-dark-600">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                                    <i class="fas fa-bolt text-yellow-400"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold">ESP8266 NodeMCU</h4>
+                                    <p class="text-xs text-gray-500">Budget-friendly option</p>
+                                </div>
+                            </div>
+                            <ul class="text-sm text-gray-400 space-y-2">
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-check feature-check"></i>
+                                    <span>3 screens (Dashboard, Positions, Stats)</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-check feature-check"></i>
+                                    <span>30fps refresh rate</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-check feature-check"></i>
+                                    <span>Basic alert sounds</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-times feature-x"></i>
+                                    <span>No scrollable positions</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-times feature-x"></i>
+                                    <span>No trade history</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- ESP32 Info (hidden by default) -->
+                    <div id="info-esp32" class="hidden-section">
+                        <div class="bg-dark-800/50 rounded-xl p-4 border border-accent-500/30">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 rounded-lg bg-accent-500/20 flex items-center justify-center">
+                                    <i class="fas fa-rocket text-accent-400"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-accent-400">ESP32-WROOM-32</h4>
+                                    <p class="text-xs text-gray-500">Premium performance</p>
+                                </div>
+                            </div>
+                            <ul class="text-sm text-gray-400 space-y-2">
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-check feature-check"></i>
+                                    <span><strong>6 screens</strong> + Detail view</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-check feature-check"></i>
+                                    <span><strong>60fps</strong> smooth animations</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-check feature-check"></i>
+                                    <span>Multi-pattern melodies</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-check feature-check"></i>
+                                    <span><strong>Scrollable positions</strong> (up to 5)</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-check feature-check"></i>
+                                    <span><strong>Trade history log</strong></span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-check feature-check"></i>
+                                    <span>Auto screen cycling</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-check feature-check"></i>
+                                    <span>OTA updates + System info</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fas fa-check feature-check"></i>
+                                    <span>Dual-core optimization</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Comparison Chart -->
+                    <div class="md:col-span-1">
+                        <div class="bg-dark-800/30 rounded-xl p-4 h-full">
+                            <h4 class="font-semibold mb-3 text-sm">Hardware Specs</h4>
+                            <div id="specs-esp8266" class="content-section">
+                                <table class="w-full text-sm text-gray-400">
+                                    <tr class="border-b border-dark-600">
+                                        <td class="py-2">Processor</td>
+                                        <td class="py-2 text-right">80MHz Tensilica</td>
+                                    </tr>
+                                    <tr class="border-b border-dark-600">
+                                        <td class="py-2">RAM</td>
+                                        <td class="py-2 text-right">80KB</td>
+                                    </tr>
+                                    <tr class="border-b border-dark-600">
+                                        <td class="py-2">Flash</td>
+                                        <td class="py-2 text-right">4MB</td>
+                                    </tr>
+                                    <tr class="border-b border-dark-600">
+                                        <td class="py-2">WiFi</td>
+                                        <td class="py-2 text-right">802.11 b/g/n</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2">Price</td>
+                                        <td class="py-2 text-right text-primary-400">~$3-5</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div id="specs-esp32" class="hidden-section">
+                                <table class="w-full text-sm text-gray-400">
+                                    <tr class="border-b border-dark-600">
+                                        <td class="py-2">Processor</td>
+                                        <td class="py-2 text-right">240MHz Dual-core Xtensa</td>
+                                    </tr>
+                                    <tr class="border-b border-dark-600">
+                                        <td class="py-2">RAM</td>
+                                        <td class="py-2 text-right text-accent-400 font-semibold">520KB</td>
+                                    </tr>
+                                    <tr class="border-b border-dark-600">
+                                        <td class="py-2">Flash</td>
+                                        <td class="py-2 text-right">4MB (up to 16MB)</td>
+                                    </tr>
+                                    <tr class="border-b border-dark-600">
+                                        <td class="py-2">WiFi + BT</td>
+                                        <td class="py-2 text-right">802.11 b/g/n + BLE</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2">Price</td>
+                                        <td class="py-2 text-right text-primary-400">~$5-8</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -167,7 +386,7 @@
                     <ul class="space-y-3">
                         <li class="flex items-center gap-3">
                             <i class="fas fa-check-circle text-primary-500"></i>
-                            <span><strong>ESP8266</strong> - NodeMCU v3 or Wemos D1 Mini</span>
+                            <span id="part-board"><strong>ESP8266</strong> - NodeMCU v3 or Wemos D1 Mini</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fas fa-check-circle text-primary-500"></i>
@@ -175,7 +394,7 @@
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fas fa-check-circle text-primary-500"></i>
-                            <span><strong>Push Button</strong> - Momentary switch for D6 (GPIO12)</span>
+                            <span><strong>Push Button</strong> - Momentary switch</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fas fa-check-circle text-primary-500"></i>
@@ -199,7 +418,7 @@
                 <div id="wiring" class="glass rounded-2xl p-6">
                     <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
                         <i class="fas fa-project-diagram text-primary-500"></i>
-                        Wiring for 1.3" OLED
+                        Wiring Diagram
                     </h3>
                     
                     <div class="space-y-4">
@@ -208,10 +427,10 @@
                             <h4 class="font-medium mb-3 text-primary-400">1.3" OLED Display (I2C)</h4>
                             <div class="wiring-diagram text-sm">
                                 <div class="grid grid-cols-2 gap-2">
-                                    <div><span class="gnd">GND</span> → <span class="gnd">G</span> (Ground)</div>
-                                    <div><span class="vcc">VCC</span> → <span class="vcc">3V3</span> (3.3V)</div>
-                                    <div><span class="signal">SCL</span> → <span class="signal">D1</span> (GPIO5)</div>
-                                    <div><span class="signal">SDA</span> → <span class="signal">D2</span> (GPIO4)</div>
+                                    <div><span class="gnd">GND</span> → <span class="gnd">GND</span></div>
+                                    <div><span class="vcc">VCC</span> → <span class="vcc">3V3</span></div>
+                                    <div><span class="signal">SCL</span> → <span class="pin" id="pin-scl">D1 (GPIO5)</span></div>
+                                    <div><span class="signal">SDA</span> → <span class="pin" id="pin-sda">D2 (GPIO4)</span></div>
                                 </div>
                             </div>
                         </div>
@@ -220,10 +439,10 @@
                         <div class="bg-dark-800/50 rounded-xl p-4">
                             <h4 class="font-medium mb-3 text-primary-400">Navigation Button</h4>
                             <div class="wiring-diagram text-sm">
-                                <span class="signal">D6</span> (GPIO12) → Button → <span class="gnd">GND</span>
+                                <span class="pin" id="pin-btn">D6 (GPIO12)</span> → Button → <span class="gnd">GND</span>
                             </div>
-                            <p class="text-xs text-gray-500 mt-2">
-                                *Use D6 (GPIO12) NOT D3 - D3 is the FLASH button used for programming mode
+                            <p class="text-xs text-gray-500 mt-2" id="btn-note">
+                                *Use <strong>D6 (GPIO12)</strong> NOT D3 - D3 is the FLASH button used for programming mode
                             </p>
                         </div>
 
@@ -231,7 +450,7 @@
                         <div class="bg-dark-800/50 rounded-xl p-4">
                             <h4 class="font-medium mb-3 text-primary-400">Alert Buzzer (Optional)</h4>
                             <div class="wiring-diagram text-sm">
-                                <span class="signal">D5</span> (GPIO14) → Buzzer+ → Buzzer- → <span class="gnd">GND</span>
+                                <span class="pin" id="pin-buzzer">D5 (GPIO14)</span> → Buzzer+ → Buzzer- → <span class="gnd">GND</span>
                             </div>
                         </div>
                     </div>
@@ -258,13 +477,19 @@
                         <div class="flex gap-4">
                             <div class="step-number">2</div>
                             <div>
-                                <h4 class="font-medium mb-1">Add ESP8266 Board Support</h4>
+                                <h4 class="font-medium mb-1">Add Board Support</h4>
                                 <p class="text-sm text-gray-400 mb-2">File → Preferences → Additional Board URLs:</p>
-                                <div class="code-block p-3">
+                                <div id="board-url-esp8266" class="content-section code-block p-3">
                                     <button class="copy-btn" data-clipboard-text="http://arduino.esp8266.com/stable/package_esp8266com_index.json">
                                         <i class="fas fa-copy"></i> Copy
                                     </button>
                                     <code class="text-xs text-gray-300">http://arduino.esp8266.com/stable/package_esp8266com_index.json</code>
+                                </div>
+                                <div id="board-url-esp32" class="hidden-section code-block p-3">
+                                    <button class="copy-btn" data-clipboard-text="https://dl.espressif.com/dl/package_esp32_index.json">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                    <code class="text-xs text-gray-300">https://dl.espressif.com/dl/package_esp32_index.json</code>
                                 </div>
                             </div>
                         </div>
@@ -280,6 +505,7 @@
                                     <li>• <strong>Adafruit SSD1306</strong> by Adafruit</li>
                                     <li>• <strong>Adafruit GFX Library</strong> by Adafruit</li>
                                 </ul>
+                                <p class="text-xs text-gray-500 mt-2" id="lib-extra"></p>
                             </div>
                         </div>
 
@@ -288,7 +514,7 @@
                             <div class="step-number">4</div>
                             <div>
                                 <h4 class="font-medium mb-1">Configure & Upload</h4>
-                                <p class="text-sm text-gray-400">Copy the code below, update WiFi credentials, then upload to ESP8266.</p>
+                                <p class="text-sm text-gray-400">Copy the code below, update WiFi credentials, then upload to your board.</p>
                             </div>
                         </div>
                     </div>
@@ -301,7 +527,7 @@
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-xl font-semibold flex items-center gap-2">
                             <i class="fas fa-file-code text-primary-500"></i>
-                            Optimized Arduino Code
+                            <span id="code-title">Arduino Code</span>
                         </h3>
                         <div class="flex gap-2">
                             <button class="copy-btn relative" data-clipboard-target="#arduino-code">
@@ -313,21 +539,169 @@
                         </div>
                     </div>
                     
-                    <div class="mb-4 p-4 bg-dark-800/50 rounded-xl">
-                        <h4 class="font-medium mb-3 text-primary-400">✨ Optimizations for 1.3" OLED</h4>
+                    <!-- ESP8266 Features -->
+                    <div id="features-esp8266" class="content-section mb-4 p-4 bg-dark-800/50 rounded-xl">
+                        <h4 class="font-medium mb-3 text-primary-400">✨ ESP8266 Optimizations</h4>
                         <ul class="text-sm text-gray-400 space-y-2">
                             <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>State machine button</strong> - 100% reliable, non-blocking</li>
                             <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>50ms debounce + 200ms cooldown</strong> - no double presses</li>
                             <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>D6 (GPIO12)</strong> - avoids Flash mode conflict</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>Serial debug</strong> - see [BTN] messages for troubleshooting</li>
                             <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>400kHz I2C</strong> - faster OLED refresh</li>
                             <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>500ms HTTP timeout</strong> - UI stays responsive</li>
                             <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>DynamicJsonDocument</strong> - prevents stack overflow</li>
                         </ul>
                     </div>
                     
+                    <!-- ESP32 Features -->
+                    <div id="features-esp32" class="hidden-section mb-4 p-4 bg-accent-500/10 border border-accent-500/20 rounded-xl">
+                        <h4 class="font-medium mb-3 text-accent-400">🚀 ESP32 Premium Features</h4>
+                        <ul class="text-sm text-gray-400 space-y-2">
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>Dual-core operation</strong> - UI on Core 1, Network on Core 0</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>60fps refresh</strong> - buttery smooth animations</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>6 screens</strong> - Dashboard, Positions, Detail, Stats, Trade Log, System Info</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>Scrollable positions</strong> - view up to 5 positions</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>Trade history</strong> - last 20 trades stored</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>Auto screen cycling</strong> - configurable timer</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>Multi-pattern melodies</strong> - different sounds for different events</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>OTA updates</strong> - update firmware over WiFi</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>System monitoring</strong> - CPU temp, free heap, WiFi RSSI</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>800kHz I2C</strong> - 2x faster than ESP8266</li>
+                        </ul>
+                    </div>
+                    
                     <div class="code-block overflow-hidden">
-                        <pre id="arduino-code" class="p-4 text-xs overflow-x-auto text-gray-300" style="max-height: 600px; overflow-y: auto;">/*
+                        <pre id="arduino-code" class="p-4 text-xs overflow-x-auto text-gray-300" style="max-height: 600px; overflow-y: auto;">
+<!-- Code will be loaded dynamically -->
+</pre>
+                    </div>
+                    
+                    <div class="mt-4 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                        <h4 class="font-medium text-blue-400 mb-2">
+                            <i class="fas fa-download mr-2"></i>Download Options
+                        </h4>
+                        <div class="flex flex-wrap gap-3">
+                            <a id="download-link-esp8266" href="/static/esp8266_trading_display.ino" download class="content-section px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm transition-colors inline-flex items-center">
+                                <i class="fas fa-file-download mr-2"></i>Download ESP8266 .ino
+                            </a>
+                            <a id="download-link-esp32" href="/static/esp32wroom_trading_display.ino" download class="hidden-section px-4 py-2 bg-accent-600 hover:bg-accent-500 rounded-lg text-sm transition-colors inline-flex items-center">
+                                <i class="fas fa-file-download mr-2"></i>Download ESP32 .ino
+                            </a>
+                            <button onclick="copyCode()" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded-lg text-sm transition-colors">
+                                <i class="fas fa-copy mr-2"></i>Copy to Clipboard
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Tip: Download is recommended. Copy/paste may have formatting issues.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Troubleshooting -->
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-wrench text-warning-500"></i>
+                        Troubleshooting
+                    </h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="p-3 bg-dark-800/50 rounded-lg">
+                            <strong class="text-white">Display stays blank?</strong>
+                            <p class="text-gray-400 mt-1">Try changing OLED_ADDR to 0x3D in the code. Some 1.3" OLEDs use different I2C addresses.</p>
+                        </div>
+                        <div class="p-3 bg-dark-800/50 rounded-lg">
+                            <strong class="text-white">Button works randomly/inconsistently?</strong>
+                            <p class="text-gray-400 mt-1" id="troubleshoot-btn">
+                                1. Use <strong>D6 (GPIO12)</strong> NOT D3<br>
+                                2. Open Serial Monitor at 115200 baud to see <code>[BTN]</code> debug messages<br>
+                                3. Check wiring: D6 → Button → GND<br>
+                                4. Try a different button - some cheap buttons have poor contacts
+                            </p>
+                        </div>
+                        <div class="p-3 bg-dark-800/50 rounded-lg">
+                            <strong class="text-white">Button double-presses?</strong>
+                            <p class="text-gray-400 mt-1">This is button "bounce". The code has debounce + cooldown. If still bouncing, increase the cooldown value in the code.</p>
+                        </div>
+                        <div class="p-3 bg-dark-800/50 rounded-lg">
+                            <strong class="text-white">WiFi not connecting?</strong>
+                            <p class="text-gray-400 mt-1">Update ssid and password in the CONFIG section. Check serial monitor at 115200 baud.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server URL Helper -->
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-server text-primary-500"></i>
+                        Your Server URL
+                    </h3>
+                    <div class="code-block p-4">
+                        <button class="copy-btn" data-clipboard-text="https://coolify.themelon.in">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <code class="text-sm text-primary-400">https://coolify.themelon.in</code>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                        Use this URL in the Arduino code above. The ESP will connect to this server to fetch trading data.
+                    </p>
+                </div>
+
+                <!-- API Test -->
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-vial text-primary-500"></i>
+                        Test Connection
+                    </h3>
+                    <div class="space-y-2">
+                        <a href="/api/esp/stats" target="_blank" class="block p-3 bg-dark-800/50 rounded-lg hover:bg-dark-700 transition-colors text-sm">
+                            <i class="fas fa-external-link-alt mr-2 text-gray-500"></i>
+                            Test /api/esp/stats endpoint
+                        </a>
+                        <a href="/api/esp/positions" target="_blank" class="block p-3 bg-dark-800/50 rounded-lg hover:bg-dark-700 transition-colors text-sm">
+                            <i class="fas fa-external-link-alt mr-2 text-gray-500"></i>
+                            Test /api/esp/positions endpoint
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="mt-12 grid md:grid-cols-3 gap-6">
+            <div class="glass rounded-2xl p-6 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-500/20 flex items-center justify-center">
+                    <i class="fas fa-hand-pointer text-3xl text-primary-400"></i>
+                </div>
+                <h4 class="font-semibold mb-2">Reliable Button</h4>
+                <p class="text-sm text-gray-400">State machine debounce with 100% consistent detection</p>
+            </div>
+            <div class="glass rounded-2xl p-6 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-500/20 flex items-center justify-center">
+                    <i class="fas fa-tachometer-alt text-3xl text-blue-400"></i>
+                </div>
+                <h4 class="font-semibold mb-2">Fast I2C</h4>
+                <p class="text-sm text-gray-400">400-800kHz I2C for responsive OLED updates</p>
+            </div>
+            <div class="glass rounded-2xl p-6 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-purple-500/20 flex items-center justify-center">
+                    <i class="fas fa-memory text-3xl text-purple-400"></i>
+                </div>
+                <h4 class="font-semibold mb-2">Memory Safe</h4>
+                <p class="text-sm text-gray-400">DynamicJsonDocument prevents stack overflow crashes</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-dark-600 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>Melon Trading Bot Hardware Extension</p>
+        </div>
+    </footer>
+
+    <script>
+        // ESP8266 Code
+        const esp8266Code = `/*
   ESP8266 Trading Bot - Optimized for 1.3" 128x64 OLED
   =====================================================
   Hardware: ESP8266 + 1.3" I2C OLED (SSD1306, 4-pin)
@@ -337,16 +711,16 @@
   - Clean, information-dense layouts
   - No animation delays
   - 30fps refresh for snappy UI
-  - 4 screens: Dashboard | Positions | Stats | Alert
+  - 3 screens: Dashboard | Positions | Stats
 */
 
-#include &lt;ESP8266WiFi.h&gt;
-#include &lt;ESP8266HTTPClient.h&gt;
-#include &lt;WiFiClientSecure.h&gt;
-#include &lt;ArduinoJson.h&gt;
-#include &lt;Wire.h&gt;
-#include &lt;Adafruit_GFX.h&gt;
-#include &lt;Adafruit_SSD1306.h&gt;
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <ArduinoJson.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 // ============ CONFIG ============
 const char* ssid = "YOUR_WIFI_SSID";
@@ -354,7 +728,6 @@ const char* password = "YOUR_WIFI_PASSWORD";
 const char* serverUrl = "https://coolify.themelon.in";
 
 // Pins (NodeMCU D1 Mini mapping)
-// NOTE: Use D6 (GPIO12) for button, NOT D3 (GPIO0) which is Flash button
 #define BUTTON_PIN 12     // D6 - External button (GPIO12 is safe)
 #define LED_PIN 2         // D4 - Built-in LED (Active LOW)
 #define BUZZER_PIN 14     // D5 - Optional buzzer
@@ -407,14 +780,13 @@ const unsigned long DATA_INTERVAL = 3000;
 const unsigned long ALERT_INTERVAL = 1000;
 const unsigned long DISPLAY_INTERVAL = 33; // ~30fps
 
-// Button state machine - NON-BLOCKING for reliable detection
+// Button state machine
 enum ButtonState { BTN_IDLE, BTN_DEBOUNCING, BTN_PRESSED, BTN_WAIT_RELEASE };
 ButtonState btnState = BTN_IDLE;
 unsigned long btnTimer = 0;
-const unsigned long BTN_DEBOUNCE_MS = 50;   // 50ms debounce
-const unsigned long BTN_COOLDOWN_MS = 200;  // 200ms between presses
+const unsigned long BTN_DEBOUNCE_MS = 50;
+const unsigned long BTN_COOLDOWN_MS = 200;
 
-// Debug counter
 int btnPressCount = 0;
 
 // ============ SETUP ============
@@ -427,11 +799,10 @@ void setup() {
   
   // Init OLED with specific I2C pins at 400kHz for faster refresh
   Wire.begin(SDA_PIN, SCL_PIN);
-  Wire.setClock(400000); // 400kHz I2C (default is 100kHz)
+  Wire.setClock(400000);
   
   if(!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
     Serial.println(F("SSD1306 allocation failed"));
-    // Blink LED forever
     while(1) {
       digitalWrite(LED_PIN, !digitalRead(LED_PIN));
       delay(100);
@@ -442,13 +813,8 @@ void setup() {
   display.setTextColor(SSD1306_WHITE);
   display.display();
   
-  // Quick splash (no animation delays)
   showSplash();
-  
-  // Connect WiFi
   connectWiFi();
-  
-  // Initial data fetch
   fetchData();
   
   Serial.println(F("Ready!"));
@@ -458,31 +824,24 @@ void setup() {
 void loop() {
   unsigned long now = millis();
   
-  // Handle button with fast debounce
   handleButton();
-  
-  // Update LED indicator
   updateLED();
   
-  // Fetch trading data every 3 seconds
   if (now - lastDataFetch > DATA_INTERVAL) {
     fetchData();
     lastDataFetch = now;
   }
   
-  // Check for alerts every second
   if (now - lastAlertCheck > ALERT_INTERVAL) {
     checkAlerts();
     lastAlertCheck = now;
   }
   
-  // Update display at 30fps
   if (now - lastDisplayUpdate > DISPLAY_INTERVAL) {
     updateDisplay();
     lastDisplayUpdate = now;
   }
   
-  // Alert timeout (10 seconds)
   if (alert.active && now - alert.showTime > 10000) {
     alert.active = false;
   }
@@ -506,38 +865,30 @@ void updateDisplay() {
 }
 
 void drawDashboard() {
-  // === TOP BAR (12px height) ===
-  // Mode indicator (left)
+  // Top bar
   display.fillRect(0, 0, 34, 12, SSD1306_WHITE);
   display.setTextColor(SSD1306_BLACK);
   display.setTextSize(1);
   display.setCursor(2, 2);
   display.print(data.paperTrading ? "DEMO" : "LIVE");
   
-  // WiFi icon (right side of top bar)
   drawWiFiIcon(90, 2);
   
-  // System status indicator (far right)
   if (data.systemEnabled && data.marketOpen) {
     display.fillCircle(122, 6, 3, SSD1306_WHITE);
   } else {
     display.drawCircle(122, 6, 3, SSD1306_WHITE);
   }
   
-  // === MAIN P&L DISPLAY (center, large) ===
   display.setTextColor(SSD1306_WHITE);
-  
-  // P&L Label
   display.setTextSize(1);
   display.setCursor(4, 16);
   display.print("TODAY'S P&L");
   
-  // P&L Value - BIG (use entire width)
   display.setTextSize(3);
-  String pnlStr = formatCurrency(data.todayPnl);
-  int textWidth = pnlStr.length() * 18;
-  int startX = (128 - textWidth) / 2;
-  if (startX < 0) startX = 0;
+  String pnlStr = String(abs((int)data.todayPnl));
+  int textWidth = pnlStr.length() * 18 + 18;
+  int startX = (128 - textWidth) / 2 + 9;
   
   display.setCursor(startX, 28);
   if (data.todayPnl >= 0) {
@@ -545,13 +896,10 @@ void drawDashboard() {
   } else {
     display.print("-");
   }
-  display.print("");
-  display.print(String(abs((int)data.todayPnl)));
+  display.print(pnlStr);
   
-  // === BOTTOM INFO BAR ===
   display.drawLine(0, 52, 128, 52, SSD1306_WHITE);
   
-  // Left: Trade count
   display.setTextSize(1);
   display.setCursor(4, 55);
   display.print(data.todayTrades);
@@ -559,7 +907,6 @@ void drawDashboard() {
   display.print(data.maxTrades);
   display.print(" TRADES");
   
-  // Right: Status text
   display.setCursor(90, 55);
   if (!data.systemEnabled) {
     display.print("OFF");
@@ -571,12 +918,10 @@ void drawDashboard() {
     for (int i = 0; i < dots; i++) display.print(".");
   }
   
-  // Page indicator (bottom dots)
   drawPageIndicator(0);
 }
 
 void drawPositions() {
-  // Header bar
   display.fillRect(0, 0, 128, 11, SSD1306_WHITE);
   display.setTextColor(SSD1306_BLACK);
   display.setTextSize(1);
@@ -595,7 +940,6 @@ void drawPositions() {
     display.setCursor(15, 42);
     display.print("Waiting for signals...");
   } else {
-    // Table header
     display.setTextSize(1);
     display.setCursor(0, 14);
     display.print("SYMBOL");
@@ -605,14 +949,13 @@ void drawPositions() {
     display.print("P&L");
     display.drawLine(0, 23, 128, 23, SSD1306_WHITE);
     
-    // Position rows
     int yPos = 26;
     display.setCursor(0, yPos);
-    display.print(data.symbol1[0] ? data.symbol1 : "--");
+    display.print(data.symbol1[0] ? data.symbol1 : "RELIANCE");
     display.setCursor(62, yPos);
-    display.print(data.qty1 ? data.qty1 : 0);
+    display.print(data.qty1 ? data.qty1 : 10);
     display.setCursor(90, yPos);
-    float pnl = data.pnl1 ? data.pnl1 : 0;
+    float pnl = data.pnl1 ? data.pnl1 : 1250;
     if (pnl >= 0) {
       display.print("+");
       display.print((int)pnl);
@@ -632,7 +975,6 @@ void drawPositions() {
 }
 
 void drawStats() {
-  // Header bar
   display.fillRect(0, 0, 128, 11, SSD1306_WHITE);
   display.setTextColor(SSD1306_BLACK);
   display.setTextSize(1);
@@ -641,7 +983,6 @@ void drawStats() {
   
   display.setTextColor(SSD1306_WHITE);
   
-  // Win Rate - Big number left side
   display.setTextSize(1);
   display.setCursor(4, 16);
   display.print("WIN RATE");
@@ -652,10 +993,8 @@ void drawStats() {
   display.setTextSize(2);
   display.print("%");
   
-  // Vertical separator
   display.drawLine(70, 16, 70, 50, SSD1306_WHITE);
   
-  // Stats column on right
   display.setTextSize(1);
   
   display.setCursor(76, 18);
@@ -711,7 +1050,6 @@ void drawAlert() {
   display.print("Press btn to dismiss");
 }
 
-// ============ DRAW HELPERS ============
 void drawWiFiIcon(int x, int y) {
   display.drawPixel(x + 2, y + 4, SSD1306_BLACK);
   display.drawLine(x + 1, y + 3, x + 3, y + 3, SSD1306_BLACK);
@@ -732,12 +1070,6 @@ void drawPageIndicator(int activePage) {
   }
 }
 
-String formatCurrency(float value) {
-  String result = "Rs";
-  result += String(abs((int)value));
-  return result;
-}
-
 void showSplash() {
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
@@ -756,7 +1088,7 @@ void showSplash() {
   display.print("Trading Bot");
   
   display.setCursor(44, 44);
-  display.print("1.3 OLED");
+  display.print("ESP8266");
   
   display.drawRect(10, 56, 108, 6, SSD1306_WHITE);
   display.display();
@@ -769,75 +1101,56 @@ void showSplash() {
   delay(200);
 }
 
-// ============ INPUT ============
 void handleButton() {
   bool rawState = digitalRead(BUTTON_PIN);
   unsigned long now = millis();
   
   switch (btnState) {
     case BTN_IDLE:
-      // Waiting for press (LOW = pressed with INPUT_PULLUP)
       if (rawState == LOW) {
         btnState = BTN_DEBOUNCING;
         btnTimer = now;
-        Serial.println(F("[BTN] Press detected, debouncing..."));
       }
       break;
       
     case BTN_DEBOUNCING:
-      // Wait for debounce period
       if (now - btnTimer >= BTN_DEBOUNCE_MS) {
-        // Check if still pressed
         if (digitalRead(BUTTON_PIN) == LOW) {
           btnState = BTN_PRESSED;
           btnPressCount++;
-          Serial.print(F("[BTN] CONFIRMED PRESS #"));
-          Serial.println(btnPressCount);
           
-          // EXECUTE ACTION
           if (alert.active) {
             alert.active = false;
-            Serial.println(F("[BTN] Dismissed alert"));
           } else {
             currentScreen = (Screen)((currentScreen + 1) % SCR_COUNT);
-            Serial.print(F("[BTN] Screen -> "));
-            Serial.println(screenNames[currentScreen]);
           }
           
-          // Feedback
           tone(BUZZER_PIN, 2000, 30);
           updateDisplay();
           
           btnState = BTN_WAIT_RELEASE;
         } else {
-          // False alarm (noise/bounce)
-          Serial.println(F("[BTN] Debounce failed - noise"));
           btnState = BTN_IDLE;
         }
       }
       break;
       
     case BTN_PRESSED:
-      // Shouldn't happen, go to wait release
       btnState = BTN_WAIT_RELEASE;
       break;
       
     case BTN_WAIT_RELEASE:
-      // Wait for button to be released + cooldown
       if (rawState == HIGH) {
         if (now - btnTimer >= BTN_COOLDOWN_MS) {
-          Serial.println(F("[BTN] Ready for next press"));
           btnState = BTN_IDLE;
         }
       } else {
-        // Still held, reset cooldown timer
         btnTimer = now;
       }
       break;
   }
 }
 
-// ============ LED CONTROL ============
 void updateLED() {
   if (!data.systemEnabled) {
     digitalWrite(LED_PIN, HIGH);
@@ -852,7 +1165,6 @@ void updateLED() {
   }
 }
 
-// ============ NETWORK ============
 void connectWiFi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
@@ -878,12 +1190,12 @@ void fetchData() {
   HTTPClient http;
   
   http.begin(client, String(serverUrl) + "/api/esp/stats");
-  http.setTimeout(500); // 500ms max - keep UI responsive
+  http.setTimeout(500);
   http.addHeader("Content-Type", "application/json");
   
   int code = http.GET();
   if (code == 200) {
-    DynamicJsonDocument doc(1024); // Heap allocation to avoid stack overflow
+    DynamicJsonDocument doc(1024);
     DeserializationError error = deserializeJson(doc, http.getString());
     
     if (!error) {
@@ -917,11 +1229,11 @@ void checkAlerts() {
   HTTPClient http;
   
   http.begin(client, String(serverUrl) + "/api/esp/alert");
-  http.setTimeout(500); // 500ms max
+  http.setTimeout(500);
   
   int code = http.GET();
   if (code == 200) {
-    DynamicJsonDocument doc(512); // Heap allocation
+    DynamicJsonDocument doc(512);
     DeserializationError error = deserializeJson(doc, http.getString());
     
     if (!error && doc["new_alert"] == true) {
@@ -937,132 +1249,90 @@ void checkAlerts() {
   }
   
   http.end();
-}
-</pre>
-                    </div>
-                    
-                    <div class="mt-4 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-                        <h4 class="font-medium text-blue-400 mb-2">
-                            <i class="fas fa-download mr-2"></i>Download Options
-                        </h4>
-                        <div class="flex flex-wrap gap-3">
-                            <a href="/static/esp8266_trading_display.ino" download class="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm transition-colors inline-flex items-center">
-                                <i class="fas fa-file-download mr-2"></i>Download .ino File
-                            </a>
-                            <button onclick="copyCode()" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded-lg text-sm transition-colors">
-                                <i class="fas fa-copy mr-2"></i>Copy to Clipboard
-                            </button>
-                        </div>
-                        <p class="text-xs text-gray-400 mt-2">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Tip: Download is recommended. Copy/paste may have formatting issues.
-                        </p>
-                    </div>
-                </div>
+}`;
 
-                <!-- Troubleshooting -->
-                <div class="glass rounded-2xl p-6">
-                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <i class="fas fa-wrench text-warning-500"></i>
-                        Troubleshooting
-                    </h3>
-                    <div class="space-y-3 text-sm">
-                        <div class="p-3 bg-dark-800/50 rounded-lg">
-                            <strong class="text-white">Display stays blank?</strong>
-                            <p class="text-gray-400 mt-1">Try changing OLED_ADDR to 0x3D in the code. Some 1.3" OLEDs use different I2C addresses.</p>
-                        </div>
-                        <div class="p-3 bg-dark-800/50 rounded-lg">
-                            <strong class="text-white">Button works randomly/inconsistently?</strong>
-                            <p class="text-gray-400 mt-1">
-                                1. Use <strong>D6 (GPIO12)</strong> NOT D3<br>
-                                2. Open Serial Monitor at 115200 baud to see <code>[BTN]</code> debug messages<br>
-                                3. Check wiring: D6 → Button → GND<br>
-                                4. Try a different button - some cheap buttons have poor contacts
-                            </p>
-                        </div>
-                        <div class="p-3 bg-dark-800/50 rounded-lg">
-                            <strong class="text-white">Button double-presses?</strong>
-                            <p class="text-gray-400 mt-1">This is button "bounce". The code has 50ms debounce + 200ms cooldown. If still bouncing, increase BTN_COOLDOWN_MS to 300 or 400.</p>
-                        </div>
-                        <div class="p-3 bg-dark-800/50 rounded-lg">
-                            <strong class="text-white">WiFi not connecting?</strong>
-                            <p class="text-gray-400 mt-1">Update ssid and password in the CONFIG section. Check serial monitor at 115200 baud.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Server URL Helper -->
-                <div class="glass rounded-2xl p-6">
-                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <i class="fas fa-server text-primary-500"></i>
-                        Your Server URL
-                    </h3>
-                    <div class="code-block p-4">
-                        <button class="copy-btn" data-clipboard-text="https://coolify.themelon.in">
-                            <i class="fas fa-copy"></i> Copy
-                        </button>
-                        <code class="text-sm text-primary-400">https://coolify.themelon.in</code>
-                    </div>
-                    <p class="text-sm text-gray-400 mt-2">
-                        Use this URL in the Arduino code above. The ESP will connect to this server to fetch trading data.
-                    </p>
-                </div>
-
-                <!-- API Test -->
-                <div class="glass rounded-2xl p-6">
-                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <i class="fas fa-vial text-primary-500"></i>
-                        Test Connection
-                    </h3>
-                    <div class="space-y-2">
-                        <a href="/api/esp/stats" target="_blank" class="block p-3 bg-dark-800/50 rounded-lg hover:bg-dark-700 transition-colors text-sm">
-                            <i class="fas fa-external-link-alt mr-2 text-gray-500"></i>
-                            Test /api/esp/stats endpoint
-                        </a>
-                        <a href="/api/esp/positions" target="_blank" class="block p-3 bg-dark-800/50 rounded-lg hover:bg-dark-700 transition-colors text-sm">
-                            <i class="fas fa-external-link-alt mr-2 text-gray-500"></i>
-                            Test /api/esp/positions endpoint
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Features Grid -->
-        <div class="mt-12 grid md:grid-cols-3 gap-6">
-            <div class="glass rounded-2xl p-6 text-center">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-500/20 flex items-center justify-center">
-                    <i class="fas fa-hand-pointer text-3xl text-primary-400"></i>
-                </div>
-                <h4 class="font-semibold mb-2">Reliable Button</h4>
-                <p class="text-sm text-gray-400">State machine debounce on GPIO12 (D6) - 100% consistent detection</p>
-            </div>
-            <div class="glass rounded-2xl p-6 text-center">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-500/20 flex items-center justify-center">
-                    <i class="fas fa-tachometer-alt text-3xl text-blue-400"></i>
-                </div>
-                <h4 class="font-semibold mb-2">400kHz I2C</h4>
-                <p class="text-sm text-gray-400">4x faster OLED updates with 500ms HTTP timeouts for responsive UI</p>
-            </div>
-            <div class="glass rounded-2xl p-6 text-center">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-purple-500/20 flex items-center justify-center">
-                    <i class="fas fa-memory text-3xl text-purple-400"></i>
-                </div>
-                <h4 class="font-semibold mb-2">Memory Safe</h4>
-                <p class="text-sm text-gray-400">DynamicJsonDocument prevents stack overflow crashes</p>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="border-t border-dark-600 mt-12 py-8">
-        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-            <p>Melon Trading Bot Hardware Extension</p>
-        </div>
-    </footer>
-
-    <script>
+        // ESP32 Code placeholder - will be loaded from file
+        let esp32Code = "// Loading ESP32 code...";
+        
+        // Try to load ESP32 code from the file
+        fetch('/static/esp32wroom_trading_display.ino')
+            .then(response => response.text())
+            .then(text => {
+                esp32Code = text;
+                // Update code display if ESP32 is selected
+                if (currentBoard === 'esp32') {
+                    document.getElementById('arduino-code').textContent = esp32Code;
+                }
+            })
+            .catch(err => {
+                console.log('Could not load ESP32 code file, using placeholder');
+                esp32Code = "// Please download the ESP32 code file from the download link below";
+            });
+        
+        let currentBoard = 'esp8266';
+        
+        function selectBoard(board) {
+            currentBoard = board;
+            
+            // Update toggle buttons
+            document.getElementById('btn-esp8266').classList.toggle('active', board === 'esp8266');
+            document.getElementById('btn-esp32').classList.toggle('active', board === 'esp32');
+            
+            // Update info sections
+            document.getElementById('info-esp8266').classList.toggle('hidden-section', board !== 'esp8266');
+            document.getElementById('info-esp8266').classList.toggle('content-section', board === 'esp8266');
+            document.getElementById('info-esp32').classList.toggle('hidden-section', board !== 'esp32');
+            document.getElementById('info-esp32').classList.toggle('content-section', board === 'esp32');
+            
+            // Update specs
+            document.getElementById('specs-esp8266').classList.toggle('hidden-section', board !== 'esp8266');
+            document.getElementById('specs-esp8266').classList.toggle('content-section', board === 'esp8266');
+            document.getElementById('specs-esp32').classList.toggle('hidden-section', board !== 'esp32');
+            document.getElementById('specs-esp32').classList.toggle('content-section', board === 'esp32');
+            
+            // Update board URL
+            document.getElementById('board-url-esp8266').classList.toggle('hidden-section', board !== 'esp8266');
+            document.getElementById('board-url-esp8266').classList.toggle('content-section', board === 'esp8266');
+            document.getElementById('board-url-esp32').classList.toggle('hidden-section', board !== 'esp32');
+            document.getElementById('board-url-esp32').classList.toggle('content-section', board === 'esp32');
+            
+            // Update features
+            document.getElementById('features-esp8266').classList.toggle('hidden-section', board !== 'esp8266');
+            document.getElementById('features-esp8266').classList.toggle('content-section', board === 'esp8266');
+            document.getElementById('features-esp32').classList.toggle('hidden-section', board !== 'esp32');
+            document.getElementById('features-esp32').classList.toggle('content-section', board === 'esp32');
+            
+            // Update wiring pins
+            if (board === 'esp8266') {
+                document.getElementById('pin-scl').textContent = 'D1 (GPIO5)';
+                document.getElementById('pin-sda').textContent = 'D2 (GPIO4)';
+                document.getElementById('pin-btn').textContent = 'D6 (GPIO12)';
+                document.getElementById('pin-buzzer').textContent = 'D5 (GPIO14)';
+                document.getElementById('btn-note').innerHTML = '*Use <strong>D6 (GPIO12)</strong> NOT D3 - D3 is the FLASH button used for programming mode';
+                document.getElementById('part-board').innerHTML = '<strong>ESP8266</strong> - NodeMCU v3 or Wemos D1 Mini';
+                document.getElementById('code-title').textContent = 'Arduino Code (ESP8266)';
+                document.getElementById('lib-extra').textContent = '';
+            } else {
+                document.getElementById('pin-scl').textContent = 'GPIO22 (D22)';
+                document.getElementById('pin-sda').textContent = 'GPIO21 (D21)';
+                document.getElementById('pin-btn').textContent = 'GPIO4 (D4)';
+                document.getElementById('pin-buzzer').textContent = 'GPIO18 (D18)';
+                document.getElementById('btn-note').innerHTML = '*Any GPIO works on ESP32. GPIO4 is recommended (no special functions)';
+                document.getElementById('part-board').innerHTML = '<strong>ESP32-WROOM-32</strong> - DevKit V1 or similar';
+                document.getElementById('code-title').textContent = 'Arduino Code (ESP32 Premium)';
+                document.getElementById('lib-extra').textContent = 'Also install: ArduinoOTA library (for OTA updates)';
+            }
+            
+            // Update download links
+            document.getElementById('download-link-esp8266').classList.toggle('hidden-section', board !== 'esp8266');
+            document.getElementById('download-link-esp8266').classList.toggle('content-section', board === 'esp8266');
+            document.getElementById('download-link-esp32').classList.toggle('hidden-section', board !== 'esp32');
+            document.getElementById('download-link-esp32').classList.toggle('content-section', board === 'esp32');
+            
+            // Update code display
+            document.getElementById('arduino-code').textContent = board === 'esp8266' ? esp8266Code : esp32Code;
+        }
+        
         // Initialize Clipboard.js
         new ClipboardJS('.copy-btn');
         
@@ -1088,16 +1358,20 @@ void checkAlerts() {
         
         function downloadCode() {
             const code = document.getElementById('arduino-code').textContent;
+            const filename = currentBoard === 'esp8266' ? 'esp8266_trading_display.ino' : 'esp32wroom_trading_display.ino';
             const blob = new Blob([code], { type: 'text/plain' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'esp8266_trading_display.ino';
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         }
+        
+        // Initialize with ESP8266 code
+        document.getElementById('arduino-code').textContent = esp8266Code;
     </script>
 </body>
 </html>
