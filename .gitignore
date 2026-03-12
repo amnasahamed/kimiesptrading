@@ -40,10 +40,16 @@ wheels/
 # Logs
 *.log
 
-# Data files (optional - remove if you want to track these)
-# positions.json
-# trades_log.json
-# config.json
+# Data files (contains sensitive info and runtime data)
+config.json
+positions.json
+trades_log.json
+signals_log.json
+error_log.json
+uploads/margins_cache.json
+
+# Config example should be tracked, not the actual config
+!config.example.json
 
 # OS
 .DS_Store

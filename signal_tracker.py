@@ -6,33 +6,72 @@ on the same day. Resets daily at 8:00 AM.
 """
 
 import json
-import fcntl
 import os
+import platform
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 SIGNALS_FILE = Path("signals_log.json")
 
+# Cross-platform file locking setup
+if platform.system() == 'Windows':
+    fcntl = None
+    _file_locks = {}
+    _file_locks_lock = threading.Lock()
+else:
+    import fcntl
+
+
+def _get_file_lock(filepath: str):
+    """Get or create a file lock for the given filepath (Windows fallback)."""
+    if fcntl is not None:
+        return None
+    with _file_locks_lock:
+        if filepath not in _file_locks:
+            _file_locks[filepath] = threading.Lock()
+        return _file_locks[filepath]
+
+
+def _acquire_lock(f, exclusive: bool = False):
+    """Acquire file lock (cross-platform)."""
+    if fcntl is not None:
+        lock_type = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
+        fcntl.flock(f.fileno(), lock_type)
+
+
+def _release_lock(f):
+    """Release file lock (cross-platform)."""
+    if fcntl is not None:
+        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
 
 def load_all_signals() -> List[Dict[str, Any]]:
-    """Load all signals from JSON file with file locking."""
+    """Load all signals from JSON file with cross-platform file locking."""
     if not SIGNALS_FILE.exists():
         return []
     
+    lock = _get_file_lock(str(SIGNALS_FILE))
+    if lock:
+        lock.acquire()
+    
     try:
         with open(SIGNALS_FILE, "r") as f:
-            fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+            _acquire_lock(f, exclusive=False)
             try:
                 return json.load(f)
             finally:
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                _release_lock(f)
     except json.JSONDecodeError:
         print("Signals file corrupted, returning empty list")
         return []
     except Exception as e:
         print(f"Error loading signals: {e}")
         return []
+    finally:
+        if lock:
+            lock.release()
 
 
 def load_today_signals() -> List[Dict[str, Any]]:
@@ -59,22 +98,29 @@ def load_today_signals() -> List[Dict[str, Any]]:
 
 
 def save_signal_record(signal: Dict[str, Any]):
-    """Save a signal record to the log file with file locking."""
+    """Save a signal record to the log file with cross-platform file locking."""
+    lock = _get_file_lock(str(SIGNALS_FILE))
+    if lock:
+        lock.acquire()
+    
     try:
         signals = load_all_signals()
         signals.append(signal)
         
         with open(SIGNALS_FILE, "w") as f:
-            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            _acquire_lock(f, exclusive=True)
             try:
                 json.dump(signals, f, indent=2)
                 f.flush()
                 os.fsync(f.fileno())
             finally:
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                _release_lock(f)
     except Exception as e:
         print(f"Error saving signal: {e}")
         raise
+    finally:
+        if lock:
+            lock.release()
 
 
 def record_signal(symbol: str, status: str, reason: str = None, metadata: Dict[str, Any] = None):
@@ -140,6 +186,10 @@ def get_signal_stats() -> Dict[str, Any]:
 
 def clear_old_signals(days: int = 7):
     """Clear signals older than specified days to keep file size manageable."""
+    lock = _get_file_lock(str(SIGNALS_FILE))
+    if lock:
+        lock.acquire()
+    
     try:
         signals = load_all_signals()
         cutoff = datetime.now() - timedelta(days=days)
@@ -149,13 +199,13 @@ def clear_old_signals(days: int = 7):
                    datetime.fromisoformat(s["timestamp"]) > cutoff]
         
         with open(SIGNALS_FILE, "w") as f:
-            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            _acquire_lock(f, exclusive=True)
             try:
                 json.dump(filtered, f, indent=2)
                 f.flush()
                 os.fsync(f.fileno())
             finally:
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                _release_lock(f)
         
         removed = len(signals) - len(filtered)
         if removed > 0:
@@ -163,3 +213,6 @@ def clear_old_signals(days: int = 7):
             
     except Exception as e:
         print(f"Error clearing old signals: {e}")
+    finally:
+        if lock:
+            lock.release()

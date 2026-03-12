@@ -1,0 +1,48 @@
+{
+  "system_enabled": false,
+  "paper_trading": true,
+  "trading_hours": {
+    "start": "09:15",
+    "end": "15:30"
+  },
+  "capital": 100000,
+  "risk_percent": 1.0,
+  "trade_budget": 50000,
+  "max_trades_per_day": 10,
+  "prevent_duplicate_stocks": true,
+  "club_positions": false,
+  "trailing_tp_enabled": false,
+  "kite": {
+    "api_key": "YOUR_KITE_API_KEY_HERE",
+    "api_secret": "YOUR_KITE_API_SECRET_HERE",
+    "access_token": "",
+    "base_url": "https://api.kite.trade"
+  },
+  "telegram": {
+    "bot_token": "YOUR_BOT_TOKEN_HERE",
+    "chat_id": "YOUR_CHAT_ID_HERE",
+    "enabled": false
+  },
+  "risk_management": {
+    "atr_multiplier_sl": 1.5,
+    "atr_multiplier_tp": 3.0,
+    "min_risk_reward": 2.0,
+    "max_sl_percent": 2.0
+  },
+  "chartink": {
+    "webhook_secret": "your_secret_password_here"
+  },
+  "signal_validation": {
+    "enabled": true,
+    "time_windows": [
+      {"start": "10:00", "end": "11:30"},
+      {"start": "13:30", "end": "14:30"}
+    ],
+    "nifty_check_enabled": true,
+    "nifty_max_decline": -0.3,
+    "max_open_positions": 3,
+    "prevent_daily_duplicates": true,
+    "slippage_check_enabled": true,
+    "max_slippage_percent": 0.5
+  }
+}

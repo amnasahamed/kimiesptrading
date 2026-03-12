@@ -19,12 +19,42 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime, time, timedelta
+from collections import defaultdict
 import json
 import asyncio
 import httpx
 from pathlib import Path
 import os
 from contextlib import asynccontextmanager
+
+# Rate limiting storage
+_webhook_calls = defaultdict(list)  # IP -> list of timestamps
+RATE_LIMIT = 20  # Max calls per minute
+RATE_WINDOW = 60  # seconds
+RATE_LIMIT_BURST = 5  # Allow burst of 5 calls immediately
+
+def check_rate_limit(client_ip: str) -> tuple[bool, str]:
+    """Check if client IP has exceeded rate limit."""
+    now = datetime.now()
+    window_start = now - timedelta(seconds=RATE_WINDOW)
+    
+    # Clean old entries and keep only those within window
+    _webhook_calls[client_ip] = [
+        t for t in _webhook_calls[client_ip] 
+        if t > window_start
+    ]
+    
+    # Check if within burst limit
+    recent_calls = len(_webhook_calls[client_ip])
+    
+    if recent_calls >= RATE_LIMIT:
+        oldest_call = min(_webhook_calls[client_ip])
+        retry_after = int((oldest_call + timedelta(seconds=RATE_WINDOW) - now).total_seconds())
+        return False, f"Rate limit exceeded. Try again in {retry_after} seconds."
+    
+    # Record this call
+    _webhook_calls[client_ip].append(now)
+    return True, "OK"
 
 from calculator import calculate_atr, calculate_trade_params, calculate_intelligent_position
 from kite import KiteAPI, KiteQuote
@@ -33,6 +63,15 @@ from signal_tracker import (
     is_duplicate_signal, 
     get_signal_stats,
     load_today_signals
+)
+from incoming_alerts import (
+    record_incoming_alert,
+    update_alert_status,
+    get_incoming_alert_stats,
+    get_recent_incoming_alerts,
+    get_alerts_by_symbol,
+    get_alerts_by_scan,
+    check_file_rotation
 )
 
 # ============================================================================
@@ -60,6 +99,10 @@ class ChartinkAlert(BaseModel):
     # Momentum context (if Chartink sends these)
     volume: Optional[float] = None
     change_percent: Optional[float] = None
+    
+    # Internal tracking (not from ChartInk)
+    _alert_id: Optional[str] = None  # Internal ID for tracking
+    _received_at: Optional[str] = None  # When we received the alert
 
 class ConfigUpdate(BaseModel):
     system_enabled: Optional[bool] = None
@@ -125,6 +168,18 @@ async def lifespan(app: FastAPI):
                 "max_sl_percent": 2.0
             },
             "chartink": {"webhook_secret": ""},
+            # 🔥 PAPER TRADING: Filters for signal accuracy testing
+            "paper_trading_filters": {
+                "enabled": True,
+                "fixed_position_size": 10000,  # ₹10,000 per trade
+                "time_window_check": True,      # Only trade during market hours
+                "nifty_check": False,           # Skip Nifty health check
+                "max_positions": 20,            # Allow up to 20 positions (vs 3 in live)
+                "prevent_duplicates": True,     # Skip if already traded today
+                "slippage_check": True,         # Check price hasn't moved too much
+                "max_slippage_percent": 1.0,    # 1% slippage tolerance (vs 0.5% live)
+                "daily_loss_limit": False       # No daily loss limit in paper
+            },
             # 🔥 NEW: 5-Step Signal Validation Configuration
             "signal_validation": {
                 "enabled": True,
@@ -362,15 +417,42 @@ async def monitor_positions():
                                     
                                     # 🔥 Move SL to breakeven (or slightly below)
                                     new_sl = entry * 0.998  # 0.2% below entry for buffer
+                                    sl_modified = False
+                                    
                                     if sl_order_id and not sl_order_id.startswith("PAPER_"):
-                                        await kite.modify_sl_gtt(
+                                        modify_result = await kite.modify_sl_gtt(
                                             gtt_id=sl_order_id,
                                             new_trigger_price=new_sl,
                                             symbol=symbol,
                                             quantity=new_qty,
                                             transaction_type="BUY"
                                         )
-                                    update_position(position_id, {"sl_price": new_sl})
+                                        
+                                        if modify_result.status == "SUCCESS":
+                                            sl_modified = True
+                                            print(f"✅ SL GTT modified successfully: {sl_order_id} -> qty:{new_qty}, sl:{new_sl:.2f}")
+                                        else:
+                                            # 🔥 CRITICAL: GTT modification failed - position is at risk!
+                                            print(f"🚨 CRITICAL: SL GTT modification failed! {modify_result.message}")
+                                            await send_telegram_message(
+                                                f"🚨 *CRITICAL ALERT: {symbol}*\n\n"
+                                                f"Partial exit succeeded but SL GTT modification FAILED!\n"
+                                                f"Position: {new_qty} shares (was {qty})\n"
+                                                f"SL GTT still set for: {qty} shares @ ₹{sl:.2f}\n\n"
+                                                f"⚠️ *MANUAL INTERVENTION REQUIRED!*"
+                                            )
+                                    
+                                    # Only update position SL if modification succeeded or no GTT to modify
+                                    if sl_modified or not sl_order_id or sl_order_id.startswith("PAPER_"):
+                                        update_position(position_id, {"sl_price": new_sl})
+                                    else:
+                                        # Mark position as having mismatch
+                                        update_position(position_id, {
+                                            "sl_price": sl,  # Keep old SL
+                                            "gtt_mismatch_warning": True,
+                                            "gtt_expected_qty": new_qty,
+                                            "gtt_actual_qty": qty
+                                        })
                                     
                                     # Notify
                                     await send_telegram_message(
@@ -455,8 +537,17 @@ async def monitor_positions():
 # Start position monitor on startup
 @app.on_event("startup")
 async def start_position_monitor():
-    """Start the position monitoring background task."""
-    asyncio.create_task(monitor_positions())
+    """Start the position monitoring background task with error handling and restart."""
+    async def wrapped_monitor():
+        crash_count = 0
+        max_crashes = 5
+        
+        while crash_count < max_crashes:
+            try:
+                await monitor_positions()
+            except Exception as e:
+                crash_count += 1
+                error_msg = f
 
 # REMOVED: simulate_paper_trade function was for testing only
 # In paper trading mode, trades are logged but NOT automatically closed
@@ -466,54 +557,113 @@ async def start_position_monitor():
 # Config & Data Management
 # ============================================================================
 
-import fcntl  # For file locking on Unix
+import platform
+import threading
+
+# Cross-platform file locking
+if platform.system() == 'Windows':
+    fcntl = None
+    # Use threading lock as fallback on Windows
+    _file_locks = {}
+    _file_locks_lock = threading.Lock()
+else:
+    import fcntl
+
+
+def _get_file_lock(filepath: str):
+    """Get or create a file lock for the given filepath (Windows fallback)."""
+    if fcntl is not None:
+        return None  # Unix uses fcntl directly
+    
+    with _file_locks_lock:
+        if filepath not in _file_locks:
+            _file_locks[filepath] = threading.Lock()
+        return _file_locks[filepath]
+
+
+def _acquire_lock(f, exclusive: bool = False):
+    """Acquire file lock (cross-platform)."""
+    if fcntl is not None:
+        # Unix: use fcntl
+        lock_type = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
+        fcntl.flock(f.fileno(), lock_type)
+    # Windows: threading lock is acquired before file open
+
+
+def _release_lock(f):
+    """Release file lock (cross-platform)."""
+    if fcntl is not None:
+        # Unix: use fcntl
+        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+    # Windows: threading lock is released after file close
 
 def load_config() -> Dict[str, Any]:
-    """Load config from JSON file with file locking."""
+    """Load config from JSON file with cross-platform file locking."""
     if not CONFIG_FILE.exists():
         return {}
     
+    # Windows: acquire threading lock before file operation
+    lock = _get_file_lock(str(CONFIG_FILE))
+    if lock:
+        lock.acquire()
+    
     try:
         with open(CONFIG_FILE, "r") as f:
-            # Acquire shared lock for reading
-            fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+            # Acquire shared lock for reading (Unix only)
+            _acquire_lock(f, exclusive=False)
             try:
                 return json.load(f)
             finally:
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                _release_lock(f)
     except json.JSONDecodeError as e:
         print(f"Config file corrupted: {e}")
         return {}
     except Exception as e:
         print(f"Error loading config: {e}")
         return {}
+    finally:
+        if lock:
+            lock.release()
 
 def save_config(config: Dict[str, Any]):
-    """Save config to JSON file with file locking."""
+    """Save config to JSON file with cross-platform file locking."""
+    # Windows: acquire threading lock before file operation
+    lock = _get_file_lock(str(CONFIG_FILE))
+    if lock:
+        lock.acquire()
+    
     try:
         with open(CONFIG_FILE, "w") as f:
-            # Acquire exclusive lock for writing
-            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            # Acquire exclusive lock for writing (Unix only)
+            _acquire_lock(f, exclusive=True)
             try:
                 json.dump(config, f, indent=2)
                 f.flush()
                 os.fsync(f.fileno())  # Ensure data is written to disk
             finally:
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                _release_lock(f)
     except Exception as e:
         print(f"Error saving config: {e}")
         raise
+    finally:
+        if lock:
+            lock.release()
 
 def load_trades() -> List[Dict[str, Any]]:
-    """Load today's trades from JSON file with file locking.
+    """Load today's trades from JSON file with cross-platform file locking.
     Resets at 8:00 AM daily - trades before 8 AM are considered previous day."""
     if not TRADES_FILE.exists():
         return []
     
+    # Windows: acquire threading lock before file operation
+    lock = _get_file_lock(str(TRADES_FILE))
+    if lock:
+        lock.acquire()
+    
     try:
         with open(TRADES_FILE, "r") as f:
-            # Acquire shared lock for reading
-            fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+            # Acquire shared lock for reading (Unix only)
+            _acquire_lock(f, exclusive=False)
             try:
                 data = json.load(f)
                 
@@ -533,55 +683,79 @@ def load_trades() -> List[Dict[str, Any]]:
                     return [t for t in data if t.get("date") and 
                             datetime.fromisoformat(t.get("date")) >= reset_time]
             finally:
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                _release_lock(f)
     except json.JSONDecodeError:
         print("Trades file corrupted, returning empty list")
         return []
     except Exception as e:
         print(f"Error loading trades: {e}")
         return []
+    finally:
+        if lock:
+            lock.release()
 
 def load_all_trades() -> List[Dict[str, Any]]:
-    """Load all trades from JSON file with file locking."""
+    """Load all trades from JSON file with cross-platform file locking."""
     if not TRADES_FILE.exists():
         return []
     
+    # Windows: acquire threading lock before file operation
+    lock = _get_file_lock(str(TRADES_FILE))
+    if lock:
+        lock.acquire()
+    
     try:
         with open(TRADES_FILE, "r") as f:
-            # Acquire shared lock for reading
-            fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+            # Acquire shared lock for reading (Unix only)
+            _acquire_lock(f, exclusive=False)
             try:
                 return json.load(f)
             finally:
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                _release_lock(f)
     except json.JSONDecodeError:
         print("Trades file corrupted, returning empty list")
         return []
     except Exception as e:
         print(f"Error loading trades: {e}")
         return []
+    finally:
+        if lock:
+            lock.release()
 
 def save_trade(trade: Dict[str, Any]):
-    """Save a trade to the log file with file locking."""
+    """Save a trade to the log file with cross-platform file locking."""
+    # Windows: acquire threading lock before file operation
+    lock = _get_file_lock(str(TRADES_FILE))
+    if lock:
+        lock.acquire()
+    
     try:
         trades = load_all_trades()
         trades.append(trade)
         
         with open(TRADES_FILE, "w") as f:
-            # Acquire exclusive lock for writing
-            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            # Acquire exclusive lock for writing (Unix only)
+            _acquire_lock(f, exclusive=True)
             try:
                 json.dump(trades, f, indent=2)
                 f.flush()
                 os.fsync(f.fileno())  # Ensure data is written to disk
             finally:
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                _release_lock(f)
     except Exception as e:
         print(f"Error saving trade: {e}")
         raise
+    finally:
+        if lock:
+            lock.release()
 
 def update_trade_pnl(order_id: str, exit_price: float, pnl: float):
-    """Update P&L for a trade with file locking."""
+    """Update P&L for a trade with cross-platform file locking."""
+    # Windows: acquire threading lock before file operation
+    lock = _get_file_lock(str(TRADES_FILE))
+    if lock:
+        lock.acquire()
+    
     try:
         trades = load_all_trades()
         updated = False
@@ -595,15 +769,18 @@ def update_trade_pnl(order_id: str, exit_price: float, pnl: float):
         
         if updated:
             with open(TRADES_FILE, "w") as f:
-                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                _acquire_lock(f, exclusive=True)
                 try:
                     json.dump(trades, f, indent=2)
                     f.flush()
                     os.fsync(f.fileno())
                 finally:
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    _release_lock(f)
     except Exception as e:
         print(f"Error updating trade P&L: {e}")
+    finally:
+        if lock:
+            lock.release()
 
 
 # ============================================================================
@@ -615,13 +792,38 @@ from kite import Position
 POSITIONS_FILE = Path("positions.json")
 
 def load_positions() -> Dict[str, Any]:
-    """Load open positions from file."""
+    """Load open positions from file with daily reset check."""
     if not POSITIONS_FILE.exists():
         return {}
     try:
         with open(POSITIONS_FILE, "r") as f:
-            return json.load(f)
-    except:
+            positions = json.load(f)
+        
+        # Check for stale positions (held overnight without reset)
+        now = datetime.now()
+        today_date = now.strftime("%Y-%m-%d")
+        reset_time = datetime.strptime(f"{today_date} 08:00:00", "%Y-%m-%d %H:%M:%S")
+        
+        stale_positions_found = False
+        for pos_id, pos in list(positions.items()):
+            entry_time_str = pos.get("entry_time")
+            if entry_time_str and pos.get("status") == "OPEN":
+                try:
+                    entry_time = datetime.fromisoformat(entry_time_str)
+                    # If position is older than today's reset time and it's after reset
+                    if entry_time < reset_time and now >= reset_time:
+                        pos["stale"] = True  # Mark as potentially stale
+                        pos["stale_warning"] = f"Position held overnight from {entry_time.strftime('%Y-%m-%d')}"
+                        stale_positions_found = True
+                except (ValueError, TypeError):
+                    pass  # Invalid timestamp format
+        
+        if stale_positions_found:
+            save_positions(positions)
+        
+        return positions
+    except Exception as e:
+        print(f"Error loading positions: {e}")
         return {}
 
 def save_positions(positions: Dict[str, Any]):
@@ -634,10 +836,18 @@ def save_positions(positions: Dict[str, Any]):
 
 def store_position(position: Position):
     """Store a new position with unique ID (supports multiple positions per symbol)."""
+    import uuid
+    
     positions = load_positions()
     
-    # Use entry_order_id as key to support multiple positions per symbol
-    position_id = position.entry_order_id or f"{position.symbol}_{datetime.now().strftime('%H%M%S')}"
+    # Use entry_order_id as key, or generate unique ID with microsecond + UUID to prevent collisions
+    if position.entry_order_id:
+        position_id = position.entry_order_id
+    else:
+        # Use timestamp with microseconds + random UUID suffix for uniqueness
+        timestamp = datetime.now().strftime('%H%M%S%f')[:-3]  # HHMMSS + milliseconds
+        unique_suffix = uuid.uuid4().hex[:8]  # 8-char random suffix
+        position_id = f"{position.symbol}_{timestamp}_{unique_suffix}"
     
     positions[position_id] = {
         "id": position_id,
@@ -1095,8 +1305,40 @@ def calculate_today_pnl() -> float:
 # Telegram Notifications
 # ============================================================================
 
+def log_error(category: str, message: str, details: Dict[str, Any] = None):
+    """Log errors to persistent file for debugging."""
+    try:
+        error_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "category": category,
+            "message": message,
+            "details": details or {}
+        }
+        error_file = Path("error_log.json")
+        errors = []
+        
+        # Load existing errors
+        if error_file.exists():
+            try:
+                with open(error_file, "r") as f:
+                    errors = json.load(f)
+            except:
+                errors = []
+        
+        errors.append(error_entry)
+        
+        # Keep last 100 errors to prevent file bloat
+        errors = errors[-100:]
+        
+        with open(error_file, "w") as f:
+            json.dump(errors, f, indent=2)
+            
+    except Exception as e:
+        print(f"Failed to log error: {e}")
+
+
 async def send_telegram_message(message: str):
-    """Send notification via Telegram with retry logic."""
+    """Send notification via Telegram with retry logic and persistent error logging."""
     config = load_config()
     telegram = config.get("telegram", {})
     
@@ -1107,11 +1349,14 @@ async def send_telegram_message(message: str):
     chat_id = telegram.get("chat_id")
     
     if not bot_token or not chat_id:
+        log_error("telegram", "Missing bot_token or chat_id")
         return
     
     # Validate bot_token format (should contain a colon)
     if ":" not in bot_token or len(bot_token) < 20:
-        print(f"Telegram error: Invalid bot token format")
+        error_msg = "Invalid bot token format"
+        print(f"Telegram error: {error_msg}")
+        log_error("telegram", error_msg, {"bot_token_length": len(bot_token)})
         return
     
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
@@ -1125,6 +1370,7 @@ async def send_telegram_message(message: str):
     # Retry with exponential backoff
     max_retries = 3
     base_delay = 1.0
+    last_error = None
     
     for attempt in range(max_retries):
         try:
@@ -1134,19 +1380,36 @@ async def send_telegram_message(message: str):
                     return
                 elif resp.status_code == 429:  # Rate limited
                     retry_after = int(resp.headers.get("Retry-After", 5))
+                    log_error("telegram", f"Rate limited", {"retry_after": retry_after})
                     await asyncio.sleep(retry_after)
                 else:
-                    print(f"Telegram API error: {resp.status_code} - {resp.text}")
+                    error_msg = f"API error: {resp.status_code}"
+                    print(f"Telegram {error_msg} - {resp.text}")
+                    log_error("telegram", error_msg, {
+                        "status_code": resp.status_code,
+                        "response": resp.text[:200]
+                    })
                     if attempt < max_retries - 1:
                         await asyncio.sleep(base_delay * (2 ** attempt))
         except httpx.TimeoutException:
-            print(f"Telegram timeout (attempt {attempt + 1}/{max_retries})")
+            error_msg = f"Timeout (attempt {attempt + 1}/{max_retries})"
+            print(f"Telegram {error_msg}")
+            log_error("telegram", error_msg, {"attempt": attempt + 1, "max_retries": max_retries})
             if attempt < max_retries - 1:
                 await asyncio.sleep(base_delay * (2 ** attempt))
         except Exception as e:
-            print(f"Telegram error: {e}")
+            error_msg = f"Error: {str(e)}"
+            print(f"Telegram {error_msg}")
+            log_error("telegram", error_msg, {"attempt": attempt + 1})
+            last_error = e
             if attempt < max_retries - 1:
                 await asyncio.sleep(base_delay * (2 ** attempt))
+    
+    # All retries failed
+    log_error("telegram", "All retries failed", {
+        "message_preview": message[:100] if message else "",
+        "last_error": str(last_error) if last_error else None
+    })
 
 # ============================================================================
 # Guard Checks
@@ -1196,7 +1459,8 @@ def can_trade(config: Dict[str, Any], symbol: str = None) -> tuple[bool, str]:
 async def validate_signal(
     config: Dict[str, Any], 
     symbol: str = None,
-    kite: KiteAPI = None
+    kite: KiteAPI = None,
+    is_paper_trading: bool = False
 ) -> tuple[bool, str]:
     """
     🔥 5-STEP SIGNAL VALIDATION
@@ -1208,6 +1472,8 @@ async def validate_signal(
     4. Duplicate Check - Ignore if already triggered today
     5. Price Slippage Check - Done separately in process_single_alert
     
+    🔥 PAPER TRADING MODE: Configurable filters for signal accuracy testing
+    
     Returns: (is_valid, reason)
     """
     signal_config = config.get("signal_validation", {})
@@ -1216,6 +1482,40 @@ async def validate_signal(
     if not config.get("system_enabled", False):
         return False, "System is disabled"
     
+    # 🔥 PAPER TRADING: Apply configurable filters for signal accuracy testing
+    if is_paper_trading:
+        paper_filters = config.get("paper_trading_filters", {})
+        
+        if not paper_filters.get("enabled", True):
+            return True, "✅ Paper trading - All filters disabled"
+        
+        # Check 1: Time Window (configurable)
+        if paper_filters.get("time_window_check", True):
+            in_window, window_msg = is_in_trading_window()
+            if not in_window:
+                return False, f"⏰ Outside trading windows (10:00-11:30, 13:30-14:30)"
+        
+        # Check 2: Nifty Health (configurable)
+        if paper_filters.get("nifty_check", False) and kite:
+            nifty_change = await get_nifty_change(kite)
+            max_decline = signal_config.get("nifty_max_decline", -0.3)
+            if nifty_change < max_decline:
+                return False, f"📉 Nifty weak: {nifty_change:.2f}% (max decline: {max_decline}%)"
+        
+        # Check 3: Open Positions Limit (higher limit for paper trading)
+        max_positions = paper_filters.get("max_positions", 20)
+        open_count = count_open_positions()
+        if open_count >= max_positions:
+            return False, f"📊 Max paper positions reached: {open_count}/{max_positions}"
+        
+        # Check 4: Duplicate Check (configurable)
+        if paper_filters.get("prevent_duplicates", True):
+            if is_duplicate_signal(symbol):
+                return False, f"🔄 Duplicate signal: {symbol} already triggered today"
+        
+        return True, "✅ Paper trading filters passed"
+    
+    # LIVE TRADING: Full validation
     # Check 1: Time Window (10:00-11:30, 13:30-14:30)
     in_window, window_msg = is_in_trading_window()
     if not in_window:
@@ -1429,7 +1729,18 @@ async def process_single_alert(
     # Reject if current price is more than 0.5% above alerted price
     # ==========================================================================
     signal_config = config.get("signal_validation", {})
-    if signal_config.get("slippage_check_enabled", True) and price and price > 0:
+    paper_filters = config.get("paper_trading_filters", {})
+    
+    # Check slippage (configurable for paper trading)
+    should_check_slippage = signal_config.get("slippage_check_enabled", True)
+    max_slippage = signal_config.get("max_slippage_percent", 0.5)
+    
+    if is_paper_trading:
+        # Paper trading uses its own slippage settings
+        should_check_slippage = paper_filters.get("slippage_check", True)
+        max_slippage = paper_filters.get("max_slippage_percent", 1.0)  # More tolerant in paper
+    
+    if should_check_slippage and price and price > 0:
         max_slippage = signal_config.get("max_slippage_percent", 0.5)
         # Calculate how much current price is above alert price
         price_slippage_pct = (current_ltp - price) / price * 100
@@ -1481,16 +1792,17 @@ async def process_single_alert(
     risk_percent = config.get("risk_percent", 1.0)
     trade_budget = config.get("trade_budget", 50000)  # Default ₹50k per trade
     
-    # 🔥 FIX #4: Check daily loss limit before trading
-    daily_pnl = calculate_today_pnl()
-    daily_loss_limit = -(capital * 0.03)  # Max 3% daily loss
-    if daily_pnl <= daily_loss_limit:
-        return {
-            "status": "REJECTED",
-            "symbol": symbol,
-            "reason": f"Daily loss limit hit: ₹{daily_pnl:.2f}",
-            "timestamp": datetime.now().isoformat()
-        }
+    # 🔥 FIX #4: Check daily loss limit before trading (SKIPPED in paper trading)
+    if not is_paper_trading:
+        daily_pnl = calculate_today_pnl()
+        daily_loss_limit = -(capital * 0.03)  # Max 3% daily loss
+        if daily_pnl <= daily_loss_limit:
+            return {
+                "status": "REJECTED",
+                "symbol": symbol,
+                "reason": f"Daily loss limit hit: ₹{daily_pnl:.2f}",
+                "timestamp": datetime.now().isoformat()
+            }
     
     # ==========================================================================
     # 🔥 STEP 4: INTELLIGENT POSITION SIZING
@@ -1535,6 +1847,28 @@ async def process_single_alert(
     if is_paper_trading:
         print(f"📝 PAPER TRADING: Simulating market order for {symbol}")
         
+        # 🔥 PAPER TRADING: Fixed ₹10,000 position size for signal accuracy testing
+        PAPER_TRADE_VALUE = 10000  # Fixed ₹10,000 per trade
+        paper_qty = max(1, round(PAPER_TRADE_VALUE / current_ltp))  # At least 1 share
+        paper_value = paper_qty * current_ltp
+        
+        # Calculate SL/TP based on ATR (same logic as live trading)
+        paper_sl = current_ltp - (atr * risk_config.get("atr_multiplier_sl", 1.5))
+        paper_tp = current_ltp + (atr * risk_config.get("atr_multiplier_tp", 3.0))
+        
+        # Create paper trade params object
+        from types import SimpleNamespace
+        paper_trade_params = SimpleNamespace(
+            quantity=paper_qty,
+            entry=current_ltp,
+            stop_loss=round(paper_sl, 2),
+            target=round(paper_tp, 2),
+            risk_amount=round((current_ltp - paper_sl) * paper_qty, 2),
+            risk_reward=3.0  # Fixed 1:3 R:R for paper trading
+        )
+        
+        print(f"   📝 PAPER: ₹{PAPER_TRADE_VALUE:,.0f} fixed | Qty: {paper_qty} | Value: ₹{paper_value:,.2f}")
+        
         # Simulate successful market execution at current LTP
         from kite import KiteOrder, Position
         
@@ -1546,21 +1880,24 @@ async def process_single_alert(
             status="SUCCESS",
             message=f"Paper trade executed at market price ₹{fill_price:.2f}",
             variety="paper",
-            filled_quantity=trade_params.quantity,
+            filled_quantity=paper_trade_params.quantity,
             average_price=fill_price
         )
         
         position = Position(
             symbol=symbol,
-            quantity=trade_params.quantity,
+            quantity=paper_trade_params.quantity,
             entry_price=fill_price,
             entry_order_id=entry_order.order_id,
-            sl_price=trade_params.stop_loss,
-            tp_price=trade_params.target,
+            sl_price=paper_trade_params.stop_loss,
+            tp_price=paper_trade_params.target,
             sl_order_id=f"PAPER_SL_{symbol}",
             tp_order_id=f"PAPER_TP_{symbol}",
             status="OPEN"
         )
+        
+        # Use paper trade params for the rest of the function
+        trade_params = paper_trade_params
         
         order_status = "SUCCESS"
         trade_status = "OPEN"
@@ -1750,11 +2087,18 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
     3. Open Positions Check - Max 3 open positions
     4. Duplicate Check - Ignore if already triggered today
     5. Price Slippage Check - Reject if price moved > 0.5%
+    
+    🔥 PAPER TRADING: All limits disabled, fixed ₹10,000 position size
     """
     start_time = datetime.now()
     
     # 1. Load config (0.1ms)
     config = load_config()
+    
+    # 🔥 Check paper trading mode
+    is_paper_trading = config.get("paper_trading", False)
+    if is_paper_trading:
+        print("📝 PAPER TRADING MODE: All limits disabled, ₹10,000 per trade")
     
     # 2. Validate webhook secret
     expected_secret = config.get("chartink", {}).get("webhook_secret", "")
@@ -1784,7 +2128,8 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
         alert_price = stock_alert.get("price")
         
         # 🔥 STEP 1-4: Run signal validation (time, nifty, positions, duplicate)
-        is_valid, reason = await validate_signal(config, symbol, kite)
+        # Pass is_paper_trading to skip limits in paper mode
+        is_valid, reason = await validate_signal(config, symbol, kite, is_paper_trading)
         
         if not is_valid:
             # Record rejected signal
@@ -1798,8 +2143,14 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
             print(f"🚫 Signal rejected: {symbol} - {reason}")
             continue
         
-        # Check max trades before processing
-        if count_today_trades() >= config.get("max_trades_per_day", 10):
+        # Check max trades before processing (configurable in paper trading)
+        paper_filters = config.get("paper_trading_filters", {})
+        max_trades_check = True
+        if is_paper_trading:
+            # In paper trading, check if daily loss limit filter is enabled
+            max_trades_check = not paper_filters.get("daily_loss_limit", False)
+        
+        if max_trades_check and count_today_trades() >= config.get("max_trades_per_day", 10):
             reason = "Max daily trades reached"
             record_signal(symbol, "REJECTED", reason=reason)
             results.append({
@@ -1863,14 +2214,197 @@ async def root():
         "version": "1.0"
     }
 
+
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint that verifies all dependencies.
+    """
+    health = {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "checks": {}
+    }
+    
+    # Check config file
+    try:
+        config = load_config()
+        health["checks"]["config"] = {
+            "status": "ok",
+            "system_enabled": config.get("system_enabled", False),
+            "paper_trading": config.get("paper_trading", True)
+        }
+    except Exception as e:
+        health["checks"]["config"] = {"status": "error", "message": str(e)}
+        health["status"] = "degraded"
+    
+    # Check Kite API
+    try:
+        kite_config = config.get("kite", {})
+        if kite_config.get("api_key") and kite_config.get("access_token"):
+            kite = get_kite_api(config)
+            quote = await kite.get_quote("RELIANCE")
+            if quote:
+                health["checks"]["kite_api"] = {
+                    "status": "ok",
+                    "reliance_ltp": quote.ltp
+                }
+            else:
+                health["checks"]["kite_api"] = {
+                    "status": "warning",
+                    "message": "Connected but couldn't fetch quote"
+                }
+        else:
+            health["checks"]["kite_api"] = {
+                "status": "not_configured",
+                "message": "API key or access token missing"
+            }
+    except Exception as e:
+        health["checks"]["kite_api"] = {"status": "error", "message": str(e)}
+        health["status"] = "degraded"
+    
+    # Check file system
+    try:
+        test_file = Path(".health_check_test")
+        test_file.write_text("test")
+        test_file.unlink()
+        health["checks"]["filesystem"] = {"status": "ok"}
+    except Exception as e:
+        health["checks"]["filesystem"] = {"status": "error", "message": str(e)}
+        health["status"] = "degraded"
+    
+    # Check position monitor (is it running?)
+    # We can't directly check the background task, but we can verify positions file is accessible
+    try:
+        positions = load_positions()
+        open_count = len([p for p in positions.values() if p.get("status") == "OPEN"])
+        health["checks"]["positions"] = {
+            "status": "ok",
+            "open_positions": open_count,
+            "total_tracked": len(positions)
+        }
+    except Exception as e:
+        health["checks"]["positions"] = {"status": "error", "message": str(e)}
+    
+    return health
+
 @app.post("/webhook/chartink")
-async def chartink_webhook(alert: ChartinkAlert, background_tasks: BackgroundTasks):
+async def chartink_webhook(alert: ChartinkAlert, background_tasks: BackgroundTasks, request: Request):
     """
     Main webhook endpoint for Chartink alerts (JSON payload).
     Latency target: <300ms total
+    Records EVERY incoming alert for audit purposes.
     """
-    result = await process_chartink_alert(alert)
-    return result
+    # Get client IP for rate limiting
+    client_ip = request.headers.get("X-Forwarded-For", request.client.host)
+    if client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+    else:
+        client_ip = request.client.host
+    
+    # Check rate limit
+    allowed, message = check_rate_limit(client_ip)
+    if not allowed:
+        print(f"🚫 Rate limit exceeded for {client_ip}")
+        raise HTTPException(status_code=429, detail=message)
+    
+    # 🔥 FIX: ChartInk sends secret in query string, not JSON body
+    # Extract secret from query parameters if not in body
+    if not alert.secret:
+        query_secret = request.query_params.get("secret")
+        if query_secret:
+            alert.secret = query_secret
+    
+    # 🔥 RECORD INCOMING ALERT - Every alert is logged before processing
+    # Parse symbols from the alert for the log
+    symbols = []
+    if alert.stocks:
+        symbols = [s.strip().upper() for s in alert.stocks.split(",") if s.strip()]
+    elif alert.symbol:
+        symbols = [alert.symbol.upper()]
+    
+    # Get relevant headers
+    headers = {
+        "user-agent": request.headers.get("user-agent", ""),
+        "content-type": request.headers.get("content-type", "")
+    }
+    
+    # Record raw payload
+    raw_payload = {
+        "symbol": alert.symbol,
+        "action": alert.action,
+        "price": alert.price,
+        "alert_name": alert.alert_name,
+        "secret": "***" if alert.secret else None,  # Mask secret
+        "stocks": alert.stocks,
+        "trigger_prices": alert.trigger_prices,
+        "triggered_at": alert.triggered_at,
+        "scan_name": alert.scan_name,
+        "scan_url": alert.scan_url,
+        "webhook_url": alert.webhook_url,
+        "volume": alert.volume,
+        "change_percent": alert.change_percent
+    }
+    
+    # Record the incoming alert
+    alert_id = record_incoming_alert(
+        alert_type="json",
+        raw_payload=raw_payload,
+        source_ip=client_ip,
+        headers=headers,
+        symbols=symbols
+    )
+    
+    # Store alert ID for later status updates
+    alert._alert_id = alert_id
+    
+    # Check file rotation periodically
+    check_file_rotation()
+    
+    # Process the alert with error handling
+    start_time = datetime.now()
+    try:
+        result = await process_chartink_alert(alert)
+        
+        # Update alert status based on result
+        status = "processed" if result.get("status") in ["SUCCESS", "BATCH_PROCESSED"] else "rejected"
+        if result.get("status") == "REJECTED":
+            status = "rejected"
+        elif result.get("status") == "ERROR":
+            status = "error"
+        
+        latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+        
+        update_alert_status(
+            alert_id=alert_id,
+            status=status,
+            result=result.get("reason") or result.get("message"),
+            latency_ms=round(latency_ms, 2)
+        )
+        
+        return result
+        
+    except HTTPException as he:
+        # Update status for HTTP errors (like invalid secret, rate limit)
+        latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+        update_alert_status(
+            alert_id=alert_id,
+            status="error",
+            result=f"HTTP {he.status_code}: {he.detail}",
+            latency_ms=round(latency_ms, 2)
+        )
+        raise  # Re-raise the exception
+        
+    except Exception as e:
+        # Update status for unexpected errors
+        latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+        update_alert_status(
+            alert_id=alert_id,
+            status="error",
+            result=str(e),
+            latency_ms=round(latency_ms, 2)
+        )
+        raise
 
 
 @app.post("/webhook/chartink/form")
@@ -1878,7 +2412,21 @@ async def chartink_webhook_form(request: Request):
     """
     Form-data webhook endpoint for Chartink alerts.
     Chartink sometimes sends POST as form-data instead of JSON.
+    Records EVERY incoming alert for audit purposes.
     """
+    # Get client IP for rate limiting
+    client_ip = request.headers.get("X-Forwarded-For", request.client.host)
+    if client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+    else:
+        client_ip = request.client.host
+    
+    # Check rate limit
+    allowed, message = check_rate_limit(client_ip)
+    if not allowed:
+        print(f"🚫 Rate limit exceeded for {client_ip}")
+        raise HTTPException(status_code=429, detail=message)
+    
     try:
         form_data = await request.form()
         
@@ -1908,13 +2456,44 @@ async def chartink_webhook_form(request: Request):
             except (ValueError, TypeError):
                 change_percent = None
         
+        # 🔥 RECORD INCOMING ALERT - Every alert is logged before processing
+        raw_payload = dict(form_data)
+        # Mask secret if present
+        if "secret" in raw_payload:
+            raw_payload["secret"] = "***" if raw_payload["secret"] else None
+        
+        # Parse symbols
+        symbols = []
+        if form_data.get("stocks"):
+            symbols = [s.strip().upper() for s in form_data.get("stocks").split(",") if s.strip()]
+        elif form_data.get("symbol"):
+            symbols = [form_data.get("symbol").upper()]
+        
+        headers = {
+            "user-agent": request.headers.get("user-agent", ""),
+            "content-type": request.headers.get("content-type", "")
+        }
+        
+        alert_id = record_incoming_alert(
+            alert_type="form",
+            raw_payload=raw_payload,
+            source_ip=client_ip,
+            headers=headers,
+            symbols=symbols
+        )
+        
+        check_file_rotation()
+        
         # Convert form data to ChartinkAlert
+        # 🔥 FIX: Also check query string for secret
+        secret = form_data.get("secret") or request.query_params.get("secret")
+        
         alert = ChartinkAlert(
             symbol=form_data.get("symbol"),
             action=form_data.get("action", "BUY"),
             price=price,
             alert_name=form_data.get("alert_name"),
-            secret=form_data.get("secret"),
+            secret=secret,
             stocks=form_data.get("stocks"),
             trigger_prices=form_data.get("trigger_prices"),
             triggered_at=form_data.get("triggered_at"),
@@ -1922,11 +2501,50 @@ async def chartink_webhook_form(request: Request):
             volume=volume,
             change_percent=change_percent
         )
+        alert._alert_id = alert_id
         
-        result = await process_chartink_alert(alert)
-        return result
+        # Process with error handling
+        start_time = datetime.now()
+        try:
+            result = await process_chartink_alert(alert)
+            
+            # Update alert status
+            status = "processed" if result.get("status") in ["SUCCESS", "BATCH_PROCESSED"] else "rejected"
+            if result.get("status") == "REJECTED":
+                status = "rejected"
+            elif result.get("status") == "ERROR":
+                status = "error"
+            
+            latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+            
+            update_alert_status(
+                alert_id=alert_id,
+                status=status,
+                result=result.get("reason") or result.get("message"),
+                latency_ms=round(latency_ms, 2)
+            )
+            
+            return result
+            
+        except HTTPException as he:
+            latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+            update_alert_status(
+                alert_id=alert_id,
+                status="error",
+                result=f"HTTP {he.status_code}: {he.detail}",
+                latency_ms=round(latency_ms, 2)
+            )
+            raise
+            
     except Exception as e:
         print(f"Error in form webhook: {e}")
+        # Update alert status for the outer exception
+        if 'alert_id' in locals():
+            update_alert_status(
+                alert_id=alert_id,
+                status="error",
+                result=str(e)
+            )
         return JSONResponse(
             status_code=500,
             content={
@@ -1937,19 +2555,110 @@ async def chartink_webhook_form(request: Request):
         )
 
 @app.get("/webhook/chartink")
-async def chartink_webhook_get(symbol: str, action: str, price: Optional[float] = None, secret: Optional[str] = None):
+async def chartink_webhook_get(
+    request: Request,
+    symbol: str, 
+    action: str, 
+    price: Optional[float] = None, 
+    secret: Optional[str] = None,
+    alert_name: Optional[str] = None
+):
     """
     GET version for simple webhook integration.
     Usage: /webhook/chartink?symbol=RELIANCE&action=BUY&price=2500
+    Records EVERY incoming alert for audit purposes.
     """
+    # Get client IP for rate limiting
+    client_ip = request.headers.get("X-Forwarded-For", request.client.host)
+    if client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+    else:
+        client_ip = request.client.host
+    
+    # Check rate limit
+    allowed, message = check_rate_limit(client_ip)
+    if not allowed:
+        print(f"🚫 Rate limit exceeded for {client_ip}")
+        raise HTTPException(status_code=429, detail=message)
+    
+    # 🔥 RECORD INCOMING ALERT - Every alert is logged before processing
+    raw_payload = {
+        "symbol": symbol,
+        "action": action,
+        "price": price,
+        "alert_name": alert_name,
+        "secret": "***" if secret else None
+    }
+    
+    headers = {
+        "user-agent": request.headers.get("user-agent", ""),
+        "content-type": "application/x-www-form-urlencoded"
+    }
+    
+    symbols = [symbol.upper()] if symbol else []
+    
+    alert_id = record_incoming_alert(
+        alert_type="get",
+        raw_payload=raw_payload,
+        source_ip=client_ip,
+        headers=headers,
+        symbols=symbols
+    )
+    
+    check_file_rotation()
+    
     alert = ChartinkAlert(
         symbol=symbol.upper(),
         action=action.upper(),
         price=price,
-        secret=secret
+        secret=secret,
+        alert_name=alert_name
     )
-    result = await process_chartink_alert(alert)
-    return result
+    alert._alert_id = alert_id
+    
+    # Process with error handling
+    start_time = datetime.now()
+    try:
+        result = await process_chartink_alert(alert)
+        
+        # Update alert status
+        status = "processed" if result.get("status") in ["SUCCESS", "BATCH_PROCESSED"] else "rejected"
+        if result.get("status") == "REJECTED":
+            status = "rejected"
+        elif result.get("status") == "ERROR":
+            status = "error"
+        
+        latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+        
+        update_alert_status(
+            alert_id=alert_id,
+            status=status,
+            result=result.get("reason") or result.get("message"),
+            latency_ms=round(latency_ms, 2)
+        )
+        
+        return result
+        
+    except HTTPException as he:
+        latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+        update_alert_status(
+            alert_id=alert_id,
+            status="error",
+            result=f"HTTP {he.status_code}: {he.detail}",
+            latency_ms=round(latency_ms, 2)
+        )
+        raise
+        
+    except Exception as e:
+        latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+        update_alert_status(
+            alert_id=alert_id,
+            status="error",
+            result=str(e),
+            latency_ms=round(latency_ms, 2)
+        )
+        raise
+
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard():
@@ -2005,6 +2714,120 @@ async def clear_signals():
     from signal_tracker import record_signal
     record_signal("ADMIN", "CLEARED", reason="Manual clear via API")
     return {"status": "cleared", "message": "Signal history cleared"}
+
+
+# ============================================================================
+# Incoming Alerts API Endpoints - Comprehensive Alert Logging
+# ============================================================================
+
+@app.get("/api/incoming-alerts")
+async def get_incoming_alerts(limit: int = 50, status: Optional[str] = None):
+    """
+    Get recent incoming alerts from ChartInk webhook.
+    
+    Args:
+        limit: Maximum number of alerts to return (default: 50, max: 200)
+        status: Filter by status (pending, processing, processed, rejected, error)
+    
+    Returns:
+        List of incoming alerts with metadata
+    """
+    limit = min(limit, 200)  # Cap at 200
+    
+    alerts = get_recent_incoming_alerts(limit=limit)
+    
+    if status:
+        alerts = [a for a in alerts if a.get("processing_status") == status]
+    
+    return {
+        "alerts": alerts,
+        "count": len(alerts),
+        "filter": {"status": status, "limit": limit}
+    }
+
+
+@app.get("/api/incoming-alerts/stats")
+async def get_incoming_alerts_statistics():
+    """
+    Get statistics about incoming alerts today.
+    
+    Returns:
+        Summary statistics including counts by type, status, and latency
+    """
+    stats = get_incoming_alert_stats()
+    
+    return {
+        "stats": stats,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.get("/api/incoming-alerts/symbol/{symbol}")
+async def get_incoming_alerts_by_symbol(symbol: str):
+    """
+    Get all incoming alerts for a specific symbol today.
+    
+    Args:
+        symbol: Stock symbol to filter by
+    
+    Returns:
+        List of alerts containing the symbol
+    """
+    alerts = get_alerts_by_symbol(symbol)
+    
+    return {
+        "symbol": symbol.upper(),
+        "alerts": alerts,
+        "count": len(alerts)
+    }
+
+
+@app.get("/api/incoming-alerts/scan/{scan_name}")
+async def get_incoming_alerts_by_scan(scan_name: str):
+    """
+    Get all incoming alerts from a specific scan today.
+    
+    Args:
+        scan_name: Name of the scan (partial match supported)
+    
+    Returns:
+        List of alerts matching the scan name
+    """
+    alerts = get_alerts_by_scan(scan_name)
+    
+    return {
+        "scan_name": scan_name,
+        "alerts": alerts,
+        "count": len(alerts)
+    }
+
+
+@app.get("/api/incoming-alerts/today")
+async def get_today_incoming_alerts_summary():
+    """
+    Get a summary of all incoming alerts received today.
+    
+    Returns:
+        Summary with recent alerts and key metrics
+    """
+    from incoming_alerts import load_today_incoming_alerts
+    
+    alerts = load_today_incoming_alerts()
+    stats = get_incoming_alert_stats()
+    
+    # Get last 10 alerts
+    recent = alerts[-10:] if alerts else []
+    
+    return {
+        "summary": {
+            "total_alerts_today": len(alerts),
+            "unique_scans": len(set(a.get("scan_name") for a in alerts if a.get("scan_name"))),
+            "unique_symbols": len(set(s for a in alerts for s in a.get("symbols", []))),
+            "avg_latency_ms": stats.get("avg_latency_ms", 0)
+        },
+        "recent_alerts": recent,
+        "stats": stats
+    }
 
 
 @app.post("/api/config")

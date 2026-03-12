@@ -245,6 +245,12 @@
                     <span id="position-count" class="ml-auto bg-primary-500 text-white text-xs px-2 py-0.5 rounded-full hidden">0</span>
                 </button>
                 
+                <button onclick="switchTab('gtt')" id="nav-gtt" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-dark-700 hover:text-gray-200 transition-all">
+                    <i class="fas fa-bell w-5"></i>
+                    <span class="font-medium">GTT Orders</span>
+                    <span id="gtt-count" class="ml-auto bg-warning-500 text-white text-xs px-2 py-0.5 rounded-full hidden">0</span>
+                </button>
+                
                 <button onclick="switchTab('trades')" id="nav-trades" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-dark-700 hover:text-gray-200 transition-all">
                     <i class="fas fa-list-alt w-5"></i>
                     <span class="font-medium">Trade History</span>
@@ -253,6 +259,12 @@
                 <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-dark-700 hover:text-gray-200 transition-all">
                     <i class="fas fa-chart-pie w-5"></i>
                     <span class="font-medium">Analytics</span>
+                </button>
+                
+                <button onclick="switchTab('alerts')" id="nav-alerts" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-dark-700 hover:text-gray-200 transition-all">
+                    <i class="fas fa-bell w-5"></i>
+                    <span class="font-medium">Incoming Alerts</span>
+                    <span id="alerts-badge" class="ml-auto px-2 py-0.5 bg-primary-500/20 text-primary-400 text-xs rounded-full hidden">0</span>
                 </button>
                 
                 <div class="pt-4 mt-4 border-t border-dark-600">
@@ -474,9 +486,14 @@
                 <div id="tab-positions" class="tab-content hidden space-y-6">
                     <div class="flex items-center justify-between">
                         <h3 class="text-xl font-semibold">Open Positions</h3>
-                        <button onclick="refreshPositions()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 rounded-lg text-sm font-medium transition-colors">
-                            <i class="fas fa-sync-alt mr-2"></i>Refresh
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="syncKitePositions()" class="px-4 py-2 bg-warning-500/20 hover:bg-warning-500/30 text-warning-500 rounded-lg text-sm font-medium transition-colors" title="Sync positions from Kite app">
+                                <i class="fas fa-cloud-download-alt mr-2"></i>Sync from Kite
+                            </button>
+                            <button onclick="refreshPositions()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 rounded-lg text-sm font-medium transition-colors">
+                                <i class="fas fa-sync-alt mr-2"></i>Refresh
+                            </button>
+                        </div>
                     </div>
                     
                     <div id="positions-list" class="grid grid-cols-1 gap-4">
@@ -487,6 +504,26 @@
                         <i class="fas fa-briefcase text-5xl mb-4 opacity-30"></i>
                         <h3 class="text-xl font-semibold mb-2">No Open Positions</h3>
                         <p>Positions will appear here when trades are executed</p>
+                    </div>
+                </div>
+
+                <!-- GTT Orders Tab -->
+                <div id="tab-gtt" class="tab-content hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-semibold">GTT Orders (SL/TP)</h3>
+                        <button onclick="refreshGTT()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 rounded-lg text-sm font-medium transition-colors">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
+                    </div>
+                    
+                    <div id="gtt-list" class="space-y-3">
+                        <!-- Dynamic GTT cards -->
+                    </div>
+                    
+                    <div id="no-gtt" class="glass rounded-2xl p-12 text-center text-gray-500 hidden">
+                        <i class="fas fa-bell text-5xl mb-4 opacity-30"></i>
+                        <h3 class="text-xl font-semibold mb-2">No Active GTT Orders</h3>
+                        <p>GTT orders will appear here when you open positions</p>
                     </div>
                 </div>
 
@@ -531,6 +568,90 @@
                             <h3 class="font-semibold mb-4">Trade Performance</h3>
                             <div class="h-64">
                                 <canvas id="performance-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incoming Alerts Tab -->
+                <div id="tab-alerts" class="tab-content hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-semibold">Incoming ChartInk Alerts</h3>
+                            <p class="text-sm text-gray-400 mt-1">Every webhook call from ChartInk is logged here</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="alerts-status-filter" onchange="loadIncomingAlerts()" class="px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-sm focus:border-primary-500 focus:outline-none">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="processing">Processing</option>
+                                <option value="processed">Processed</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="error">Error</option>
+                            </select>
+                            <button onclick="loadIncomingAlerts()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 rounded-lg text-sm font-medium transition-colors">
+                                <i class="fas fa-sync-alt mr-2"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Alerts Stats Cards -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="glass rounded-xl p-4">
+                            <div class="text-sm text-gray-400 mb-1">Total Today</div>
+                            <div id="alerts-stat-total" class="text-2xl font-bold">-</div>
+                        </div>
+                        <div class="glass rounded-xl p-4">
+                            <div class="text-sm text-gray-400 mb-1">Processed</div>
+                            <div id="alerts-stat-processed" class="text-2xl font-bold text-primary-400">-</div>
+                        </div>
+                        <div class="glass rounded-xl p-4">
+                            <div class="text-sm text-gray-400 mb-1">Rejected</div>
+                            <div id="alerts-stat-rejected" class="text-2xl font-bold text-yellow-400">-</div>
+                        </div>
+                        <div class="glass rounded-xl p-4">
+                            <div class="text-sm text-gray-400 mb-1">Avg Latency</div>
+                            <div id="alerts-stat-latency" class="text-2xl font-bold text-blue-400">-</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Alerts Table -->
+                    <div class="glass rounded-2xl overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-dark-800/50">
+                                    <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        <th class="px-4 py-3">Time</th>
+                                        <th class="px-4 py-3">Type</th>
+                                        <th class="px-4 py-3">Scan/Alert</th>
+                                        <th class="px-4 py-3">Symbols</th>
+                                        <th class="px-4 py-3">Status</th>
+                                        <th class="px-4 py-3">Source IP</th>
+                                        <th class="px-4 py-3 text-right">Latency</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="incoming-alerts-body" class="text-sm">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="no-alerts-message" class="p-8 text-center text-gray-500 hidden">
+                            <i class="fas fa-bell-slash text-4xl mb-3 opacity-50"></i>
+                            <p>No alerts received yet today</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Alert Details Modal (Hidden by default) -->
+                    <div id="alert-details-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+                        <div class="glass rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-auto">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-xl font-semibold">Alert Details</h3>
+                                <button onclick="closeAlertDetails()" class="text-gray-400 hover:text-white">
+                                    <i class="fas fa-times text-xl"></i>
+                                </button>
+                            </div>
+                            <div id="alert-details-content" class="space-y-4">
+                                <!-- Dynamic content -->
                             </div>
                         </div>
                     </div>
@@ -732,7 +853,8 @@
             config: null,
             stats: null,
             trades: [],
-            positions: []
+            positions: [],
+            gttOrders: []
         };
         
         let charts = {};
@@ -772,11 +894,12 @@
         // Load all data
         async function loadData() {
             try {
-                const [configRes, statsRes, tradesRes, positionsRes] = await Promise.all([
+                const [configRes, statsRes, tradesRes, positionsRes, alertsStatsRes] = await Promise.all([
                     fetch('/api/config?_=' + Date.now()),
                     fetch('/api/stats?_=' + Date.now()),
                     fetch('/api/trades?_=' + Date.now()),
-                    fetch('/api/positions?_=' + Date.now())
+                    fetch('/api/positions?_=' + Date.now()),
+                    fetch('/api/incoming-alerts/stats?_=' + Date.now())
                 ]);
 
                 if (!configRes.ok || !statsRes.ok) throw new Error('API Error');
@@ -786,6 +909,16 @@
                 appData.trades = await tradesRes.json();
                 const positionsData = await positionsRes.json();
                 appData.positions = positionsData.positions || [];
+                
+                // Update incoming alerts stats if available
+                try {
+                    if (alertsStatsRes.ok) {
+                        const alertsStats = await alertsStatsRes.json();
+                        updateIncomingAlertsStats(alertsStats.stats || {});
+                    }
+                } catch (e) {
+                    console.error('Failed to parse alerts stats:', e);
+                }
 
                 updateUI();
             } catch (err) {
@@ -799,6 +932,7 @@
             const icon = document.getElementById('refresh-icon');
             icon.classList.add('fa-spin');
             await loadData();
+            await refreshGTT(); // Also refresh GTT orders
             setTimeout(() => icon.classList.remove('fa-spin'), 500);
         }
 
@@ -809,6 +943,7 @@
             updateCharts();
             updateTradesTable();
             updatePositions();
+            updateGTT();
             updateConfigForm();
             updateSidebarConnectionStatus();
         }
@@ -1064,16 +1199,20 @@
                 const pnlPct = pos.pnl_percent || 0;
                 const isProfit = pnl >= 0;
                 
+                const isExternal = pos.external || pos.source === 'KITE_APP';
+                const externalBadge = isExternal ? '<span class="ml-2 px-2 py-0.5 bg-warning-500/20 text-warning-500 text-xs rounded">Kite App</span>' : '';
+                const cardBorder = isExternal ? 'border-warning-500/30' : '';
+                
                 return `
-                    <div class="glass rounded-xl p-5 animated-border">
+                    <div class="glass rounded-xl p-5 animated-border ${cardBorder}" style="${isExternal ? 'border: 1px solid rgba(245, 158, 11, 0.3);' : ''}">
                         <div class="flex items-center justify-between mb-4">
                             <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold text-lg">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${isExternal ? 'from-warning-500 to-warning-700' : 'from-primary-500 to-primary-700'} flex items-center justify-center text-white font-bold text-lg">
                                     ${pos.symbol[0]}
                                 </div>
                                 <div>
-                                    <h4 class="font-bold text-lg">${pos.symbol}</h4>
-                                    <p class="text-sm text-gray-400">${pos.quantity} shares @ ₹${pos.entry_price.toFixed(2)}</p>
+                                    <h4 class="font-bold text-lg">${pos.symbol}${externalBadge}</h4>
+                                    <p class="text-sm text-gray-400">${pos.quantity} shares @ ₹${pos.entry_price.toFixed(2)} ${isExternal ? '(Manual)' : ''}</p>
                                 </div>
                             </div>
                             <div class="text-right">
@@ -1102,7 +1241,7 @@
                         </div>
                         
                         <div class="flex gap-2">
-                            <button onclick="closePosition('${pos.symbol}')" class="flex-1 bg-danger-500/20 hover:bg-danger-500/30 text-danger-500 py-2 rounded-lg font-medium transition-colors text-sm">
+                            <button onclick="closePosition('${pos.id}', '${pos.symbol}', ${pos.quantity})" class="flex-1 bg-danger-500/20 hover:bg-danger-500/30 text-danger-500 py-2 rounded-lg font-medium transition-colors text-sm">
                                 <i class="fas fa-times mr-2"></i>Close Position
                             </button>
                         </div>
@@ -1298,19 +1437,37 @@
             }
         }
 
-        // Close position
-        async function closePosition(symbol) {
+        // Close position by ID
+        async function closePosition(positionId, symbol, quantity) {
+            // Confirmation dialog
+            if (!confirm(`Close position in ${symbol}?\nQuantity: ${quantity} shares\n\nThis will:\n1. Cancel SL/TP GTT orders\n2. Place market sell order\n3. Realize P&L`)) {
+                return;
+            }
+            
+            const btn = event.target.closest('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Closing...';
+            btn.disabled = true;
+            
             try {
-                const res = await fetch(`/api/positions/${symbol}/close`, { method: 'POST' });
+                const res = await fetch(`/api/positions/${positionId}/close`, { method: 'POST' });
                 const data = await res.json();
+                
                 if (data.status === 'success') {
-                    showToast(`Closed position: ${symbol}`, 'success');
+                    const pnl = data.pnl || 0;
+                    const pnlEmoji = pnl >= 0 ? '🟢' : '🔴';
+                    showToast(`${pnlEmoji} Position closed. P&L: ₹${pnl.toFixed(2)}`, 'success');
                     refreshData();
                 } else {
-                    showToast(data.message, 'error');
+                    showToast(`Failed: ${data.message}`, 'error');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
                 }
             } catch (err) {
-                showToast('Failed to close position', 'error');
+                showToast('Network error - please try again', 'error');
+                console.error('Close position error:', err);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 
@@ -1325,6 +1482,103 @@
             } catch (err) {
                 showToast('Failed to refresh positions', 'error');
             }
+        }
+
+        // Sync positions from Kite
+        async function syncKitePositions() {
+            const btn = event.target.closest('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...';
+            btn.disabled = true;
+            
+            try {
+                const res = await fetch('/api/sync-kite', { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    showToast(`Synced ${data.synced_count} positions from Kite`, 'success');
+                    refreshPositions(); // Refresh to show new positions
+                } else {
+                    showToast(`Sync failed: ${data.message}`, 'error');
+                }
+            } catch (err) {
+                showToast('Network error during sync', 'error');
+                console.error('Sync error:', err);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Refresh GTT orders
+        async function refreshGTT() {
+            try {
+                const res = await fetch('/api/gtt-orders?_=' + Date.now());
+                const data = await res.json();
+                if (data.status === 'success') {
+                    appData.gttOrders = data.orders || [];
+                    updateGTT();
+                }
+            } catch (err) {
+                showToast('Failed to refresh GTT orders', 'error');
+            }
+        }
+
+        // Update GTT display
+        function updateGTT() {
+            const container = document.getElementById('gtt-list');
+            const noGtt = document.getElementById('no-gtt');
+            const gttCount = document.getElementById('gtt-count');
+            
+            if (!appData.gttOrders || appData.gttOrders.length === 0) {
+                container.innerHTML = '';
+                noGtt.classList.remove('hidden');
+                gttCount.classList.add('hidden');
+                return;
+            }
+            
+            noGtt.classList.add('hidden');
+            gttCount.textContent = appData.gttOrders.length;
+            gttCount.classList.remove('hidden');
+            
+            container.innerHTML = appData.gttOrders.map(gtt => {
+                const posInfo = gtt.position_info || {};
+                const symbol = posInfo.symbol || gtt.condition?.tradingsymbol || 'Unknown';
+                const triggerPrice = gtt.condition?.trigger_values?.[0] || 0;
+                const type = posInfo.type || (gtt.orders?.[0]?.order_type === 'SL' ? 'SL' : 'TP');
+                const status = gtt.status || 'ACTIVE';
+                
+                const typeColor = type === 'SL' ? 'text-danger-500' : 'text-success-500';
+                const typeBg = type === 'SL' ? 'bg-danger-500/10' : 'bg-success-500/10';
+                
+                return `
+                    <div class="glass rounded-xl p-4 border-l-4 ${type === 'SL' ? 'border-danger-500' : 'border-success-500'}">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg ${typeBg} flex items-center justify-center">
+                                    <i class="fas ${type === 'SL' ? 'fa-shield-alt' : 'fa-bullseye'} ${typeColor}"></i>
+                                </div>
+                                <div>
+                                    <div class="font-semibold">${symbol}</div>
+                                    <div class="text-xs text-gray-400">GTT ID: ${gtt.id}</div>
+                                </div>
+                            </div>
+                            <span class="px-2 py-1 rounded text-xs font-medium ${typeBg} ${typeColor}">${type}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="bg-dark-800/50 rounded-lg p-2">
+                                <div class="text-gray-400 text-xs">Trigger Price</div>
+                                <div class="font-mono font-semibold">₹${triggerPrice.toFixed(2)}</div>
+                            </div>
+                            <div class="bg-dark-800/50 rounded-lg p-2">
+                                <div class="text-gray-400 text-xs">Status</div>
+                                <div class="font-medium ${status === 'ACTIVE' ? 'text-success-500' : 'text-gray-400'}">${status}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // Save config
@@ -1400,6 +1654,220 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
+
+        // ============================================================================
+        // Incoming Alerts Functions
+        // ============================================================================
+        
+        let incomingAlertsData = [];
+        
+        // Load incoming alerts from API
+        async function loadIncomingAlerts() {
+            try {
+                const statusFilter = document.getElementById('alerts-status-filter').value;
+                let url = '/api/incoming-alerts?limit=100';
+                if (statusFilter) {
+                    url += '&status=' + statusFilter;
+                }
+                
+                // Fetch alerts
+                const alertsRes = await fetch(url + '&_=' + Date.now());
+                if (!alertsRes.ok) {
+                    const errorText = await alertsRes.text();
+                    console.error('API Error:', errorText);
+                    throw new Error('Failed to load alerts: ' + alertsRes.status);
+                }
+                
+                const alertsData = await alertsRes.json();
+                incomingAlertsData = alertsData.alerts || [];
+                updateIncomingAlertsTable();
+                
+                // Fetch stats separately (non-blocking)
+                try {
+                    const statsRes = await fetch('/api/incoming-alerts/stats?_=' + Date.now());
+                    if (statsRes.ok) {
+                        const statsData = await statsRes.json();
+                        updateIncomingAlertsStats(statsData.stats || {});
+                    }
+                } catch (statsErr) {
+                    console.error('Failed to load stats:', statsErr);
+                }
+                
+            } catch (err) {
+                console.error('Failed to load incoming alerts:', err);
+                showToast('Failed to load incoming alerts: ' + err.message, 'error');
+            }
+        }
+        
+        // Update incoming alerts stats display
+        function updateIncomingAlertsStats(stats) {
+            document.getElementById('alerts-stat-total').textContent = stats.total || 0;
+            document.getElementById('alerts-stat-processed').textContent = (stats.by_status?.processed || 0);
+            document.getElementById('alerts-stat-rejected').textContent = 
+                (stats.by_status?.rejected || 0) + (stats.by_status?.error || 0);
+            document.getElementById('alerts-stat-latency').textContent = 
+                stats.avg_latency_ms ? Math.round(stats.avg_latency_ms) + 'ms' : '-';
+            
+            // Update badge
+            const badge = document.getElementById('alerts-badge');
+            if (stats.total > 0) {
+                badge.textContent = stats.total;
+                badge.classList.remove('hidden');
+            }
+        }
+        
+        // Update incoming alerts table
+        function updateIncomingAlertsTable() {
+            const tbody = document.getElementById('incoming-alerts-body');
+            const noAlertsMsg = document.getElementById('no-alerts-message');
+            
+            if (!incomingAlertsData || incomingAlertsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">No alerts received yet today</td></tr>';
+                if (noAlertsMsg) noAlertsMsg.classList.remove('hidden');
+                return;
+            }
+            
+            if (noAlertsMsg) noAlertsMsg.classList.add('hidden');
+            
+            tbody.innerHTML = incomingAlertsData.slice().reverse().map(alert => {
+                const time = new Date(alert.received_at).toLocaleTimeString('en-IN', {
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+                
+                const statusColors = {
+                    pending: 'bg-gray-500/20 text-gray-400',
+                    processing: 'bg-blue-500/20 text-blue-400',
+                    processed: 'bg-primary-500/20 text-primary-400',
+                    rejected: 'bg-yellow-500/20 text-yellow-400',
+                    error: 'bg-danger-500/20 text-danger-400'
+                };
+                
+                const typeIcons = {
+                    json: 'fa-code',
+                    form: 'fa-wpforms',
+                    get: 'fa-link'
+                };
+                
+                const symbols = alert.symbols || [];
+                const symbolDisplay = symbols.length > 2 
+                    ? `${symbols.slice(0, 2).join(', ')} +${symbols.length - 2}`
+                    : symbols.join(', ');
+                
+                const scanName = alert.scan_name || alert.alert_name || '-';
+                const scanDisplay = scanName.length > 25 ? scanName.substring(0, 25) + '...' : scanName;
+                
+                return `
+                    <tr class="border-b border-dark-600 hover:bg-dark-700/30 cursor-pointer transition-colors"
+                        onclick="showAlertDetails('${alert.id}')">
+                        <td class="px-4 py-3 font-mono text-xs">${time}</td>
+                        <td class="px-4 py-3">
+                            <span class="flex items-center gap-2">
+                                <i class="fas ${typeIcons[alert.alert_type] || 'fa-question'} text-gray-400"></i>
+                                <span class="capitalize">${alert.alert_type}</span>
+                            </span>
+                        </td>
+                        <td class="px-4 py-3" title="${scanName}">${scanDisplay}</td>
+                        <td class="px-4 py-3 font-mono text-xs">${symbolDisplay || '-'}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded text-xs font-medium ${statusColors[alert.processing_status] || 'bg-gray-500/20'}">
+                                ${alert.processing_status}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-400">${alert.source_ip || '-'}</td>
+                        <td class="px-4 py-3 text-right font-mono text-xs">
+                            ${alert.total_latency_ms ? Math.round(alert.total_latency_ms) + 'ms' : '-'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // Show alert details modal
+        function showAlertDetails(alertId) {
+            const alert = incomingAlertsData.find(a => a.id === alertId);
+            if (!alert) return;
+            
+            const modal = document.getElementById('alert-details-modal');
+            const content = document.getElementById('alert-details-content');
+            
+            const time = new Date(alert.received_at).toLocaleString('en-IN');
+            const symbols = alert.symbols?.join(', ') || '-';
+            
+            content.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <div class="text-gray-400 text-xs mb-1">Alert ID</div>
+                        <div class="font-mono">${alert.id}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 text-xs mb-1">Received At</div>
+                        <div>${time}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 text-xs mb-1">Type</div>
+                        <div class="capitalize">${alert.alert_type}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 text-xs mb-1">Status</div>
+                        <div class="capitalize font-medium ${alert.processing_status === 'processed' ? 'text-primary-400' : alert.processing_status === 'rejected' ? 'text-yellow-400' : ''}">${alert.processing_status}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 text-xs mb-1">Source IP</div>
+                        <div class="font-mono">${alert.source_ip || '-'}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 text-xs mb-1">Latency</div>
+                        <div>${alert.total_latency_ms ? Math.round(alert.total_latency_ms) + 'ms' : '-'}</div>
+                    </div>
+                </div>
+                
+                <div class="border-t border-dark-600 pt-4">
+                    <div class="text-gray-400 text-xs mb-2">Scan/Alert Name</div>
+                    <div class="text-sm">${alert.scan_name || alert.alert_name || '-'}</div>
+                </div>
+                
+                <div class="border-t border-dark-600 pt-4">
+                    <div class="text-gray-400 text-xs mb-2">Symbols (${alert.symbols?.length || 0})</div>
+                    <div class="font-mono text-sm">${symbols}</div>
+                </div>
+                
+                ${alert.stocks ? `
+                <div class="border-t border-dark-600 pt-4">
+                    <div class="text-gray-400 text-xs mb-2">Raw Stocks Field</div>
+                    <div class="font-mono text-xs bg-dark-800/50 p-3 rounded-lg break-all">${alert.stocks}</div>
+                </div>
+                ` : ''}
+                
+                ${alert.processing_result ? `
+                <div class="border-t border-dark-600 pt-4">
+                    <div class="text-gray-400 text-xs mb-2">Processing Result</div>
+                    <div class="text-sm ${alert.processing_status === 'rejected' ? 'text-yellow-400' : ''}">${alert.processing_result}</div>
+                </div>
+                ` : ''}
+                
+                <div class="border-t border-dark-600 pt-4">
+                    <div class="text-gray-400 text-xs mb-2">Raw Payload</div>
+                    <pre class="font-mono text-xs bg-dark-800/50 p-3 rounded-lg overflow-auto max-h-64">${JSON.stringify(alert.raw_payload, null, 2)}</pre>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+        
+        // Close alert details modal
+        function closeAlertDetails() {
+            document.getElementById('alert-details-modal').classList.add('hidden');
+        }
+        
+        // Load alerts when tab is switched
+        document.addEventListener('DOMContentLoaded', () => {
+            const alertsNav = document.getElementById('nav-alerts');
+            if (alertsNav) {
+                alertsNav.addEventListener('click', () => {
+                    loadIncomingAlerts();
+                });
+            }
+        });
     </script>
 </body>
 </html>
