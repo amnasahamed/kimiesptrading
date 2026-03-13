@@ -276,6 +276,11 @@
                     Select Your Board
                 </h3>
                 <div class="board-toggle">
+                    <div class="board-option" id="btn-universal" onclick="selectBoard('universal')">
+                        <i class="fas fa-magic mb-1"></i>
+                        <span class="board-name">Universal</span>
+                        <span class="board-desc">Auto-detect</span>
+                    </div>
                     <div class="board-option active" id="btn-esp8266" onclick="selectBoard('esp8266')">
                         <i class="fas fa-microchip mb-1"></i>
                         <span class="board-name">ESP8266</span>
@@ -283,7 +288,7 @@
                     </div>
                     <div class="board-option" id="btn-esp32" onclick="selectBoard('esp32')">
                         <i class="fas fa-rocket mb-1"></i>
-                        <span class="board-name">ESP32-WROOM</span>
+                        <span class="board-name">ESP32</span>
                         <span class="board-desc">Premium • 520KB RAM</span>
                     </div>
                 </div>
@@ -762,6 +767,9 @@
     </footer>
 
     <script>
+        // Universal Code (Works on ESP32 & ESP8266)
+        const universalCode = "// Download universal version from GitHub:\n// clapslearn_monitor/clapslearn_monitor.ino\n// This single sketch auto-detects ESP32 or ESP8266 board";
+        
         // ESP8266 Code
         const esp8266Code = `/*
   ESP8266 Trading Bot - Optimized for 1.3" 128x64 OLED
@@ -1395,6 +1403,7 @@ void playMelody(Melody melody) {
             currentBoard = board;
             
             // Update toggle buttons
+            document.getElementById('btn-universal').classList.toggle('active', board === 'universal');
             document.getElementById('btn-esp8266').classList.toggle('active', board === 'esp8266');
             document.getElementById('btn-esp32').classList.toggle('active', board === 'esp32');
             
@@ -1450,7 +1459,15 @@ void playMelody(Melody melody) {
             document.getElementById('download-link-esp32').classList.toggle('content-section', board === 'esp32');
             
             // Update code display
-            document.getElementById('arduino-code').textContent = board === 'esp8266' ? esp8266Code : esp32Code;
+            let codeToShow;
+            if (board === 'esp8266') {
+                codeToShow = esp8266Code;
+            } else if (board === 'esp32') {
+                codeToShow = esp32Code;
+            } else {
+                codeToShow = universalCode;
+            }
+            document.getElementById('arduino-code').textContent = codeToShow;
         }
         
         // Initialize Clipboard.js
