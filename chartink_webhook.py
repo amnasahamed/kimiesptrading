@@ -123,6 +123,7 @@ class ConfigUpdate(BaseModel):
     prevent_duplicate_stocks: Optional[bool] = None  # Prevent buying same stock twice
     club_positions: Optional[bool] = None  # Average multiple positions of same stock
     signal_validation: Optional[Dict[str, Any]] = None  # 5-step signal validation settings
+    trading_windows: Optional[List[Dict[str, Any]]] = None  # Trading time windows from dashboard
 
 # ============================================================================
 # File paths
@@ -1778,28 +1779,60 @@ async def force_close_position(position_id: str, exit_price: float, reason: str 
     return True
 
 
-def is_in_trading_window() -> tuple[bool, str]:
+def is_in_trading_window(config: Dict[str, Any] = None) -> tuple[bool, str]:
     """
     Check if current time is within preferred trading windows.
     
-    Valid windows:
+    Reads trading windows from config if available, otherwise uses defaults:
     - 10:00 AM - 11:30 AM (Best window - morning momentum)
     - 1:30 PM - 2:30 PM (Second window - afternoon continuation)
+    
+    Args:
+        config: Configuration dictionary (optional, loads if not provided)
     
     Returns: (is_valid, message)
     """
     now = datetime.now().time()
     
-    valid_windows = [
-        (time(10, 0), time(11, 30)),   # Best window
-        (time(13, 30), time(14, 30))   # Second window
-    ]
+    # Load config if not provided
+    if config is None:
+        config = load_config()
     
-    for start, end in valid_windows:
-        if start <= now <= end:
-            return True, "OK"
+    # Get trading windows from config (set by dashboard)
+    trading_windows = config.get("trading_windows", [])
     
-    return False, "Outside trading windows (10:00-11:30, 13:30-14:30)"
+    if trading_windows:
+        # Use configured windows from dashboard
+        for window in trading_windows:
+            if window.get("enabled", True):
+                start_str = window.get("start", "10:00")
+                end_str = window.get("end", "11:30")
+                try:
+                    start_time = datetime.strptime(start_str, "%H:%M").time()
+                    end_time = datetime.strptime(end_str, "%H:%M").time()
+                    if start_time <= now <= end_time:
+                        return True, "OK"
+                except ValueError:
+                    continue
+        
+        # Build message from configured windows
+        window_strs = []
+        for w in trading_windows:
+            if w.get("enabled", True):
+                window_strs.append(f"{w.get('start', '?')}-{w.get('end', '?')}")
+        return False, f"Outside trading windows ({', '.join(window_strs)})"
+    else:
+        # Default hardcoded windows (backward compatibility)
+        valid_windows = [
+            (time(10, 0), time(11, 30)),   # Best window
+            (time(13, 30), time(14, 30))   # Second window
+        ]
+        
+        for start, end in valid_windows:
+            if start <= now <= end:
+                return True, "OK"
+        
+        return False, "Outside trading windows (10:00-11:30, 13:30-14:30)"
 
 
 async def get_nifty_change(kite: KiteAPI) -> float:
@@ -2194,9 +2227,9 @@ async def validate_signal(
         
         # Check 1: Time Window (configurable)
         if paper_filters.get("time_window_check", True):
-            in_window, window_msg = is_in_trading_window()
+            in_window, window_msg = is_in_trading_window(config)
             if not in_window:
-                return False, f"⏰ Outside trading windows (10:00-11:30, 13:30-14:30)"
+                return False, f"⏰ {window_msg}"
         
         # Check 2: Nifty Health (configurable)
         if paper_filters.get("nifty_check", False) and kite:
@@ -2219,10 +2252,10 @@ async def validate_signal(
         return True, "✅ Paper trading filters passed"
     
     # LIVE TRADING: Full validation
-    # Check 1: Time Window (10:00-11:30, 13:30-14:30)
-    in_window, window_msg = is_in_trading_window()
+    # Check 1: Time Window (configurable via dashboard)
+    in_window, window_msg = is_in_trading_window(config)
     if not in_window:
-        return False, f"⏰ Outside trading windows (10:00-11:30, 13:30-14:30)"
+        return False, f"⏰ {window_msg}"
     
     # Check 2: Nifty Health (reject if down > 0.3%)
     if kite and signal_config.get("nifty_check_enabled", True):
@@ -3646,6 +3679,10 @@ async def update_config(update: ConfigUpdate):
         if "signal_validation" not in config:
             config["signal_validation"] = {}
         config["signal_validation"].update(update.signal_validation)
+    
+    # 🔥 Update trading windows from dashboard
+    if update.trading_windows is not None:
+        config["trading_windows"] = update.trading_windows
         
     if update.kite_api_key:
         if "kite" not in config:
