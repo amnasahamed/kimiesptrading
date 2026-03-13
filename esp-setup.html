@@ -2,7 +2,10 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>ESP Trading Display Setup | Melon Bot</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -38,10 +41,69 @@
         }
     </script>
     <style>
+        /* Safe area insets for notched phones */
+        :root {
+            --sat: env(safe-area-inset-top);
+            --sar: env(safe-area-inset-right);
+            --sab: env(safe-area-inset-bottom);
+            --sal: env(safe-area-inset-left);
+        }
+        
+        body {
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        button, a, select, input {
+            touch-action: manipulation;
+        }
+        
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #12121a; }
         ::-webkit-scrollbar-thumb { background: #32324a; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #4a4a6a; }
+        
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            header .max-w-7xl {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            header h1 {
+                font-size: 1rem;
+            }
+            main.max-w-7xl {
+                padding: 1rem !important;
+            }
+            .text-4xl {
+                font-size: 1.75rem !important;
+            }
+            .grid.lg\:grid-cols-2 {
+                grid-template-columns: 1fr !important;
+            }
+            .board-toggle {
+                flex-direction: column;
+            }
+            .board-option {
+                padding: 10px 16px;
+            }
+            #board-info-container {
+                grid-template-columns: 1fr !important;
+            }
+            .code-block pre {
+                max-height: 400px;
+            }
+            .glass.rounded-2xl.p-6 {
+                padding: 1rem !important;
+            }
+            input, select, button {
+                font-size: 16px !important;
+            }
+            /* Features grid */
+            .grid.md\:grid-cols-3 {
+                grid-template-columns: 1fr !important;
+            }
+        }
         
         .glass {
             background: rgba(26, 26, 37, 0.8);
@@ -714,6 +776,17 @@
   - 3 screens: Dashboard | Positions | Stats
 */
 
+// ============ MELODY DEFINITIONS (ADD BEFORE INCLUDES OR AT TOP) ============
+enum Melody {
+  MELODY_BOOT,
+  MELODY_BUTTON,
+  MELODY_ALERT,
+  MELODY_SUCCESS,
+  MELODY_ERROR
+};
+
+void playMelody(Melody melody);
+
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
@@ -1249,6 +1322,53 @@ void checkAlerts() {
   }
   
   http.end();
+}
+
+// ============ SOUND FUNCTIONS ============
+void playMelody(Melody melody) {
+  switch(melody) {
+    case MELODY_BOOT:
+      tone(BUZZER_PIN, 2000, 200);
+      delay(200);
+      tone(BUZZER_PIN, 2500, 200);
+      delay(200);
+      tone(BUZZER_PIN, 3000, 400);
+      delay(400);
+      noTone(BUZZER_PIN);
+      break;
+      
+    case MELODY_BUTTON:
+      tone(BUZZER_PIN, 1500, 50);
+      delay(50);
+      noTone(BUZZER_PIN);
+      break;
+      
+    case MELODY_ALERT:
+      for(int i=0; i<3; i++) {
+        tone(BUZZER_PIN, 2500, 150);
+        delay(200);
+      }
+      noTone(BUZZER_PIN);
+      break;
+      
+    case MELODY_SUCCESS:
+      tone(BUZZER_PIN, 2000, 100);
+      delay(100);
+      tone(BUZZER_PIN, 2500, 100);
+      delay(100);
+      tone(BUZZER_PIN, 3000, 300);
+      delay(300);
+      noTone(BUZZER_PIN);
+      break;
+      
+    case MELODY_ERROR:
+      tone(BUZZER_PIN, 1500, 300);
+      delay(300);
+      tone(BUZZER_PIN, 1000, 500);
+      delay(500);
+      noTone(BUZZER_PIN);
+      break;
+  }
 }`;
 
         // ESP32 Code placeholder - will be loaded from file
