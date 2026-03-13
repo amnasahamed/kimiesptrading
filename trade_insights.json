@@ -1,0 +1,358 @@
+{
+  "symbols": {
+    "INFY": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.224481",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "ASTRAMICRO": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.224920",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "NAVA": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.225233",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "RELIANCE": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.226005",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "TCS": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.226272",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "AARTIIND": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.226549",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "DRREDDY": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.226811",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "SBIN": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.227181",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "HDFCBANK": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.227503",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "CHENNPETRO": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.227809",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "MRPL": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.228199",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "AEROFLEX": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.228531",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "POWERINDIA": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.228880",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "MBAPL": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.229270",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    },
+    "LENSKART": {
+      "paper": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0
+      },
+      "live": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0,
+        "avg_pnl": 0.0,
+        "win_rate": 0.0
+      },
+      "first_seen": "2026-03-12T23:46:23.229744",
+      "last_trade": {
+        "date": "2026-03-12T23:46:23.192932",
+        "pnl": 0,
+        "type": "live"
+      }
+    }
+  },
+  "daily_stats": {
+    "2026-03-12": {
+      "trades": 25,
+      "paper_pnl": 0,
+      "live_pnl": 159.35,
+      "reset_time": "2026-03-12T23:46:23.192932"
+    }
+  },
+  "last_updated": "2026-03-12T23:46:23.232191"
+}

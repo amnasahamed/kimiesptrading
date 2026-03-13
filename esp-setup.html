@@ -767,8 +767,22 @@
     </footer>
 
     <script>
-        // Universal Code (Works on ESP32 & ESP8266)
-        const universalCode = "// Download universal version from GitHub:\n// clapslearn_monitor/clapslearn_monitor.ino\n// This single sketch auto-detects ESP32 or ESP8266 board";
+        // Universal Code - will be loaded from file
+        let universalCode = "// Loading universal code...";
+        
+        // Load universal code from file
+        fetch('/static/clapslearn_monitor.ino')
+            .then(response => response.text())
+            .then(text => {
+                universalCode = text;
+                if (currentBoard === 'universal') {
+                    document.getElementById('arduino-code').textContent = universalCode;
+                }
+            })
+            .catch(err => {
+                console.log('Could not load universal code:', err);
+                universalCode = "// Error loading universal code. Please download from GitHub.";
+            });
         
         // ESP8266 Code
         const esp8266Code = `/*

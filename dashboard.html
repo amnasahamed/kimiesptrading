@@ -13,6 +13,12 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Mobile Web App Capabilities -->
+    <meta name="theme-color" content="#0f1117">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -87,6 +93,30 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
+        /* Safe area insets for notched phones */
+        :root {
+            --sat: env(safe-area-inset-top);
+            --sar: env(safe-area-inset-right);
+            --sab: env(safe-area-inset-bottom);
+            --sal: env(safe-area-inset-left);
+        }
+        
+        /* Prevent pull-to-refresh on mobile Chrome */
+        body {
+            overscroll-behavior-y: none;
+        }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Touch action optimization */
+        button, a, select, input, .nav-item {
+            touch-action: manipulation;
+        }
+        
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
@@ -188,23 +218,183 @@
             transition: all 0.2s;
         }
         
-        /* Mobile Optimizations */
+        /* ============================================
+           MOBILE RESPONSIVENESS - Comprehensive
+           ============================================ */
+        
+        /* Mobile Sidebar */
+        @media (max-width: 1024px) {
+            aside {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 40;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            aside.mobile-open {
+                transform: translateX(0);
+            }
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 35;
+                backdrop-filter: blur(2px);
+            }
+            .sidebar-overlay.show {
+                display: block;
+            }
+            /* Adjust main content */
+            main {
+                width: 100vw;
+            }
+        }
+        
+        /* Mobile Header Adjustments */
+        @media (max-width: 768px) {
+            header {
+                padding: 0.75rem 1rem !important;
+                height: auto !important;
+                min-height: 56px;
+            }
+            #page-title {
+                font-size: 1.1rem !important;
+            }
+            #current-time {
+                display: none;
+            }
+            header .flex.items-center.gap-4 {
+                gap: 0.5rem !important;
+            }
+            /* System status bar */
+            #system-status-bar {
+                padding: 0.5rem 1rem !important;
+                flex-wrap: wrap;
+                gap: 0.5rem !important;
+            }
+            #system-status-bar .flex.items-center.gap-6 {
+                gap: 0.75rem !important;
+                flex-wrap: wrap;
+            }
+            #system-status-bar .hidden {
+                display: none !important;
+            }
+            #live-warning {
+                width: 100%;
+                justify-content: center;
+                padding: 0.5rem !important;
+                font-size: 0.75rem !important;
+            }
+        }
+        
+        /* Mobile Content Padding */
+        @media (max-width: 768px) {
+            .flex-1.overflow-y-auto.p-6 {
+                padding: 1rem !important;
+            }
+        }
+        
+        /* Mobile Cards & Stats */
+        @media (max-width: 768px) {
+            .glass.rounded-2xl.p-5,
+            .glass.rounded-2xl.p-6 {
+                padding: 1rem !important;
+                border-radius: 1rem !important;
+            }
+            .glass.rounded-xl.p-4 {
+                padding: 0.75rem !important;
+            }
+            /* Stats grid - single column on mobile */
+            .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4.gap-4 {
+                grid-template-columns: 1fr !important;
+                gap: 0.75rem !important;
+            }
+            .grid.grid-cols-2.md\:grid-cols-5.gap-4 {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.5rem !important;
+            }
+            .grid.grid-cols-2.md\:grid-cols-5.gap-4 > div {
+                padding: 0.75rem !important;
+            }
+            .grid.grid-cols-2.md\:grid-cols-5.gap-4 .text-2xl {
+                font-size: 1.25rem !important;
+            }
+        }
+        
+        /* Mobile Tables - Convert to Cards */
+        @media (max-width: 768px) {
+            .overflow-x-auto {
+                overflow: visible !important;
+            }
+            table.trades-table {
+                display: block;
+            }
+            table.trades-table thead {
+                display: none;
+            }
+            table.trades-table tbody {
+                display: block;
+            }
+            table.trades-table tr {
+                display: block;
+                margin-bottom: 0.75rem;
+                padding: 0.75rem;
+                background: rgba(26, 26, 37, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 0.75rem;
+                border-left: 4px solid;
+            }
+            table.trades-table tr.border-l-yellow-500\/50 {
+                border-left-color: rgba(234, 179, 8, 0.5);
+            }
+            table.trades-table tr.border-l-primary-500\/50 {
+                border-left-color: rgba(34, 197, 94, 0.5);
+            }
+            table.trades-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.4rem 0 !important;
+                border: none !important;
+            }
+            table.trades-table td::before {
+                content: attr(data-label);
+                font-weight: 500;
+                color: #9ca3af;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+            }
+            table.trades-table td:last-child {
+                justify-content: flex-end;
+                padding-top: 0.5rem !important;
+                margin-top: 0.5rem;
+                border-top: 1px solid rgba(255,255,255,0.05) !important;
+            }
+        }
+        
+        /* Mobile Position Cards */
         @media (max-width: 768px) {
             .position-card-mobile {
                 padding: 1rem !important;
             }
             .position-card-mobile .text-2xl {
+                font-size: 1.5rem !important;
+            }
+            .position-card-mobile .text-4xl {
                 font-size: 1.75rem !important;
             }
             .position-card-mobile .text-lg {
-                font-size: 1.25rem !important;
+                font-size: 1rem !important;
             }
             .position-card-mobile .font-mono {
-                font-size: 1.1rem !important;
+                font-size: 1rem !important;
             }
             .position-card-mobile button {
-                min-height: 48px;
-                font-size: 1rem !important;
+                min-height: 44px;
+                font-size: 0.875rem !important;
             }
             .mobile-stack {
                 flex-direction: column !important;
@@ -212,6 +402,151 @@
             }
             .mobile-full-width {
                 width: 100% !important;
+            }
+            /* Position grid columns */
+            #positions-list.grid.grid-cols-1.xl\:grid-cols-2.gap-4 {
+                grid-template-columns: 1fr !important;
+            }
+            /* Position summary cards */
+            #positions-summary.grid.grid-cols-2.md\:grid-cols-4.gap-4 {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.5rem !important;
+            }
+            #positions-summary .text-2xl {
+                font-size: 1.25rem !important;
+            }
+        }
+        
+        /* Mobile Forms & Inputs */
+        @media (max-width: 768px) {
+            input, select, button {
+                font-size: 16px !important; /* Prevents zoom on iOS */
+            }
+            .grid.grid-cols-2.gap-4 {
+                grid-template-columns: 1fr !important;
+            }
+            /* Config page grid */
+            .grid.grid-cols-1.lg\:grid-cols-2.gap-6 {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        
+        /* Mobile Tab Navigation */
+        @media (max-width: 768px) {
+            #tab-positions .flex.flex-col.lg\:flex-row {
+                gap: 0.75rem !important;
+            }
+            #tab-positions .flex.items-center.gap-3,
+            #tab-positions .flex.flex-wrap.items-center.gap-3 {
+                flex-wrap: wrap;
+                gap: 0.5rem !important;
+            }
+            #tab-positions button,
+            #tab-positions select {
+                padding: 0.5rem 0.75rem !important;
+                font-size: 0.8rem !important;
+            }
+        }
+        
+        /* Mobile Trades Filter Bar */
+        @media (max-width: 768px) {
+            #tab-trades .glass.rounded-xl.p-4 > .flex.flex-wrap {
+                flex-direction: column;
+                align-items: stretch !important;
+            }
+            #tab-trades .glass.rounded-xl.p-4 > .flex.flex-wrap > div {
+                width: 100%;
+            }
+            #tab-trades .glass.rounded-xl.p-4 input,
+            #tab-trades .glass.rounded-xl.p-4 select {
+                width: 100%;
+            }
+            #tab-trades .flex-1 {
+                display: none;
+            }
+        }
+        
+        /* Mobile Charts */
+        @media (max-width: 768px) {
+            .h-64 {
+                height: 200px !important;
+            }
+            .grid.grid-cols-1.lg\:grid-cols-3.gap-4 > .lg\:col-span-2 {
+                grid-column: span 1 !important;
+            }
+        }
+        
+        /* Mobile Toast Notifications */
+        @media (max-width: 768px) {
+            #toast-container {
+                left: 1rem;
+                right: 1rem;
+                top: 1rem;
+            }
+            .toast {
+                width: 100%;
+            }
+        }
+        
+        /* Mobile Modals */
+        @media (max-width: 768px) {
+            .fixed.inset-0.bg-black\/70 > .glass {
+                margin: 0.5rem;
+                max-height: 95vh;
+            }
+            .max-w-md, .max-w-2xl {
+                max-width: 100% !important;
+            }
+        }
+        
+        /* Touch-friendly improvements */
+        @media (max-width: 768px) {
+            button, a, select, input[type="checkbox"] {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            .nav-item {
+                padding: 0.875rem 1rem !important;
+            }
+        }
+        
+        /* Mobile Learning Tab */
+        @media (max-width: 768px) {
+            #strategy-summary.grid.grid-cols-2.md\:grid-cols-4.gap-4 {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            #strategy-summary .text-2xl {
+                font-size: 1.25rem !important;
+            }
+        }
+        
+        /* Mobile Alerts Tab */
+        @media (max-width: 768px) {
+            #tab-alerts .grid.grid-cols-2.md\:grid-cols-4.gap-4 {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            #tab-alerts .text-2xl {
+                font-size: 1.25rem !important;
+            }
+            /* Alerts table as cards */
+            #incoming-alerts-body tr {
+                display: block;
+                margin-bottom: 0.75rem;
+                padding: 0.75rem;
+                background: rgba(26, 26, 37, 0.8);
+                border-radius: 0.75rem;
+                border: 1px solid rgba(255,255,255,0.05);
+            }
+            #incoming-alerts-body td {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.35rem 0 !important;
+            }
+            #incoming-alerts-body td::before {
+                content: attr(data-label);
+                font-size: 0.75rem;
+                color: #9ca3af;
+                text-transform: uppercase;
             }
         }
         
@@ -320,7 +655,7 @@
     <div class="flex h-screen overflow-hidden">
         
         <!-- Sidebar -->
-        <aside class="w-64 bg-dark-800 border-r border-dark-600 flex flex-col">
+        <aside id="sidebar" class="w-64 bg-dark-800 border-r border-dark-600 flex flex-col">
             <!-- Logo -->
             <div class="p-6 border-b border-dark-600">
                 <div class="flex items-center gap-3">
@@ -411,9 +746,15 @@
             
             <!-- Header -->
             <header class="h-16 bg-dark-800/50 backdrop-blur border-b border-dark-600 flex items-center justify-between px-6">
-                <div>
-                    <h2 id="page-title" class="text-xl font-semibold">Dashboard</h2>
-                    <p id="current-time" class="text-xs text-gray-500">--</p>
+                <div class="flex items-center gap-3">
+                    <!-- Mobile Menu Toggle -->
+                    <button id="mobile-menu-btn" onclick="toggleMobileSidebar()" class="lg:hidden w-10 h-10 flex items-center justify-center rounded-lg hover:bg-dark-700 transition-colors">
+                        <i class="fas fa-bars text-gray-300"></i>
+                    </button>
+                    <div>
+                        <h2 id="page-title" class="text-xl font-semibold">Dashboard</h2>
+                        <p id="current-time" class="text-xs text-gray-500">--</p>
+                    </div>
                 </div>
                 
                 <div class="flex items-center gap-4">
@@ -1868,6 +2209,32 @@
                 minute: '2-digit'
             });
         }
+        
+        // Mobile Sidebar Toggle
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const btn = document.getElementById('mobile-menu-btn');
+            
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('show');
+            
+            // Update icon
+            if (sidebar.classList.contains('mobile-open')) {
+                btn.innerHTML = '<i class="fas fa-times text-gray-300"></i>';
+            } else {
+                btn.innerHTML = '<i class="fas fa-bars text-gray-300"></i>';
+            }
+        }
+        
+        // Close sidebar when clicking a nav item on mobile
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) {
+                    toggleMobileSidebar();
+                }
+            });
+        });
 
         // Load all data
         async function loadData() {
@@ -2445,27 +2812,27 @@
             
             return `
                 <tr class="${rowClass}">
-                    <td class="px-5 py-3 text-gray-400">${time}</td>
-                    <td class="px-5 py-3 font-semibold">${trade.symbol}</td>
-                    <td class="px-5 py-3">
+                    <td class="px-5 py-3 text-gray-400" data-label="Time">${time}</td>
+                    <td class="px-5 py-3 font-semibold" data-label="Symbol">${trade.symbol}</td>
+                    <td class="px-5 py-3" data-label="Strategy">
                         <span class="text-xs text-gray-400" title="${scanName}">${scanDisplay}</span>
                     </td>
-                    <td class="px-5 py-3">${modeBadge}</td>
-                    <td class="px-5 py-3">
+                    <td class="px-5 py-3" data-label="Mode">${modeBadge}</td>
+                    <td class="px-5 py-3" data-label="Side">
                         <span class="px-2 py-1 rounded text-xs ${side === 'BUY' ? 'bg-primary-500/20 text-primary-400' : 'bg-danger-500/20 text-danger-400'}">
                             ${side}
                         </span>
                     </td>
-                    <td class="px-5 py-3 font-mono">₹${(trade.entry_price || 0).toFixed(2)}</td>
-                    <td class="px-5 py-3 text-xs text-gray-400">
+                    <td class="px-5 py-3 font-mono" data-label="Entry">₹${(trade.entry_price || 0).toFixed(2)}</td>
+                    <td class="px-5 py-3 text-xs text-gray-400" data-label="SL/TP">
                         SL: ₹${(trade.stop_loss || 0).toFixed(2)}<br>
                         TP: ₹${(trade.target || 0).toFixed(2)}
                     </td>
-                    <td class="px-5 py-3">${trade.quantity || 0}</td>
-                    <td class="px-5 py-3">
+                    <td class="px-5 py-3" data-label="Qty">${trade.quantity || 0}</td>
+                    <td class="px-5 py-3" data-label="Status">
                         <span class="px-2 py-1 rounded text-xs ${statusClass}">${status}</span>
                     </td>
-                    <td class="px-5 py-3 text-right font-mono ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}">
+                    <td class="px-5 py-3 text-right font-mono ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}" data-label="P&L">
                         ${pnl !== 0 ? (pnl >= 0 ? '+' : '') + '₹' + pnl.toFixed(2) : '-'}
                     </td>
                 </tr>
@@ -2512,20 +2879,20 @@
             
             return `
                 <tr class="${rowClass}">
-                    <td class="px-5 py-3">
+                    <td class="px-5 py-3" data-label="Date/Time">
                         <div class="text-gray-400 text-xs">${dateStr}</div>
                         <div class="text-gray-300">${timeStr}</div>
                     </td>
-                    <td class="px-5 py-3 font-semibold">${trade.symbol}</td>
-                    <td class="px-5 py-3">
+                    <td class="px-5 py-3 font-semibold" data-label="Symbol">${trade.symbol}</td>
+                    <td class="px-5 py-3" data-label="Strategy">
                         <span class="text-xs text-gray-400" title="${scanName}">${scanDisplay}</span>
                     </td>
-                    <td class="px-5 py-3">${modeBadge}</td>
-                    <td class="px-5 py-3 font-mono">₹${(trade.entry_price || 0).toFixed(2)}</td>
-                    <td class="px-5 py-3 font-mono">${trade.exit_price ? '₹' + trade.exit_price.toFixed(2) : '-'}</td>
-                    <td class="px-5 py-3">${trade.quantity || 0}</td>
-                    <td class="px-5 py-3">${resultBadge}</td>
-                    <td class="px-5 py-3 text-right font-mono ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}">
+                    <td class="px-5 py-3" data-label="Mode">${modeBadge}</td>
+                    <td class="px-5 py-3 font-mono" data-label="Entry">₹${(trade.entry_price || 0).toFixed(2)}</td>
+                    <td class="px-5 py-3 font-mono" data-label="Exit">${trade.exit_price ? '₹' + trade.exit_price.toFixed(2) : '-'}</td>
+                    <td class="px-5 py-3" data-label="Qty">${trade.quantity || 0}</td>
+                    <td class="px-5 py-3" data-label="Result">${resultBadge}</td>
+                    <td class="px-5 py-3 text-right font-mono ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}" data-label="P&L">
                         ${pnl !== 0 ? (pnl >= 0 ? '+' : '') + '₹' + pnl.toFixed(2) : '-'}
                     </td>
                 </tr>
@@ -4871,24 +5238,24 @@
                 return `
                     <tr class="border-b border-dark-600 hover:bg-dark-700/30 cursor-pointer transition-colors"
                         onclick="showAlertDetails('${alert.id}')">
-                        <td class="px-4 py-3 font-mono text-xs">${time}</td>
-                        <td class="px-4 py-3">
+                        <td class="px-4 py-3 font-mono text-xs" data-label="Time">${time}</td>
+                        <td class="px-4 py-3" data-label="Type">
                             <span class="flex items-center gap-2">
                                 <i class="fas ${typeIcons[alert.alert_type] || 'fa-question'} text-gray-400"></i>
                                 <span class="capitalize">${alert.alert_type}</span>
                             </span>
                         </td>
-                        <td class="px-4 py-3" title="${scanName}">${scanDisplay}</td>
-                        <td class="px-4 py-3 font-mono text-xs">${symbolDisplay || '-'}</td>
-                        <td class="px-4 py-3">
+                        <td class="px-4 py-3" data-label="Scan/Alert" title="${scanName}">${scanDisplay}</td>
+                        <td class="px-4 py-3 font-mono text-xs" data-label="Symbols">${symbolDisplay || '-'}</td>
+                        <td class="px-4 py-3" data-label="Status">
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${status.bgClass} ${status.textClass}">
                                 <span>${status.icon}</span>
                                 <span>${status.label}</span>
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-xs">${reasonDisplay}</td>
-                        <td class="px-4 py-3 text-xs text-gray-400 font-mono">${alert.source_ip || '-'}</td>
-                        <td class="px-4 py-3 text-right font-mono text-xs">
+                        <td class="px-4 py-3 text-xs" data-label="Reason">${reasonDisplay}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400 font-mono" data-label="Source IP">${alert.source_ip || '-'}</td>
+                        <td class="px-4 py-3 text-right font-mono text-xs" data-label="Latency">
                             ${alert.total_latency_ms ? Math.round(alert.total_latency_ms) + 'ms' : '-'}
                         </td>
                     </tr>

@@ -1,0 +1,76 @@
+// FIX FOR: Melody not declared in scope
+// Add this near the TOP of your clapslearn_monitor.ino file
+// (Before any function that uses playMelody)
+
+// ============================================
+// ADD THIS SECTION near the top (after includes, before setup())
+// ============================================
+
+// Melody types for playMelody function
+enum Melody {
+  MELODY_BOOT,
+  MELODY_BUTTON,
+  MELODY_ALERT,
+  MELODY_SUCCESS,
+  MELODY_ERROR
+};
+
+// Forward declaration
+void playMelody(Melody melody);
+
+// ============================================
+// OR if Melody is already defined later in the file,
+// move this enum definition BEFORE the first use (setup())
+// ============================================
+
+// The playMelody function should then be defined as:
+void playMelody(Melody melody) {
+  switch(melody) {
+    case MELODY_BOOT:
+      // Boot melody tones
+      tone(PIN_BUZZER, 2000, 200);
+      delay(200);
+      tone(PIN_BUZZER, 2500, 200);
+      delay(200);
+      tone(PIN_BUZZER, 3000, 400);
+      delay(400);
+      noTone(PIN_BUZZER);
+      break;
+      
+    case MELODY_BUTTON:
+      // Short beep
+      tone(PIN_BUZZER, 1500, 50);
+      delay(50);
+      noTone(PIN_BUZZER);
+      break;
+      
+    case MELODY_ALERT:
+      // Alert melody
+      for(int i=0; i<3; i++) {
+        tone(PIN_BUZZER, 2500, 150);
+        delay(200);
+      }
+      noTone(PIN_BUZZER);
+      break;
+      
+    case MELODY_SUCCESS:
+      // Success ascending
+      tone(PIN_BUZZER, 2000, 100);
+      delay(100);
+      tone(PIN_BUZZER, 2500, 100);
+      delay(100);
+      tone(PIN_BUZZER, 3000, 300);
+      delay(300);
+      noTone(PIN_BUZZER);
+      break;
+      
+    case MELODY_ERROR:
+      // Error descending
+      tone(PIN_BUZZER, 1500, 300);
+      delay(300);
+      tone(PIN_BUZZER, 1000, 500);
+      delay(500);
+      noTone(PIN_BUZZER);
+      break;
+  }
+}
