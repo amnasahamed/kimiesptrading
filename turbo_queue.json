@@ -1,0 +1,2551 @@
+[
+  {
+    "id": "TURBO_20260316091610_THERMAX",
+    "symbol": "THERMAX",
+    "direction": "BUY",
+    "alert_price": 3303.2,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:16:10.185648",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 300,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "timeframes": {
+          "trend": [
+            "4hour",
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 60,
+          "rsi_oversold": 40,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.5
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316091708_AEROFLEX",
+    "symbol": "AEROFLEX",
+    "direction": "BUY",
+    "alert_price": 241.59,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:17:08.590682",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 300,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "timeframes": {
+          "trend": [
+            "4hour",
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 60,
+          "rsi_oversold": 40,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.5
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316091708_WABAG",
+    "symbol": "WABAG",
+    "direction": "BUY",
+    "alert_price": 1278.5,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:17:08.893886",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 300,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "timeframes": {
+          "trend": [
+            "4hour",
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 60,
+          "rsi_oversold": 40,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.5
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316091807_TEJASNET",
+    "symbol": "TEJASNET",
+    "direction": "BUY",
+    "alert_price": 443.0,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:18:07.663856",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316091908_MCX",
+    "symbol": "MCX",
+    "direction": "BUY",
+    "alert_price": 2509.0,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:19:08.307552",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316092008_COALINDIA",
+    "symbol": "COALINDIA",
+    "direction": "BUY",
+    "alert_price": 468.4,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:20:08.281251",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316092008_NATIONALUM",
+    "symbol": "NATIONALUM",
+    "direction": "BUY",
+    "alert_price": 389.4,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:20:08.572912",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316092009_APOLLOHOSP",
+    "symbol": "APOLLOHOSP",
+    "direction": "BUY",
+    "alert_price": 7602.0,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:20:09.226039",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316092009_JBCHEPHARM",
+    "symbol": "JBCHEPHARM",
+    "direction": "BUY",
+    "alert_price": 2160.4,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:20:09.521684",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316092508_PFIZER",
+    "symbol": "PFIZER",
+    "direction": "BUY",
+    "alert_price": 4884.0,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:25:08.664631",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316093508_MRPL",
+    "symbol": "MRPL",
+    "direction": "BUY",
+    "alert_price": 186.3,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:35:08.030806",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316094208_GANECOS",
+    "symbol": "GANECOS",
+    "direction": "BUY",
+    "alert_price": 839.0,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:42:08.070656",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316094407_SAREGAMA",
+    "symbol": "SAREGAMA",
+    "direction": "BUY",
+    "alert_price": 354.75,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:44:07.806579",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316094408_LINDEINDIA",
+    "symbol": "LINDEINDIA",
+    "direction": "BUY",
+    "alert_price": 7225.0,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:44:08.476896",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316094707_TIMKEN",
+    "symbol": "TIMKEN",
+    "direction": "BUY",
+    "alert_price": 3567.0,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T09:47:07.820224",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316100009_ABSLAMC",
+    "symbol": "ABSLAMC",
+    "direction": "BUY",
+    "alert_price": 985.0,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T10:00:09.275275",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316100708_GANECOS",
+    "symbol": "GANECOS",
+    "direction": "BUY",
+    "alert_price": 867.0,
+    "scan_name": "claude bullish scan intraday",
+    "action": "BUY",
+    "context": {
+      "scan_url": "claude-bullish-scan-intraday",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T10:07:08.681664",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316100908_NLCINDIA",
+    "symbol": "NLCINDIA",
+    "direction": "BUY",
+    "alert_price": 262.4,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T10:09:08.197705",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Insufficient 4H data",
+      "details": {}
+    },
+    "result": {
+      "reason": "Insufficient 4H data"
+    }
+  },
+  {
+    "id": "TURBO_20260316104907_KIRLOSENG",
+    "symbol": "KIRLOSENG",
+    "direction": "BUY",
+    "alert_price": 1485.1,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T10:49:07.174072",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T10:49:08.149043"
+    },
+    "result": {
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL"
+    }
+  },
+  {
+    "id": "TURBO_20260316110009_SAILIFE",
+    "symbol": "SAILIFE",
+    "direction": "BUY",
+    "alert_price": 963.2,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T11:00:09.877886",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:00:10.539395"
+    },
+    "result": {
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL"
+    }
+  },
+  {
+    "id": "TURBO_20260316110010_SUNCLAY",
+    "symbol": "SUNCLAY",
+    "direction": "BUY",
+    "alert_price": 1312.2,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T11:00:10.162331",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:00:11.759465"
+    },
+    "result": {
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL"
+    }
+  },
+  {
+    "id": "TURBO_20260316110807_JINDALSAW",
+    "symbol": "JINDALSAW",
+    "direction": "BUY",
+    "alert_price": 201.0,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T11:08:07.872362",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": false,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "How long to wait for perfect entry (seconds). Default 600s (10 min).",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:08:08.296057"
+    },
+    "result": {
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL"
+    }
+  },
+  {
+    "id": "TURBO_20260316111706_SEAMECLTD",
+    "symbol": "SEAMECLTD",
+    "direction": "BUY",
+    "alert_price": 1393.8,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T11:17:06.960172",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": false,
+        "monitor_until_market_close": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "Fallback duration if monitor_until_market_close is false. Default 600s (10 min).",
+          "monitor_until_market_close": "If true, monitors until 2:30 PM market close instead of fixed duration.",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:17:08.205793"
+    },
+    "result": {
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL"
+    }
+  },
+  {
+    "id": "TURBO_20260316112008_BSE",
+    "symbol": "BSE",
+    "direction": "BUY",
+    "alert_price": 2857.1,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T11:20:08.845824",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": false,
+        "monitor_until_market_close": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "Fallback duration if monitor_until_market_close is false. Default 600s (10 min).",
+          "monitor_until_market_close": "If true, monitors until 2:30 PM market close instead of fixed duration.",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:20:09.591858"
+    },
+    "result": {
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL"
+    }
+  },
+  {
+    "id": "TURBO_20260316112009_ADANIPOWER",
+    "symbol": "ADANIPOWER",
+    "direction": "BUY",
+    "alert_price": 152.35,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T11:20:09.170611",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": false,
+        "monitor_until_market_close": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "Fallback duration if monitor_until_market_close is false. Default 600s (10 min).",
+          "monitor_until_market_close": "If true, monitors until 2:30 PM market close instead of fixed duration.",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:20:09.931282"
+    },
+    "result": {
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL"
+    }
+  },
+  {
+    "id": "TURBO_20260316112408_AADHARHFC",
+    "symbol": "AADHARHFC",
+    "direction": "BUY",
+    "alert_price": 474.65,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T11:24:08.196980",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": false,
+        "monitor_until_market_close": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "Fallback duration if monitor_until_market_close is false. Default 600s (10 min).",
+          "monitor_until_market_close": "If true, monitors until 2:30 PM market close instead of fixed duration.",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:24:08.814897"
+    },
+    "result": {
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL"
+    }
+  },
+  {
+    "id": "TURBO_20260316112453_RELIANCE",
+    "symbol": "RELIANCE",
+    "direction": "BUY",
+    "alert_price": 1373.0,
+    "scan_name": "TEST_TURBO",
+    "action": "buy",
+    "context": {
+      "scan_url": "test",
+      "webhook_url": null
+    },
+    "timestamp": "2026-03-16T11:24:53.274378",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": false,
+        "monitor_until_market_close": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "Fallback duration if monitor_until_market_close is false. Default 600s (10 min).",
+          "monitor_until_market_close": "If true, monitors until 2:30 PM market close instead of fixed duration.",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:24:54.134978"
+    },
+    "result": {
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL"
+    }
+  },
+  {
+    "id": "TURBO_20260316112508_AARTIIND",
+    "symbol": "AARTIIND",
+    "direction": "BUY",
+    "alert_price": 419.7,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T11:25:08.897982",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": false,
+        "monitor_until_market_close": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "Fallback duration if monitor_until_market_close is false. Default 600s (10 min).",
+          "monitor_until_market_close": "If true, monitors until 2:30 PM market close instead of fixed duration.",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:25:09.482802"
+    },
+    "result": {
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL"
+    }
+  },
+  {
+    "id": "TURBO_20260316112509_CHENNPETRO",
+    "symbol": "CHENNPETRO",
+    "direction": "BUY",
+    "alert_price": 944.85,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T11:25:09.200721",
+    "status": "TREND_MISMATCH",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": false,
+        "monitor_until_market_close": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "Fallback duration if monitor_until_market_close is false. Default 600s (10 min).",
+          "monitor_until_market_close": "If true, monitors until 2:30 PM market close instead of fixed duration.",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:25:09.831573"
+    },
+    "result": {
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL"
+    }
+  },
+  {
+    "id": "TURBO_20260316112718_RELIANCE",
+    "symbol": "RELIANCE",
+    "direction": "BUY",
+    "alert_price": 1373.0,
+    "scan_name": "TEST_TURBO",
+    "action": "buy",
+    "context": {
+      "scan_url": "test",
+      "webhook_url": null
+    },
+    "timestamp": "2026-03-16T11:27:18.778871",
+    "status": "EXECUTED",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": false,
+        "monitor_until_market_close": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "Fallback duration if monitor_until_market_close is false. Default 600s (10 min).",
+          "monitor_until_market_close": "If true, monitors until 2:30 PM market close instead of fixed duration.",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:27:19.766195"
+    },
+    "monitoring_started_at": "2026-03-16T11:27:19.766229",
+    "monitor_until_market_close": true,
+    "entry_monitor": {
+      "triggered": true,
+      "duration_seconds": 0.295857,
+      "confidence": 60.0,
+      "reason": "Score 3/4: Near EMA9, RSI 67, MACD bullish",
+      "completed_at": "2026-03-16T11:27:20.064006"
+    },
+    "entry_price": 1378.9,
+    "result": {
+      "status": "SUCCESS",
+      "symbol": "RELIANCE",
+      "paper_order_id": "PAPER_112720904",
+      "live_order_id": "260316221033997",
+      "message": "Paper + Live trade executed",
+      "paper_trading": false,
+      "latency_ms": 2108.03,
+      "timestamp": "2026-03-16T11:27:22.172057"
+    }
+  },
+  {
+    "id": "TURBO_20260316113108_MRPL",
+    "symbol": "MRPL",
+    "direction": "BUY",
+    "alert_price": 194.0,
+    "scan_name": "claude bullish scan intraday",
+    "action": "BUY",
+    "context": {
+      "scan_url": "claude-bullish-scan-intraday",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T11:31:08.416500",
+    "status": "EXECUTED",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": false,
+        "monitor_until_market_close": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "Fallback duration if monitor_until_market_close is false. Default 600s (10 min).",
+          "monitor_until_market_close": "If true, monitors until 2:30 PM market close instead of fixed duration.",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:31:09.551729"
+    },
+    "monitoring_started_at": "2026-03-16T11:31:09.551761",
+    "monitor_until_market_close": true,
+    "entry_monitor": {
+      "triggered": true,
+      "duration_seconds": 30.939152,
+      "confidence": 60.0,
+      "reason": "Score 3/4: Above EMA20, MACD bullish, Vol 0.9x",
+      "completed_at": "2026-03-16T11:31:40.493497"
+    },
+    "entry_price": 193.51,
+    "result": {
+      "status": "SUCCESS",
+      "symbol": "MRPL",
+      "paper_order_id": "PAPER_113140934",
+      "live_order_id": "260316221053143",
+      "message": "Paper + Live trade executed",
+      "paper_trading": false,
+      "latency_ms": 1626.78,
+      "timestamp": "2026-03-16T11:31:42.120320"
+    }
+  },
+  {
+    "id": "TURBO_20260316113908_RADICO",
+    "symbol": "RADICO",
+    "direction": "BUY",
+    "alert_price": 2836.6,
+    "scan_name": "cklaude2",
+    "action": "BUY",
+    "context": {
+      "scan_url": "cklaude2",
+      "webhook_url": "https://coolify.themelon.in/webhook/chartink?secret=MelonBot123"
+    },
+    "timestamp": "2026-03-16T11:39:08.377861",
+    "status": "EXECUTED",
+    "config": {
+      "capital": 2000.0,
+      "risk_percent": 1.0,
+      "turbo_mode": {
+        "enabled": true,
+        "max_monitor_duration_seconds": 600,
+        "trend_alignment_required": false,
+        "monitor_until_market_close": true,
+        "fallback_to_market": true,
+        "continuous_monitoring": true,
+        "check_interval_seconds": 3,
+        "timeframes": {
+          "trend": [
+            "1hour"
+          ],
+          "entry": "1minute"
+        },
+        "indicators": {
+          "ema_fast": 9,
+          "ema_slow": 20,
+          "rsi_period": 14,
+          "rsi_overbought": 65,
+          "rsi_oversold": 35,
+          "macd_fast": 12,
+          "macd_slow": 26,
+          "macd_signal": 9,
+          "volume_threshold": 1.2
+        },
+        "execution": {
+          "order_type": "MARKET",
+          "limit_timeout_seconds": 5,
+          "max_retry_attempts": 3
+        },
+        "notes": {
+          "max_monitor_duration": "Fallback duration if monitor_until_market_close is false. Default 600s (10 min).",
+          "monitor_until_market_close": "If true, monitors until 2:30 PM market close instead of fixed duration.",
+          "continuous_monitoring": "If true, checks every check_interval_seconds until conditions met.",
+          "check_interval": "Seconds between each check. Lower = faster entry but more API calls.",
+          "trend_timeframes": "Use ['1hour'] for stocks without 4H history, or ['4hour', '1hour'] for comprehensive check.",
+          "relaxed_thresholds": "RSI and volume thresholds are now more relaxed for better fill rates."
+        }
+      },
+      "kite": {
+        "api_key": "8zjbufhni9k0u2mx",
+        "api_secret": "hhuufago2dnhst2vah6qjzz3rcfpvbvs",
+        "access_token": "paPJ1U7mgC5TMhC7cg7srr0gtHtZ6lBM",
+        "base_url": "https://api.kite.trade"
+      },
+      "risk_management": {
+        "atr_multiplier_sl": 1.5,
+        "atr_multiplier_tp": 3.0,
+        "min_risk_reward": 2.0,
+        "max_sl_percent": 2.0
+      }
+    },
+    "trend_check": {
+      "aligned": false,
+      "confidence": 0,
+      "reason": "Trend misaligned: 4H=None, 1H=NEUTRAL",
+      "details": {
+        "trend_4h": null,
+        "trend_1h": "NEUTRAL",
+        "required": "BULLISH"
+      },
+      "checked_at": "2026-03-16T11:39:09.936684"
+    },
+    "monitoring_started_at": "2026-03-16T11:39:09.936711",
+    "monitor_until_market_close": true,
+    "entry_monitor": {
+      "triggered": true,
+      "duration_seconds": 0.483513,
+      "confidence": 75.0,
+      "reason": "Score 3/4: Near EMA9, RSI 54, MACD bullish",
+      "completed_at": "2026-03-16T11:39:10.422071"
+    },
+    "entry_price": 2838.4,
+    "result": {
+      "status": "SUCCESS",
+      "symbol": "RADICO",
+      "paper_order_id": "PAPER_113910916",
+      "live_order_id": "260316221086263",
+      "message": "Paper + Live trade executed",
+      "paper_trading": false,
+      "latency_ms": 1696.62,
+      "timestamp": "2026-03-16T11:39:12.118707"
+    }
+  }
+]

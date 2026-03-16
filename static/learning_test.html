@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Learning System Test</title>
+    <style>
+        body { font-family: system-ui, sans-serif; padding: 20px; background: #0f172a; color: #fff; }
+        .box { background: #1e293b; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        button { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        pre { background: #0f172a; padding: 10px; overflow-x: auto; font-size: 12px; max-height: 300px; }
+        .error { color: #f87171; }
+        .success { color: #4ade80; }
+    </style>
+</head>
+<body>
+    <h1>🧠 Learning System Diagnostics</h1>
+    <button onclick="testAll()">Run All Tests</button>
+    <div id="results"></div>
+    
+    <script>
+        async function testAll() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing...</p>';
+            
+            const tests = [
+                { name: 'Summary API', url: '/api/learning/summary' },
+                { name: 'Symbols API', url: '/api/learning/symbols' },
+                { name: 'Signals API', url: '/api/learning/signals' },
+                { name: 'Time Patterns API', url: '/api/learning/time-patterns' },
+                { name: 'Full Report API', url: '/api/learning/report' }
+            ];
+            
+            let html = '';
+            for (const test of tests) {
+                try {
+                    const res = await fetch(test.url + '?_=' + Date.now());
+                    if (res.ok) {
+                        const data = await res.json();
+                        html += `<div class="box">
+                            <h3 class="success">✓ ${test.name}</h3>
+                            <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                        </div>`;
+                    } else {
+                        html += `<div class="box">
+                            <h3 class="error">✗ ${test.name}</h3>
+                            <p>HTTP ${res.status}</p>
+                        </div>`;
+                    }
+                } catch (e) {
+                    html += `<div class="box">
+                        <h3 class="error">✗ ${test.name}</h3>
+                        <p>${e.message}</p>
+                    </div>`;
+                }
+            }
+            results.innerHTML = html;
+        }
+        
+        // Auto-run
+        window.onload = testAll;
+    </script>
+</body>
+</html>

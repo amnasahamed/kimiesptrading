@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Turbo Mode Debug</title>
+    <style>
+        body { font-family: system-ui, sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; }
+        .box { background: #1e293b; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .info { color: #60a5fa; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #3b82f6; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #2563eb; }
+        pre { background: #0f172a; padding: 10px; overflow-x: auto; border-radius: 4px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #1e293b; }
+        .badge { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .bg-red { background: #ef4444; color: white; }
+        .bg-green { background: #22c55e; color: white; }
+        .bg-blue { background: #3b82f6; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Turbo Mode Diagnostic</h1>
+    
+    <div class="box">
+        <h3>Step 1: Test API Connection</h3>
+        <button onclick="testAPI()">Fetch Turbo Data</button>
+        <div id="api-result"></div>
+    </div>
+    
+    <div class="box">
+        <h3>Step 2: View Raw Data</h3>
+        <div id="raw-data"></div>
+    </div>
+    
+    <div class="box">
+        <h3>Step 3: Signal Table</h3>
+        <div id="signal-table"></div>
+    </div>
+    
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<p class="info">Fetching...</p>';
+            
+            try {
+                const response = await fetch('/api/turbo/status?_=' + Date.now());
+                const data = await response.json();
+                
+                let html = `<p class="success">✓ API Response: HTTP ${response.status}</p>`;
+                html += `<p>Status: <strong>${data.status}</strong></p>`;
+                html += `<p>Total Items: <strong class="info">${data.counts?.total || 0}</strong></p>`;
+                html += `<p>Recent Items: <strong class="info">${data.recent_items?.length || 0}</strong></p>`;
+                
+                resultDiv.innerHTML = html;
+                
+                // Show raw data
+                document.getElementById('raw-data').innerHTML = 
+                    '<pre>' + JSON.stringify(data, null, 2).substring(0, 3000) + '...</pre>';
+                
+                // Render table
+                renderTable(data.recent_items || []);
+                
+            } catch (err) {
+                resultDiv.innerHTML = `<p class="error">✗ Error: ${err.message}</p>`;
+            }
+        }
+        
+        function renderTable(items) {
+            const tableDiv = document.getElementById('signal-table');
+            
+            if (items.length === 0) {
+                tableDiv.innerHTML = '<p class="error">No items found</p>';
+                return;
+            }
+            
+            let html = `<p>Showing ${items.length} items:</p>`;
+            html += '<table><thead><tr>';
+            html += '<th>Time</th><th>Symbol</th><th>Direction</th><th>Status</th><th>Alert Price</th>';
+            html += '</tr></thead><tbody>';
+            
+            items.slice().reverse().forEach(item => {
+                const time = item.timestamp ? new Date(item.timestamp).toLocaleString() : '-';
+                const statusClass = item.status === 'EXECUTED' ? 'bg-green' : 
+                                   item.status === 'TREND_MISMATCH' ? 'bg-red' : 'bg-blue';
+                
+                html += `<tr>`;
+                html += `<td>${time}</td>`;
+                html += `<td><strong>${item.symbol}</strong></td>`;
+                html += `<td>${item.direction}</td>`;
+                html += `<td><span class="badge ${statusClass}">${item.status}</span></td>`;
+                html += `<td>${item.alert_price || '-'}</td>`;
+                html += `</tr>`;
+            });
+            
+            html += '</tbody></table>';
+            tableDiv.innerHTML = html;
+        }
+        
+        // Auto-load on page open
+        window.onload = testAPI;
+    </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Turbo Mode Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+        button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .info { color: #60a5fa; }
+        pre { background: #2a2a2a; padding: 10px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #444; padding: 8px; text-align: left; }
+        th { background: #333; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Turbo Mode API Test</h1>
+    <p>This page tests if the Turbo Mode API is working correctly.</p>
+    
+    <button onclick="testAPI()">Test API Connection</button>
+    <button onclick="clearCache()">Clear Cache & Reload</button>
+    
+    <div id="status"></div>
+    <div id="results"></div>
+    
+    <script>
+        async function testAPI() {
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+            
+            status.innerHTML = '<p class="info">Testing...</p>';
+            results.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/turbo/status?_=' + Date.now());
+                const data = await response.json();
+                
+                if (response.ok) {
+                    status.innerHTML = `<p class="success">✓ API OK - HTTP ${response.status}</p>`;
+                    
+                    let html = '<h2>Results:</h2>';
+                    html += `<p>Status: <span class="success">${data.status}</span></p>`;
+                    html += `<p>Total Items: <strong>${data.counts?.total || 0}</strong></p>`;
+                    html += `<p>Recent Items: <strong>${data.recent_items?.length || 0}</strong></p>`;
+                    
+                    if (data.counts) {
+                        html += '<h3>Counts:</h3><ul>';
+                        for (const [key, val] of Object.entries(data.counts)) {
+                            html += `<li>${key}: ${val}</li>`;
+                        }
+                        html += '</ul>';
+                    }
+                    
+                    if (data.recent_items && data.recent_items.length > 0) {
+                        html += '<h3>Recent Signals:</h3><table>';
+                        html += '<tr><th>Time</th><th>Symbol</th><th>Direction</th><th>Status</th><th>Price</th></tr>';
+                        
+                        data.recent_items.slice().reverse().forEach(item => {
+                            const time = item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : '-';
+                            html += `<tr>
+                                <td>${time}</td>
+                                <td>${item.symbol}</td>
+                                <td>${item.direction}</td>
+                                <td>${item.status}</td>
+                                <td>${item.alert_price || '-'}</td>
+                            </tr>`;
+                        });
+                        html += '</table>';
+                    } else {
+                        html += '<p class="error">No items found in queue</p>';
+                    }
+                    
+                    html += '<h3>Raw Response:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    results.innerHTML = html;
+                } else {
+                    status.innerHTML = `<p class="error">✗ API Error - HTTP ${response.status}</p>`;
+                    results.innerHTML = `<pre>${await response.text()}</pre>`;
+                }
+            } catch (err) {
+                status.innerHTML = `<p class="error">✗ Connection Error</p>`;
+                results.innerHTML = `<p class="error">${err.message}</p><p>Make sure the server is running on localhost:8000</p>`;
+            }
+        }
+        
+        function clearCache() {
+            location.reload(true);
+        }
+        
+        // Auto-test on load
+        window.onload = testAPI;
+    </script>
+</body>
+</html>

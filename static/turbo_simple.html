@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Turbo Mode - Simple View</title>
+    <style>
+        body { font-family: system-ui, sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #1e293b; position: sticky; top: 0; }
+        tr:hover { background: #1e293b; }
+        .status-TREND_MISMATCH { color: #f87171; }
+        .status-QUEUED { color: #60a5fa; }
+        .status-EXECUTED { color: #4ade80; }
+        .status-MONITORING { color: #fbbf24; }
+        button { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        .error { color: #f87171; }
+        .success { color: #4ade80; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Turbo Mode Signals</h1>
+    <button onclick="loadData()">Refresh Data</button>
+    <div id="info"></div>
+    <table id="signals-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Symbol</th>
+                <th>Direction</th>
+                <th>Alert Price</th>
+                <th>Status</th>
+                <th>Trend Aligned</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <tr><td colspan="6" style="text-align:center;padding:40px;">Click Refresh to load data</td></tr>
+        </tbody>
+    </table>
+    
+    <script>
+        async function loadData() {
+            const info = document.getElementById('info');
+            const tbody = document.getElementById('table-body');
+            
+            info.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                const res = await fetch('/api/turbo/status?_=' + Date.now());
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error('HTTP ' + res.status);
+                }
+                
+                const items = data.recent_items || [];
+                info.innerHTML = `<p class="success">✓ Loaded ${items.length} items (Total: ${data.counts?.total || 0})</p>`;
+                
+                if (items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No items found</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = items.slice().reverse().map(item => {
+                    const time = item.timestamp ? new Date(item.timestamp).toLocaleString() : '-';
+                    const trendStatus = item.trend_aligned === null ? 'N/A' : 
+                                       item.trend_aligned ? 'Yes' : 'No';
+                    return `
+                        <tr>
+                            <td>${time}</td>
+                            <td><strong>${item.symbol}</strong></td>
+                            <td>${item.direction}</td>
+                            <td>₹${item.alert_price || '-'}</td>
+                            <td class="status-${item.status}">${item.status}</td>
+                            <td>${trendStatus}</td>
+                        </tr>
+                    `;
+                }).join('');
+                
+            } catch (err) {
+                info.innerHTML = `<p class="error">✗ Error: ${err.message}</p>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="error" style="text-align:center;padding:40px;">Failed to load: ${err.message}</td></tr>`;
+            }
+        }
+        
+        // Auto-load
+        window.onload = loadData;
+    </script>
+</body>
+</html>

@@ -318,6 +318,104 @@ def calculate_intelligent_position(
     )
 
 
+def calculate_brokerage_aware_quantity(
+    entry_price: float,
+    stop_loss: float,
+    target: float,
+    min_profit_after_costs: float = 100.0,
+    brokerage_config: dict = None
+) -> dict:
+    """
+    Calculate minimum quantity needed to achieve minimum profit after brokerage costs.
+    
+    Args:
+        entry_price: Entry price per share
+        stop_loss: Stop loss price
+        target: Target price
+        min_profit_after_costs: Minimum desired profit after all costs (default ₹100)
+        brokerage_config: Brokerage configuration dict (uses defaults if None)
+        
+    Returns:
+        Dict with recommended quantity, break-even target, and cost estimates
+    """
+    if brokerage_config is None:
+        # Default Zerodha rates
+        brokerage_config = {
+            "brokerage_rate": 0.0003,
+            "brokerage_cap": 20,
+            "stt_rate": 0.00025,
+            "transaction_rate": 0.0000297,
+            "sebi_rate": 0.000001,
+            "stamp_duty_rate": 0.00003,
+            "gst_rate": 0.18
+        }
+    
+    # Estimate costs for different quantities
+    # We'll iterate to find minimum quantity that gives desired profit
+    
+    def estimate_costs(qty: int) -> float:
+        """Estimate total costs for given quantity"""
+        buy_value = entry_price * qty
+        sell_value = target * qty  # Assume target exit
+        
+        # Brokerage (capped at ₹20 per order)
+        brokerage_buy = min(buy_value * brokerage_config["brokerage_rate"], brokerage_config["brokerage_cap"])
+        brokerage_sell = min(sell_value * brokerage_config["brokerage_rate"], brokerage_config["brokerage_cap"])
+        brokerage = brokerage_buy + brokerage_sell
+        
+        # STT (sell side only)
+        stt = sell_value * brokerage_config["stt_rate"]
+        
+        # Transaction charges (both sides)
+        transaction = (buy_value + sell_value) * brokerage_config["transaction_rate"]
+        
+        # SEBI charges (both sides)
+        sebi = (buy_value + sell_value) * brokerage_config["sebi_rate"]
+        
+        # Stamp duty (buy side only)
+        stamp_duty = buy_value * brokerage_config["stamp_duty_rate"]
+        
+        # GST on brokerage + transaction + SEBI
+        gst = (brokerage + transaction + sebi) * brokerage_config["gst_rate"]
+        
+        return brokerage + stt + transaction + sebi + stamp_duty + gst
+    
+    # Find minimum quantity
+    qty = 1
+    max_iterations = 10000
+    
+    while qty <= max_iterations:
+        buy_value = entry_price * qty
+        sell_value = target * qty
+        gross_profit = sell_value - buy_value
+        costs = estimate_costs(qty)
+        net_profit = gross_profit - costs
+        
+        if net_profit >= min_profit_after_costs:
+            # Found minimum quantity
+            break_even_sell = (buy_value + costs) / qty
+            
+            return {
+                "minimum_quantity": qty,
+                "total_investment": round(buy_value, 2),
+                "estimated_costs": round(costs, 2),
+                "gross_profit_at_target": round(gross_profit, 2),
+                "net_profit_at_target": round(net_profit, 2),
+                "break_even_price": round(break_even_sell, 2),
+                "cost_percentage": round(costs / buy_value * 100, 3),
+                "notes": f"Need at least {qty} shares to make ₹{min_profit_after_costs} profit after costs"
+            }
+        
+        qty += 1
+    
+    # Could not find quantity (target too close to entry)
+    return {
+        "minimum_quantity": None,
+        "error": f"Target price ₹{target} is too close to entry ₹{entry_price} to achieve ₹{min_profit_after_costs} profit after costs",
+        "suggestion": "Increase target or accept lower minimum profit"
+    }
+
+
 if __name__ == '__main__':
     # Test
     test_data = [
