@@ -3459,6 +3459,13 @@ async def root():
                 </div>
                 <span class="badge badge-green">Main</span>
             </a>
+            <a href="/kite-login" class="nav-link">
+                <div class="nav-icon ni-blue"><i class="fas fa-plug"></i></div>
+                <div>
+                    <div style="font-weight:600;">Kite Login</div>
+                    <div style="font-size:.72rem;color:var(--c-muted);">Zerodha OAuth &amp; token management</div>
+                </div>
+            </a>
             <a href="/esp-setup" class="nav-link">
                 <div class="nav-icon ni-blue"><i class="fas fa-microchip"></i></div>
                 <div>
@@ -4840,6 +4847,14 @@ async def debug_page():
         with open(debug_file, "r") as f:
             return f.read()
     return "<h1>Debug file not found</h1>"
+
+@app.get("/kite-login", response_class=HTMLResponse)
+async def kite_login_page():
+    """Serve the Kite OAuth login / token exchange page."""
+    kite_file = Path("kite-login.html")
+    if kite_file.exists():
+        return kite_file.read_text()
+    return "<h1>Kite login page not found</h1>"
 
 @app.get("/esp-setup", response_class=HTMLResponse)
 async def esp_setup_page():
