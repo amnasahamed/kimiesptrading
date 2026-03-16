@@ -57,6 +57,7 @@ def check_rate_limit(client_ip: str) -> tuple[bool, str]:
     return True, "OK"
 
 from calculator import calculate_atr, calculate_trade_params, calculate_intelligent_position
+from brokerage_calculator import calculate_trading_costs, calculate_net_pnl
 from kite import KiteAPI, KiteQuote
 from signal_tracker import (
     record_signal, 
@@ -73,6 +74,20 @@ from incoming_alerts import (
     get_alerts_by_scan,
     check_file_rotation
 )
+
+# 🔥 TURBO MODE: Multi-timeframe signal confirmation
+try:
+    from turbo_queue import (
+        add_to_turbo_queue,
+        start_turbo_processor,
+        stop_turbo_processor,
+        get_queue_status,
+        cleanup_turbo_queue
+    )
+    TURBO_AVAILABLE = True
+except ImportError:
+    TURBO_AVAILABLE = False
+    print("⚠️ Turbo mode modules not available")
 
 # ============================================================================
 # Models
@@ -139,6 +154,24 @@ DASHBOARD_HTML = Path("dashboard.html")
 # ============================================================================
 
 from fastapi.middleware.cors import CORSMiddleware
+
+async def _wrapped_monitor():
+    """Position monitor wrapper with crash-restart logic."""
+    crash_count = 0
+    max_crashes = 5
+
+    while crash_count < max_crashes:
+        try:
+            await monitor_positions()
+        except Exception as e:
+            crash_count += 1
+            error_msg = f"Position monitor crashed ({crash_count}/{max_crashes}): {e}"
+            print(f"❌ {error_msg}")
+            if crash_count < max_crashes:
+                await asyncio.sleep(min(5 * crash_count, 30))  # Back-off before restart
+            else:
+                print("❌ Position monitor permanently stopped after max crashes")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -226,12 +259,32 @@ async def lifespan(app: FastAPI):
         with open(TRADES_FILE, "w") as f:
             json.dump([], f)
     
+    # 🔥 START TURBO PROCESSOR (if available)
+    if TURBO_AVAILABLE:
+        try:
+            await start_turbo_processor()
+            print("🚀 Turbo mode processor started")
+        except Exception as e:
+            print(f"⚠️ Failed to start turbo processor: {e}")
+
+    # Start position monitor as background task (replaces deprecated on_event startup)
+    _monitor_task = asyncio.create_task(_wrapped_monitor())
+    print("📡 Position monitor started")
+
     yield
     
     # Shutdown
     print("\n" + "=" * 50)
     print("🛑 Chartink Trading Bot Shutting Down")
     print("=" * 50)
+    
+    # Stop turbo processor
+    if TURBO_AVAILABLE:
+        try:
+            await stop_turbo_processor()
+            print("🛑 Turbo processor stopped")
+        except Exception as e:
+            print(f"⚠️ Error stopping turbo processor: {e}")
     
     # Close KiteAPI client
     global _kite_instance
@@ -348,17 +401,21 @@ async def monitor_positions():
                     sl = pos.get("sl_price", 0)
                     tp = pos.get("tp_price", 0)
                     qty = pos.get("quantity", 0)
+                    direction = pos.get("direction", "BUY").upper()  # BUY (LONG) or SELL (SHORT)
                     sl_order_id = pos.get("sl_order_id")
                     tp_order_id = pos.get("tp_order_id")
                     partial_exits = pos.get("partial_exits", [])
                     highest_r = pos.get("highest_r", 0)  # Track highest R reached
-                    
+
                     if entry <= 0 or qty <= 0:
                         continue
-                    
-                    # Calculate current R multiple
+
+                    is_long = direction != "SELL"
+                    exit_transaction = "SELL" if is_long else "BUY"
+
+                    # Calculate current R multiple (direction-aware)
                     risk_per_share = abs(entry - sl)
-                    current_profit = ltp - entry
+                    current_profit = (ltp - entry) if is_long else (entry - ltp)
                     r_multiple = current_profit / risk_per_share if risk_per_share > 0 else 0
                     
                     # Update highest R if we reached a new high
@@ -399,10 +456,34 @@ async def monitor_positions():
                                     )
                                     continue  # Move to next position
                             
-                            # Warn if GTT cancelled/expired unexpectedly
+                            # SL GTT cancelled/expired: re-place it to keep position protected
                             if sl_order_id and sl_status in ["cancelled", "expired", "rejected"]:
-                                print(f"🚨 WARNING: SL GTT for {symbol} is {sl_status}! Position unprotected!")
-                                # TODO: Place new SL GTT or exit position
+                                print(f"🚨 SL GTT for {symbol} is {sl_status}! Re-placing SL GTT...")
+                                try:
+                                    new_sl_order = await kite.place_sl_gtt(
+                                        symbol=symbol,
+                                        quantity=qty,
+                                        trigger_price=sl,
+                                        entry_transaction_type=exit_transaction,
+                                        product=pos.get("product", "MIS")
+                                    )
+                                    if new_sl_order.status == "SUCCESS":
+                                        update_position(position_id, {"sl_order_id": new_sl_order.gtt_id})
+                                        print(f"✅ SL GTT re-placed for {symbol}: {new_sl_order.gtt_id}")
+                                        await send_telegram_message(
+                                            f"⚠️ *SL GTT Re-placed: {symbol}*\n"
+                                            f"Previous GTT was {sl_status}. New GTT: {new_sl_order.gtt_id}\n"
+                                            f"SL @ ₹{sl:.2f}"
+                                        )
+                                    else:
+                                        print(f"🚨 CRITICAL: Failed to re-place SL GTT for {symbol}! Exiting position.")
+                                        await send_telegram_message(
+                                            f"🚨 *CRITICAL: {symbol} - SL GTT failed, closing position!*\n"
+                                            f"Could not re-place SL GTT. Emergency exit initiated."
+                                        )
+                                        await kite.close_position(symbol, reason="EMERGENCY_NO_SL")
+                                except Exception as gtt_err:
+                                    print(f"❌ Error re-placing SL GTT for {symbol}: {gtt_err}")
                             
                         except Exception as e:
                             print(f"Error checking GTT status for {symbol}: {e}")
@@ -417,7 +498,7 @@ async def monitor_positions():
                         if exit_qty > 0:
                             exit_order = await kite.place_market_order(
                                 symbol=symbol,
-                                transaction_type="SELL",
+                                transaction_type=exit_transaction,
                                 quantity=exit_qty
                             )
                             
@@ -440,17 +521,18 @@ async def monitor_positions():
                                         "partial_exits": partial_exits + [partial_exit]
                                     })
                                     
-                                    # 🔥 Move SL to breakeven (or slightly below)
-                                    new_sl = entry * 0.998  # 0.2% below entry for buffer
+                                    # 🔥 Move SL to breakeven (direction-aware)
+                                    # LONG: slightly below entry; SHORT: slightly above entry
+                                    new_sl = entry * 0.998 if is_long else entry * 1.002
                                     sl_modified = False
-                                    
+
                                     if sl_order_id and not sl_order_id.startswith("PAPER_"):
                                         modify_result = await kite.modify_sl_gtt(
                                             gtt_id=sl_order_id,
                                             new_trigger_price=new_sl,
                                             symbol=symbol,
                                             quantity=new_qty,
-                                            transaction_type="BUY"
+                                            transaction_type=exit_transaction
                                         )
                                         
                                         if modify_result.status == "SUCCESS":
@@ -492,18 +574,20 @@ async def monitor_positions():
                     # When price reaches 3R, trail SL to 2R, etc.
                     if r_multiple >= 2.0 and sl_order_id and not sl_order_id.startswith("PAPER_"):
                         target_sl_r = int(r_multiple) - 1  # Trail 1R behind current
-                        target_sl_price = entry + (target_sl_r * risk_per_share)
-                        
-                        # Only move SL up, never down
-                        if target_sl_price > sl * 1.01:  # 1% buffer to avoid micro adjustments
+                        # Direction-aware: LONG trails up, SHORT trails down
+                        target_sl_price = entry + (target_sl_r * risk_per_share) if is_long else entry - (target_sl_r * risk_per_share)
+
+                        # Only move SL in the favourable direction, never against
+                        sl_improved = (target_sl_price > sl * 1.01) if is_long else (target_sl_price < sl * 0.99)
+                        if sl_improved:
                             print(f"Trailing SL for {symbol} to {target_sl_r}R: ₹{target_sl_price:.2f}")
-                            
+
                             await kite.modify_sl_gtt(
                                 gtt_id=sl_order_id,
                                 new_trigger_price=target_sl_price,
                                 symbol=symbol,
                                 quantity=qty,
-                                transaction_type="BUY"
+                                transaction_type=exit_transaction
                             )
                             
                             update_position(position_id, {"sl_price": target_sl_price})
@@ -524,28 +608,28 @@ async def monitor_positions():
                         # When price reaches 3.5R, move TP from 2R to 3R, etc.
                         if r_multiple >= 2.5:
                             target_tp_r = int(r_multiple - 0.5)  # Trail 0.5R behind
-                            target_tp_price = entry + (target_tp_r * risk_per_share)
-                            
-                            # Only move TP up, never down
-                            if target_tp_price > tp * 1.01:
+                            # Direction-aware TP price
+                            target_tp_price = entry + (target_tp_r * risk_per_share) if is_long else entry - (target_tp_r * risk_per_share)
+
+                            # Only move TP in the favourable direction, never against
+                            tp_improved = (target_tp_price > tp * 1.01) if is_long else (target_tp_price < tp * 0.99)
+                            if tp_improved:
                                 print(f"Trailing TP for {symbol} to {target_tp_r}R: ₹{target_tp_price:.2f}")
-                                
-                                # Delete old TP and place new one
-                                await kite.delete_gtt(tp_order_id)
+
+                                # Place new TP first, then delete old to avoid gap
                                 new_tp_order = await kite.place_tp_gtt(
                                     symbol=symbol,
                                     quantity=qty,
                                     trigger_price=target_tp_price,
-                                    entry_transaction_type="BUY",
-                                    product="CNC"
+                                    entry_transaction_type=direction,
+                                    product=pos.get("product", "MIS")
                                 )
-                                
                                 if new_tp_order.status == "SUCCESS":
+                                    await kite.delete_gtt(tp_order_id)
                                     update_position(position_id, {
                                         "tp_price": target_tp_price,
                                         "tp_order_id": new_tp_order.gtt_id
                                     })
-                                    
                                     await send_telegram_message(
                                         f"🎯 *Trailing TP: {symbol}*\n"
                                         f"TP moved to {target_tp_r}R: ₹{target_tp_price:.2f}\n"
@@ -560,20 +644,6 @@ async def monitor_positions():
             await asyncio.sleep(30)  # Wait longer on error
 
 # Start position monitor on startup
-@app.on_event("startup")
-async def start_position_monitor():
-    """Start the position monitoring background task with error handling and restart."""
-    async def wrapped_monitor():
-        crash_count = 0
-        max_crashes = 5
-        
-        while crash_count < max_crashes:
-            try:
-                await monitor_positions()
-            except Exception as e:
-                crash_count += 1
-                error_msg = f
-
 # REMOVED: simulate_paper_trade function was for testing only
 # In paper trading mode, trades are logged but NOT automatically closed
 # You must manually close paper trades via dashboard or API
@@ -1226,8 +1296,10 @@ def get_learning_recommendations() -> List[Dict[str, Any]]:
     for symbol, data in insights["symbols"].items():
         paper = data.get("paper", {})
         live = data.get("live", {})
+        paper_win_rate = paper.get("win_rate", 0)
         live_win_rate = live.get("win_rate", 0)
         
+        # Check for execution gap (paper performing much better than live)
         if paper.get("trades", 0) >= 3 and paper_win_rate > 60 and live_win_rate < 40:
             recommendations.append({
                 "symbol": symbol,
@@ -2149,12 +2221,35 @@ Keep learning! 📈"""
 # ============================================================================
 
 def is_within_trading_hours(config: Dict[str, Any]) -> bool:
-    """Check if current time is within trading hours."""
+    """
+    Check if current time is within trading hours.
+    
+    🔥 PRIMARY: Uses trading_windows from dashboard (if available)
+    Fallback: Uses legacy trading_hours for backward compatibility
+    """
+    now = datetime.now().time()
+    
+    # 🔥 PRIMARY: Check using trading_windows (the new multi-window system)
+    trading_windows = config.get("trading_windows", [])
+    if trading_windows:
+        for window in trading_windows:
+            if window.get("enabled", True):
+                start_str = window.get("start", "09:15")
+                end_str = window.get("end", "15:30")
+                try:
+                    start_time = datetime.strptime(start_str, "%H:%M").time()
+                    end_time = datetime.strptime(end_str, "%H:%M").time()
+                    if start_time <= now <= end_time:
+                        return True
+                except ValueError:
+                    continue
+        return False  # Not in any enabled window
+    
+    # Fallback: Legacy trading_hours (single range)
     trading_hours = config.get("trading_hours", {})
     start_str = trading_hours.get("start", "09:15")
     end_str = trading_hours.get("end", "15:30")
     
-    now = datetime.now().time()
     start_time = datetime.strptime(start_str, "%H:%M").time()
     end_time = datetime.strptime(end_str, "%H:%M").time()
     
@@ -2278,6 +2373,207 @@ async def validate_signal(
     # Check 5: Price Slippage - handled in process_single_alert where we have live price
     
     return True, "✅ All checks passed"
+
+
+async def validate_signal_for_live(
+    config: Dict[str, Any], 
+    symbol: str = None,
+    kite: KiteAPI = None
+) -> tuple[bool, str]:
+    """
+    🔥 LIVE TRADING VALIDATION
+    
+    Validates a signal specifically for LIVE trading (real money).
+    This is STRICTER than paper trading validation.
+    
+    Checks:
+    1. System enabled
+    2. Nifty Health (reject if Nifty down > 0.3%)
+    3. Open Positions Limit (max 3 live positions)
+    4. Duplicate Check (ignore if already triggered today in live mode)
+    5. Price Slippage (handled separately)
+    
+    Note: Time window check is done BEFORE calling this function
+    
+    Returns: (is_valid, reason)
+    """
+    signal_config = config.get("signal_validation", {})
+    
+    # Check 0: System enabled
+    if not config.get("system_enabled", False):
+        return False, "System is disabled"
+    
+    # Check 1: Nifty Health (reject if down > 0.3%)
+    if kite and signal_config.get("nifty_check_enabled", True):
+        nifty_change = await get_nifty_change(kite)
+        max_decline = signal_config.get("nifty_max_decline", -0.3)
+        if nifty_change < max_decline:
+            return False, f"Nifty weak: {nifty_change:.2f}%"
+    
+    # Check 2: Open Positions Limit (max 3, count only live positions)
+    max_positions = signal_config.get("max_open_positions", 3)
+    live_count = count_live_positions()
+    if live_count >= max_positions:
+        return False, f"Max positions: {live_count}/{max_positions}"
+    
+    # Check 3: Duplicate Check (same day) - only for live mode
+    if symbol and signal_config.get("prevent_daily_duplicates", True):
+        # Check if already holding this symbol in live mode
+        open_positions = get_open_positions()
+        for pos_id, pos in open_positions.items():
+            if (pos.get("symbol") == symbol.upper() and 
+                pos.get("status") == "OPEN" and
+                not pos.get("paper_trading", False)):  # Only check live positions
+                return False, f"Already holding {symbol}"
+    
+    # Check 4: Max trades per day
+    max_trades = config.get("max_trades_per_day", 10)
+    if count_today_trades() >= max_trades:
+        return False, f"Max trades: {count_today_trades()}/{max_trades}"
+    
+    return True, "✅ Live validation passed"
+
+
+async def create_analysis_paper_trade(
+    symbol: str,
+    price: Optional[float],
+    scan_name: str,
+    action: str,
+    config: Dict[str, Any],
+    kite: KiteAPI
+) -> Dict[str, Any]:
+    """
+    🔥 ANALYSIS PAPER TRADE
+    
+    Creates a paper trade for EVERY signal received, regardless of:
+    - Time of day
+    - Trading windows
+    - Position limits
+    - Duplicates
+    - Market conditions
+    
+    This is purely for signal accuracy analysis.
+    
+    Returns: Trade result dict
+    """
+    from types import SimpleNamespace
+    from kite import KiteOrder, Position
+    
+    try:
+        symbol = symbol.upper().strip()
+        
+        # Get current market price
+        quote = await kite.get_quote(symbol)
+        if not quote:
+            return {"status": "ERROR", "message": f"Could not fetch quote for {symbol}"}
+        
+        current_ltp = quote.ltp
+        
+        # Get paper trading config
+        paper_config = config.get("paper_trading", {})
+        if isinstance(paper_config, bool):
+            paper_config = {"enabled": paper_config, "analysis_position_size": 10000}
+        
+        position_size = paper_config.get("analysis_position_size", 10000)
+        
+        # Calculate quantity
+        qty = max(1, int(position_size / current_ltp))
+        
+        # Use ATR from quote or default
+        atr = quote.high - quote.low if quote.high > quote.low else current_ltp * 0.02
+        
+        # Calculate SL/TP
+        sl_price = current_ltp - (atr * 1.5)
+        tp_price = current_ltp + (atr * 3.0)
+        
+        # Create timestamp for order ID
+        paper_timestamp = datetime.now().strftime('%H%M%S%f')[:-3]
+        
+        # Create paper order (same pattern as process_single_alert)
+        paper_entry_order = KiteOrder(
+            order_id=f"ANALYSIS_{symbol}_{paper_timestamp}",
+            status="SUCCESS",
+            message=f"Analysis paper trade at ₹{current_ltp:.2f}",
+            variety="analysis_paper",
+            filled_quantity=qty,
+            average_price=current_ltp
+        )
+        
+        # Create paper position
+        paper_position = Position(
+            symbol=symbol,
+            quantity=qty,
+            entry_price=current_ltp,
+            entry_order_id=paper_entry_order.order_id,
+            sl_price=sl_price,
+            tp_price=tp_price,
+            sl_order_id=f"ANALYSIS_SL_{symbol}_{paper_timestamp}",
+            tp_order_id=f"ANALYSIS_TP_{symbol}_{paper_timestamp}",
+            status="OPEN",
+            paper_trading=True,
+            is_analysis_trade=True  # Mark as analysis trade
+        )
+        
+        # Store position
+        store_position(paper_position)
+        
+        # Calculate estimated costs
+        buy_value = current_ltp * qty
+        sell_value = tp_price * qty  # Estimate at target
+        cost_estimate = calculate_trading_costs(buy_value, sell_value)
+        
+        # Save trade record with cost estimates
+        paper_trade_record = {
+            "id": f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{symbol}_ANALYSIS",
+            "date": datetime.now().isoformat(),
+            "symbol": symbol,
+            "action": action,
+            "entry_price": current_ltp,
+            "stop_loss": sl_price,
+            "target": tp_price,
+            "quantity": qty,
+            "risk_amount": round((current_ltp - sl_price) * qty, 2),
+            "risk_reward": 3.0,
+            "atr": atr,
+            "order_id": paper_entry_order.order_id,
+            "order_status": "SUCCESS",
+            "sl_order_id": paper_position.sl_order_id,
+            "tp_order_id": paper_position.tp_order_id,
+            "status": "OPEN",
+            "pnl": 0,
+            "paper_trading": True,
+            "is_analysis_trade": True,  # Flag for analysis
+            "scan_name": scan_name,
+            # 🔥 NEW: Cost tracking
+            "estimated_costs": {
+                "brokerage": cost_estimate.brokerage_total,
+                "stt": cost_estimate.stt,
+                "transaction": cost_estimate.transaction_charges,
+                "sebi": cost_estimate.sebi_charges,
+                "stamp_duty": cost_estimate.stamp_duty,
+                "gst": cost_estimate.gst,
+                "total": cost_estimate.total_costs,
+                "cost_percentage": cost_estimate.cost_percentage
+            },
+            "break_even_price": round((buy_value + cost_estimate.total_costs) / qty, 2)
+        }
+        save_trade(paper_trade_record)
+        
+        print(f"📈 Analysis paper trade: {symbol} {qty} shares @ ₹{current_ltp:.2f}")
+        
+        return {
+            "status": "SUCCESS",
+            "symbol": symbol,
+            "paper_order_id": paper_entry_order.order_id,
+            "position_id": paper_position.entry_order_id,
+            "entry_price": current_ltp,
+            "quantity": qty,
+            "is_analysis_trade": True
+        }
+        
+    except Exception as e:
+        print(f"⚠️ Error creating analysis paper trade: {e}")
+        return {"status": "ERROR", "message": str(e)}
 
 # ============================================================================
 # Trading Logic
@@ -2655,6 +2951,11 @@ async def process_single_alert(
         paper_position.clubbed = True
         store_position(paper_position)
     
+    # Calculate estimated costs for paper trade
+    paper_buy_value = paper_fill_price * paper_qty
+    paper_sell_value = paper_trade_params.target * paper_qty
+    paper_cost_estimate = calculate_trading_costs(paper_buy_value, paper_sell_value)
+    
     # Log paper trade
     paper_trade_record = {
         "id": f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{symbol}_PAPER",
@@ -2674,7 +2975,19 @@ async def process_single_alert(
         "tp_order_id": paper_position.tp_order_id,
         "status": "OPEN",
         "pnl": 0,
-        "paper_trading": True
+        "paper_trading": True,
+        # 🔥 NEW: Cost tracking
+        "estimated_costs": {
+            "brokerage": paper_cost_estimate.brokerage_total,
+            "stt": paper_cost_estimate.stt,
+            "transaction": paper_cost_estimate.transaction_charges,
+            "sebi": paper_cost_estimate.sebi_charges,
+            "stamp_duty": paper_cost_estimate.stamp_duty,
+            "gst": paper_cost_estimate.gst,
+            "total": paper_cost_estimate.total_costs,
+            "cost_percentage": paper_cost_estimate.cost_percentage
+        },
+        "break_even_price": round((paper_buy_value + paper_cost_estimate.total_costs) / paper_qty, 2)
     }
     save_trade(paper_trade_record)
     
@@ -2747,6 +3060,11 @@ async def process_single_alert(
     
     # Log LIVE trade with bracket order details
     if not is_paper_trading:
+        # Calculate estimated costs
+        buy_value = actual_entry * trade_params.quantity
+        sell_value = trade_params.target * trade_params.quantity
+        cost_estimate = calculate_trading_costs(buy_value, sell_value)
+        
         live_trade_record = {
             "id": f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{symbol}",
             "date": datetime.now().isoformat(),
@@ -2767,7 +3085,19 @@ async def process_single_alert(
             "pnl": 0,
             "alert_name": scan_name,
             "context": context,
-            "paper_trading": False  # This is a live trade
+            "paper_trading": False,  # This is a live trade
+            # 🔥 NEW: Cost tracking
+            "estimated_costs": {
+                "brokerage": cost_estimate.brokerage_total,
+                "stt": cost_estimate.stt,
+                "transaction": cost_estimate.transaction_charges,
+                "sebi": cost_estimate.sebi_charges,
+                "stamp_duty": cost_estimate.stamp_duty,
+                "gst": cost_estimate.gst,
+                "total": cost_estimate.total_costs,
+                "cost_percentage": cost_estimate.cost_percentage
+            },
+            "break_even_price": round((buy_value + cost_estimate.total_costs) / trade_params.quantity, 2)
         }
         save_trade(live_trade_record)
         store_alert_for_esp(symbol, actual_entry)
@@ -2873,24 +3203,21 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
     Main trading logic - handles single or multiple stocks from Chartink.
     Executes in ~200-300ms total.
     
-    🔥 Implements 5-step signal validation before placing orders:
-    1. Time Window Check - Only 10:00-11:30 and 13:30-14:30
-    2. Nifty Health Check - Reject if Nifty down > 0.3%
-    3. Open Positions Check - Max 3 open positions
-    4. Duplicate Check - Ignore if already triggered today
-    5. Price Slippage Check - Reject if price moved > 0.5%
+    🔥 NEW: Universal Paper Trading for Analysis
+    - EVERY signal creates a paper trade for analysis (bypasses ALL filters)
+    - Live trades ONLY execute within trading windows
     
-    🔥 PAPER TRADING: All limits disabled, fixed ₹10,000 position size
+    This allows tracking signal accuracy 24/7 while respecting time limits for real money.
     """
     start_time = datetime.now()
     
     # 1. Load config (0.1ms)
     config = load_config()
     
-    # 🔥 Check paper trading mode
-    is_paper_trading = config.get("paper_trading", False)
-    if is_paper_trading:
-        print("📝 PAPER TRADING MODE: All limits disabled, ₹10,000 per trade")
+    # 🔥 Get paper trading config
+    paper_config = config.get("paper_trading", {})
+    is_paper_trading_mode = paper_config.get("enabled", True) if isinstance(paper_config, dict) else paper_config
+    always_record_analysis = paper_config.get("always_record_for_analysis", True) if isinstance(paper_config, dict) else True
     
     # 2. Validate webhook secret
     expected_secret = config.get("chartink", {}).get("webhook_secret", "")
@@ -2910,65 +3237,141 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
             "timestamp": datetime.now().isoformat()
         }
     
-    # Get Kite API instance for validation (Nifty check)
+    # Get Kite API instance
     kite = get_kite_api(config)
     
-    # 4. Process each stock with 5-step validation
+    # 4. Process each stock
     results = []
     for stock_alert in stock_alerts:
         symbol = stock_alert["symbol"]
         alert_price = stock_alert.get("price")
+        scan_name = stock_alert.get("scan_name", "Unknown")
         
-        # 🔥 STEP 1-4: Run signal validation (time, nifty, positions, duplicate)
-        # Pass is_paper_trading to skip limits in paper mode
-        is_valid, reason = await validate_signal(config, symbol, kite, is_paper_trading)
+        print(f"\n📊 Processing signal: {symbol} @ ₹{alert_price or 'N/A'} (Scan: {scan_name})")
         
-        if not is_valid:
-            # Record rejected signal
-            record_signal(symbol, "REJECTED", reason=reason)
+        # ==========================================================================
+        # 🔥 STEP 1: ALWAYS create analysis paper trade (for signal tracking)
+        # This happens REGARDLESS of time windows or any filters
+        # ==========================================================================
+        analysis_trade_result = None
+        if always_record_analysis:
+            try:
+                analysis_trade_result = await create_analysis_paper_trade(
+                    symbol=symbol,
+                    price=alert_price,
+                    scan_name=scan_name,
+                    action=alert.action,
+                    config=config,
+                    kite=kite
+                )
+                if analysis_trade_result.get("status") == "SUCCESS":
+                    print(f"📈 Analysis paper trade created: {symbol}")
+                else:
+                    print(f"⚠️ Analysis paper trade failed: {analysis_trade_result.get('message')}")
+            except Exception as e:
+                print(f"⚠️ Analysis paper trade error: {e}")
+        
+        # ==========================================================================
+        # 🔥 STEP 2: Check if we should execute LIVE trade (time windows apply)
+        # ==========================================================================
+        in_trading_window, window_msg = is_in_trading_window(config)
+        
+        if not in_trading_window:
+            # Outside trading window - skip live trade, keep analysis trade
+            record_signal(symbol, "ANALYSIS_ONLY", reason=f"Outside trading window: {window_msg}")
             results.append({
                 "symbol": symbol,
-                "status": "REJECTED",
-                "reason": reason,
+                "status": "ANALYSIS_ONLY",
+                "reason": f"⏰ Outside trading window: {window_msg}",
+                "analysis_trade": analysis_trade_result.get("paper_order_id") if analysis_trade_result else None,
                 "timestamp": datetime.now().isoformat()
             })
-            print(f"🚫 Signal rejected: {symbol} - {reason}")
+            print(f"🚫 Live trade skipped (outside window): {symbol} - {window_msg}")
             continue
         
-        # Check max trades before processing (SKIPPED in paper trading - unlimited orders)
-        if not is_paper_trading and count_today_trades() >= config.get("max_trades_per_day", 10):
-            reason = "Max daily trades reached"
-            record_signal(symbol, "REJECTED", reason=reason)
+        # ==========================================================================
+        # 🔥 STEP 3: Within trading window - run full validation for LIVE trade
+        # ==========================================================================
+        is_valid, reason = await validate_signal_for_live(config, symbol, kite)
+        
+        if not is_valid:
+            # Failed validation - still keep analysis trade
+            record_signal(symbol, "ANALYSIS_ONLY", reason=f"Live validation failed: {reason}")
             results.append({
                 "symbol": symbol,
-                "status": "REJECTED",
-                "reason": reason
+                "status": "ANALYSIS_ONLY",
+                "reason": f"🚫 Live validation failed: {reason}",
+                "analysis_trade": analysis_trade_result.get("paper_order_id") if analysis_trade_result else None,
+                "timestamp": datetime.now().isoformat()
             })
+            print(f"🚫 Live trade skipped (validation): {symbol} - {reason}")
             continue
         
-        # Record that we're executing this signal
+        # ==========================================================================
+        # 🔥 STEP 4: TURBO MODE - Multi-timeframe confirmation
+        # ==========================================================================
+        turbo_config = config.get("turbo_mode", {})
+        turbo_enabled = turbo_config.get("enabled", False) and TURBO_AVAILABLE
+        
+        if turbo_enabled:
+            print(f"🚀 TURBO MODE: Adding {symbol} to queue for multi-timeframe confirmation")
+            
+            queue_id = await add_to_turbo_queue(
+                symbol=symbol,
+                direction=alert.action.upper(),
+                alert_price=alert_price,
+                scan_name=scan_name,
+                action=alert.action,
+                context=stock_alert.get("context"),
+                config=config
+            )
+            
+            record_signal(symbol, "TURBO_QUEUED", metadata={
+                "queue_id": queue_id,
+                "analysis_order_id": analysis_trade_result.get("paper_order_id") if analysis_trade_result else None
+            })
+            
+            results.append({
+                "symbol": symbol,
+                "status": "TURBO_QUEUED",
+                "reason": "Added to turbo queue for multi-timeframe confirmation",
+                "queue_id": queue_id,
+                "analysis_trade": analysis_trade_result.get("paper_order_id") if analysis_trade_result else None,
+                "timestamp": datetime.now().isoformat()
+            })
+            print(f"✅ {symbol} added to turbo queue (ID: {queue_id})")
+            continue
+        
+        # ==========================================================================
+        # 🔥 STEP 5: Execute LIVE trade immediately (turbo disabled or unavailable)
+        # ==========================================================================
         record_signal(symbol, "EXECUTING")
         
-        # Process the trade (includes price slippage check - Step 5)
-        result = await process_single_alert(
+        live_result = await process_single_alert(
             symbol=symbol,
             price=alert_price,
-            scan_name=stock_alert["scan_name"],
+            scan_name=scan_name,
             action=alert.action,
-            context=stock_alert["context"],
+            context=stock_alert.get("context"),
             config=config
         )
         
         # Update signal record with final status
-        if result.get("status") == "SUCCESS":
+        if live_result.get("status") == "SUCCESS":
             record_signal(symbol, "EXECUTED", metadata={
-                "order_id": result.get("order_id"),
-                "entry_price": result.get("trade_params", {}).get("entry")
+                "order_id": live_result.get("order_id"),
+                "entry_price": live_result.get("trade_params", {}).get("entry"),
+                "analysis_order_id": analysis_trade_result.get("paper_order_id") if analysis_trade_result else None
             })
         else:
-            record_signal(symbol, "FAILED", reason=result.get("message", "Unknown"))
+            record_signal(symbol, "FAILED", reason=live_result.get("message", "Unknown"))
         
-        results.append(result)
+        # Combine results
+        combined_result = {
+            **live_result,
+            "analysis_trade_id": analysis_trade_result.get("paper_order_id") if analysis_trade_result else None
+        }
+        results.append(combined_result)
     
     # Calculate total latency
     total_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -2978,12 +3381,18 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
         results[0]["latency_ms"] = round(total_ms, 2)
         return results[0]
     else:
+        # Count different statuses
+        success_count = len([r for r in results if r.get("status") == "SUCCESS"])
+        analysis_only_count = len([r for r in results if r.get("status") == "ANALYSIS_ONLY"])
+        rejected_count = len([r for r in results if r.get("status") == "REJECTED"])
+        
         return {
             "status": "BATCH_PROCESSED",
             "results": results,
             "total_stocks": len(stock_alerts),
-            "processed": len([r for r in results if r.get("status") == "SUCCESS"]),
-            "rejected": len([r for r in results if r.get("status") == "REJECTED"]),
+            "executed": success_count,
+            "analysis_only": analysis_only_count,
+            "rejected": rejected_count,
             "latency_ms": round(total_ms, 2),
             "timestamp": datetime.now().isoformat()
         }
@@ -3074,6 +3483,49 @@ async def health_check():
     
     return health
 
+
+@app.get("/api/turbo/status")
+async def turbo_status():
+    """
+    Get Turbo Mode queue status.
+    Shows signals being monitored for multi-timeframe confirmation.
+    """
+    if not TURBO_AVAILABLE:
+        return {
+            "status": "unavailable",
+            "message": "Turbo mode modules not available",
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    try:
+        status = await get_queue_status()
+        return {
+            "status": "ok",
+            "turbo_enabled": True,
+            **status,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.post("/api/turbo/cleanup")
+async def turbo_cleanup():
+    """Clean up old turbo queue entries"""
+    if not TURBO_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Turbo mode not available")
+    
+    try:
+        await cleanup_turbo_queue(max_age_hours=24)
+        return {"status": "ok", "message": "Cleanup completed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/webhook/chartink")
 async def chartink_webhook(alert: ChartinkAlert, background_tasks: BackgroundTasks, request: Request):
     """
@@ -3153,11 +3605,17 @@ async def chartink_webhook(alert: ChartinkAlert, background_tasks: BackgroundTas
         result = await process_chartink_alert(alert)
         
         # Update alert status based on result
-        status = "processed" if result.get("status") in ["SUCCESS", "BATCH_PROCESSED"] else "rejected"
-        if result.get("status") == "REJECTED":
+        # 🔥 FIX: Handle ALL_REJECTED status for batch results where all stocks were rejected
+        if result.get("status") in ["SUCCESS", "BATCH_PROCESSED"]:
+            status = "processed"
+        elif result.get("status") == "ALL_REJECTED":
+            status = "rejected"
+        elif result.get("status") == "REJECTED":
             status = "rejected"
         elif result.get("status") == "ERROR":
             status = "error"
+        else:
+            status = "rejected"
         
         latency_ms = (datetime.now() - start_time).total_seconds() * 1000
         
@@ -3680,9 +4138,22 @@ async def update_config(update: ConfigUpdate):
             config["signal_validation"] = {}
         config["signal_validation"].update(update.signal_validation)
     
-    # 🔥 Update trading windows from dashboard
+    # 🔥 Update trading windows from dashboard (PRIMARY setting)
     if update.trading_windows is not None:
         config["trading_windows"] = update.trading_windows
+        
+        # Sync trading_hours to match the overall range of trading_windows
+        # This ensures backward compatibility with systems using trading_hours
+        if update.trading_windows:
+            enabled_windows = [w for w in update.trading_windows if w.get("enabled", True)]
+            if enabled_windows:
+                # Find earliest start and latest end
+                starts = [w.get("start", "09:15") for w in enabled_windows]
+                ends = [w.get("end", "15:30") for w in enabled_windows]
+                config["trading_hours"] = {
+                    "start": min(starts),
+                    "end": max(ends)
+                }
         
     if update.kite_api_key:
         if "kite" not in config:
@@ -4418,6 +4889,98 @@ async def get_symbol_insights_api(symbol: str):
         "symbol": symbol.upper(),
         "insights": insights
     }
+
+
+# ============================================================================
+# Learning & Insights API (Robust Version)
+# ============================================================================
+
+try:
+    from learning_engine import get_learning_report, get_learning_summary, LearningEngine
+    LEARNING_ENGINE_AVAILABLE = True
+except ImportError as e:
+    LEARNING_ENGINE_AVAILABLE = False
+    print(f"⚠️ Learning engine not available: {e}")
+
+@app.get("/api/learning/report")
+async def api_learning_report():
+    """Get complete learning report"""
+    if not LEARNING_ENGINE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Learning engine not available")
+    
+    try:
+        return get_learning_report()
+    except Exception as e:
+        import traceback
+        print(f"Learning report error: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/learning/summary")
+async def api_learning_summary():
+    """Get summary only"""
+    if not LEARNING_ENGINE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Learning engine not available")
+    
+    try:
+        return get_learning_summary()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/learning/symbols")
+async def api_learning_symbols():
+    """Get symbol performance"""
+    if not LEARNING_ENGINE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Learning engine not available")
+    
+    try:
+        engine = LearningEngine()
+        return engine.get_symbol_performance()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/learning/signals")
+async def api_learning_signals():
+    """Get signal analysis"""
+    if not LEARNING_ENGINE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Learning engine not available")
+    
+    try:
+        engine = LearningEngine()
+        return engine.get_signal_analysis()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/learning/time-patterns")
+async def api_learning_time():
+    """Get time patterns"""
+    if not LEARNING_ENGINE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Learning engine not available")
+    
+    try:
+        engine = LearningEngine()
+        return engine.get_time_analysis()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/learning/recommendations")
+async def api_learning_recommendations():
+    """Get recommendations"""
+    if not LEARNING_ENGINE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Learning engine not available")
+    
+    try:
+        engine = LearningEngine()
+        return {"recommendations": engine.get_recommendations()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/strategy/analytics")

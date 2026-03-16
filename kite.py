@@ -59,6 +59,7 @@ class Position:
     exit_time: Optional[datetime] = None
     exit_reason: Optional[str] = None  # SL_HIT, TP_HIT, MANUAL
     paper_trading: bool = False  # Whether this is a paper trade
+    is_analysis_trade: bool = False  # Whether this is an analysis trade (tracks all signals)
     partial_exits: List[Dict] = field(default_factory=list)
 
 
@@ -335,7 +336,7 @@ class KiteAPI:
         """Poll order until filled or timeout."""
         start_time = datetime.now()
         
-        while (datetime.now() - start_time).seconds < timeout:
+        while (datetime.now() - start_time).total_seconds() < timeout:
             status = await self.get_order_status(order_id)
             
             if status.get("status") == "COMPLETE":
@@ -565,21 +566,24 @@ class KiteAPI:
             "last_price": round(last_price, 2)
         }
         
-        # For SL orders, price must be the trigger price (not 0)
-        # For LIMIT orders, price is the limit price
-        if order_type == "LIMIT":
+        # GTT API only supports "LIMIT" or "MARKET" order types (not "SL")
+        # For SL orders, use LIMIT with the trigger price as the limit price
+        if order_type == "SL":
+            gtt_order_type = "LIMIT"
             order_price = round(trigger_price, 2)
-        elif order_type == "SL":
-            order_price = round(trigger_price, 2)  # SL needs a price (acts as limit)
+        elif order_type == "LIMIT":
+            gtt_order_type = "LIMIT"
+            order_price = round(trigger_price, 2)
         else:
+            gtt_order_type = "MARKET"
             order_price = 0
-        
+
         orders = [{
             "exchange": "NSE",
             "tradingsymbol": symbol,
             "transaction_type": transaction_type,
             "quantity": quantity,
-            "order_type": order_type,
+            "order_type": gtt_order_type,
             "product": product,
             "price": order_price
         }]
@@ -630,12 +634,17 @@ class KiteAPI:
         transaction_type: str,
         product: str = "MIS"
     ) -> KiteGTT:
-        """Modify existing SL GTT (for trailing stop)."""
-        # Delete old GTT
-        await self.delete_gtt(gtt_id)
-        
-        # Place new GTT with updated price
-        return await self.place_sl_gtt(symbol, quantity, new_trigger_price, transaction_type, product)
+        """Modify existing SL GTT (for trailing stop).
+        Places new GTT first, then deletes old one to avoid gap in protection.
+        """
+        # Place new GTT first before deleting old one
+        new_gtt = await self.place_sl_gtt(symbol, quantity, new_trigger_price, transaction_type, product)
+
+        if new_gtt.status == "SUCCESS":
+            # Only delete old GTT once new one is confirmed placed
+            await self.delete_gtt(gtt_id)
+
+        return new_gtt
     
     async def delete_gtt(self, gtt_id: str) -> bool:
         """Delete a GTT order."""
@@ -774,6 +783,86 @@ class KiteAPI:
         except Exception as e:
             print(f"Error cancelling order: {e}")
             return False
+
+    async def get_historical_data(
+        self,
+        symbol: str,
+        interval: str = "day",
+        duration: int = 30,
+        exchange: str = "NSE"
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetch historical candle data for technical analysis.
+        
+        Args:
+            symbol: Trading symbol (e.g., "RELIANCE")
+            interval: Candle interval - "day", "60minute", "30minute", "15minute", "5minute", "minute"
+            duration: Number of candles to fetch
+            exchange: Exchange code (default: NSE)
+        
+        Returns:
+            List of candles with timestamp, open, high, low, close, volume
+        """
+        if not symbol:
+            return []
+        
+        # Get instrument token first (required by Kite API)
+        token = await self.get_instrument_token(symbol)
+        if not token:
+            print(f"⚠️ Could not get instrument token for {symbol}")
+            return []
+        
+        url = f"{self.base_url}/instruments/historical/{token}/{interval}"
+        
+        # Calculate date range based on interval and duration
+        now = datetime.now()
+        if interval in ["minute", "1minute"]:
+            # For 1-minute candles, need ~1 day for 400 candles (market hours only)
+            from_date = (now - timedelta(days=max(duration // 375 + 1, 2))).strftime("%Y-%m-%d")
+        elif interval in ["5minute", "15minute", "30minute", "60minute", "1hour"]:
+            # For intraday candles, need more days
+            from_date = (now - timedelta(days=max(duration // 25 + 1, 5))).strftime("%Y-%m-%d")
+        elif interval in ["4hour", "240minute"]:
+            # 4-hour candles, need more days
+            from_date = (now - timedelta(days=max(duration // 6 + 1, 15))).strftime("%Y-%m-%d")
+        else:
+            # Daily candles
+            from_date = (now - timedelta(days=duration * 2)).strftime("%Y-%m-%d")
+        
+        to_date = now.strftime("%Y-%m-%d")
+        
+        params = {
+            "from": from_date,
+            "to": to_date,
+            "continuous": "0",
+            "oi": "0"
+        }
+        
+        try:
+            client = await self._get_client()
+            resp = await client.get(url, headers=self.headers, params=params)
+            data = resp.json()
+            
+            if data.get("status") == "success" and "data" in data:
+                candles_raw = data["data"].get("candles", [])
+                # candles format: [timestamp, open, high, low, close, volume]
+                candles = []
+                for candle in candles_raw[-duration:]:  # Take last 'duration' candles
+                    if len(candle) >= 6:
+                        candles.append({
+                            "timestamp": candle[0],
+                            "datetime": datetime.fromisoformat(candle[0].replace('Z', '+00:00')),
+                            "open": float(candle[1]),
+                            "high": float(candle[2]),
+                            "low": float(candle[3]),
+                            "close": float(candle[4]),
+                            "volume": int(candle[5])
+                        })
+                return candles
+            return []
+        except Exception as e:
+            print(f"❌ Error fetching historical data for {symbol}: {e}")
+            return []
 
     async def get_ohlcv_history(
         self, 
