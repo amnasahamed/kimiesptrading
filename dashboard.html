@@ -19,75 +19,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
-                    colors: {
-                        primary: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            200: '#bbf7d0',
-                            300: '#86efac',
-                            400: '#4ade80',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                            800: '#166534',
-                            900: '#14532d',
-                        },
-                        danger: {
-                            400: '#f87171',
-                            500: '#ef4444',
-                            600: '#dc2626',
-                        },
-                        warning: {
-                            400: '#fbbf24',
-                            500: '#f59e0b',
-                        },
-                        accent: {
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                        },
-                        dark: {
-                            900: '#0f1117',
-                            850: '#0a0a0f',
-                            800: '#12121a',
-                            750: '#161a23',
-                            700: '#1a1a25',
-                            650: '#1e2330',
-                            600: '#252536',
-                            550: '#2a2f3d',
-                            500: '#32324a',
-                        }
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'float': 'float 6s ease-in-out infinite',
-                        'glow': 'glow 2s ease-in-out infinite alternate',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        },
-                        glow: {
-                            '0%': { boxShadow: '0 0 5px rgba(34, 197, 94, 0.2)' },
-                            '100%': { boxShadow: '0 0 20px rgba(34, 197, 94, 0.6)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- No Tailwind — pure CSS design system below -->
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -97,23 +29,25 @@
            DESIGN SYSTEM — CSS custom properties
            ============================================================ */
         :root {
-            /* Colors */
-            --c-bg:         #0b0d14;
-            --c-surface:    #10121c;
-            --c-surface-2:  #161927;
-            --c-surface-3:  #1d2133;
-            --c-border:     rgba(255,255,255,0.06);
+            /* Unified Design System Colors */
+            --c-bg:         #0a0a0f;
+            --c-surface:    #12121a;
+            --c-surface-2:  #1a1a25;
+            --c-surface-3:  #222230;
+            --c-border:     rgba(255,255,255,0.07);
             --c-border-2:   rgba(255,255,255,0.10);
+            --c-text:       #e2e8f0;
+            --c-muted:      #6b7280;
             --c-green:      #22c55e;
-            --c-green-dim:  rgba(34,197,94,.12);
+            --c-green-dim:  rgba(34,197,94,0.12);
             --c-red:        #ef4444;
-            --c-red-dim:    rgba(239,68,68,.12);
+            --c-red-dim:    rgba(239,68,68,0.12);
             --c-amber:      #f59e0b;
-            --c-amber-dim:  rgba(245,158,11,.12);
+            --c-amber-dim:  rgba(245,158,11,0.12);
             --c-blue:       #3b82f6;
-            --c-blue-dim:   rgba(59,130,246,.12);
+            --c-blue-dim:   rgba(59,130,246,0.12);
             --c-purple:     #a855f7;
-            --c-purple-dim: rgba(168,85,247,.12);
+            --c-purple-dim: rgba(168,85,247,0.12);
             /* Typography */
             --font-mono: 'JetBrains Mono', monospace;
             /* Transitions */
@@ -1166,9 +1100,404 @@
            ============================================================ */
         .toast-enter { animation: toastIn 0.3s ease forwards; }
         .toast-exit  { animation: toastOut 0.3s ease forwards; }
+
+        /* ============================================================
+           UTILITY CLASSES (replacing Tailwind)
+           ============================================================ */
+
+        /* --- Display --- */
+        .flex         { display: flex; }
+        .inline-flex  { display: inline-flex; }
+        .block        { display: block; }
+        .inline-block { display: inline-block; }
+        .grid         { display: grid; }
+        .hidden       { display: none !important; }
+        .sr-only      { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+        /* --- Flex/Grid --- */
+        .flex-col       { flex-direction: column; }
+        .flex-row       { flex-direction: row; }
+        .flex-wrap      { flex-wrap: wrap; }
+        .flex-1         { flex: 1 1 0%; }
+        .flex-shrink-0  { flex-shrink: 0; }
+        .items-center   { align-items: center; }
+        .items-start    { align-items: flex-start; }
+        .items-end      { align-items: flex-end; }
+        .items-baseline { align-items: baseline; }
+        .justify-center  { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-end     { justify-content: flex-end; }
+        .justify-start   { justify-content: flex-start; }
+        .self-center     { align-self: center; }
+
+        /* --- Gap --- */
+        .gap-1   { gap: 0.25rem; }
+        .gap-1\.5 { gap: 0.375rem; }
+        .gap-2   { gap: 0.5rem; }
+        .gap-2\.5 { gap: 0.625rem; }
+        .gap-3   { gap: 0.75rem; }
+        .gap-4   { gap: 1rem; }
+        .gap-5   { gap: 1.25rem; }
+        .gap-6   { gap: 1.5rem; }
+        .gap-8   { gap: 2rem; }
+
+        /* --- Grid cols --- */
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .col-span-2  { grid-column: span 2 / span 2; }
+        .col-span-3  { grid-column: span 3 / span 3; }
+
+        /* --- Padding --- */
+        .p-1   { padding: 0.25rem; }
+        .p-2   { padding: 0.5rem; }
+        .p-3   { padding: 0.75rem; }
+        .p-4   { padding: 1rem; }
+        .p-5   { padding: 1.25rem; }
+        .p-6   { padding: 1.5rem; }
+        .px-2  { padding-left: 0.5rem; padding-right: 0.5rem; }
+        .px-2\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
+        .px-3  { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .px-4  { padding-left: 1rem; padding-right: 1rem; }
+        .px-5  { padding-left: 1.25rem; padding-right: 1.25rem; }
+        .py-1  { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+        .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+        .py-2  { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .py-2\.5 { padding-top: 0.625rem; padding-bottom: 0.625rem; }
+        .py-3  { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .py-4  { padding-top: 1rem; padding-bottom: 1rem; }
+        .py-8  { padding-top: 2rem; padding-bottom: 2rem; }
+        .pt-2  { padding-top: 0.5rem; }
+        .pt-3  { padding-top: 0.75rem; }
+        .pt-4  { padding-top: 1rem; }
+        .pb-4  { padding-bottom: 1rem; }
+        .pl-4  { padding-left: 1rem; }
+        .pl-6  { padding-left: 1.5rem; }
+        .pl-10 { padding-left: 2.5rem; }
+
+        /* --- Margin --- */
+        .m-0   { margin: 0; }
+        .mb-1  { margin-bottom: 0.25rem; }
+        .mb-1\.5 { margin-bottom: 0.375rem; }
+        .mb-2  { margin-bottom: 0.5rem; }
+        .mb-3  { margin-bottom: 0.75rem; }
+        .mb-4  { margin-bottom: 1rem; }
+        .mb-5  { margin-bottom: 1.25rem; }
+        .mt-0\.5 { margin-top: 0.125rem; }
+        .mt-1  { margin-top: 0.25rem; }
+        .mt-1\.5 { margin-top: 0.375rem; }
+        .mt-2  { margin-top: 0.5rem; }
+        .mt-3  { margin-top: 0.75rem; }
+        .mt-4  { margin-top: 1rem; }
+        .mt-5  { margin-top: 1.25rem; }
+        .ml-auto { margin-left: auto; }
+        .mr-1  { margin-right: 0.25rem; }
+        .mr-1\.5 { margin-right: 0.375rem; }
+        .mr-2  { margin-right: 0.5rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .space-y-1 > * + *   { margin-top: 0.25rem; }
+        .space-y-1\.5 > * + * { margin-top: 0.375rem; }
+        .space-y-2 > * + *   { margin-top: 0.5rem; }
+        .space-y-3 > * + *   { margin-top: 0.75rem; }
+        .space-y-4 > * + *   { margin-top: 1rem; }
+        .space-y-5 > * + *   { margin-top: 1.25rem; }
+        .space-y-6 > * + *   { margin-top: 1.5rem; }
+        .space-y-0\.5 > * + * { margin-top: 0.125rem; }
+
+        /* --- Width / Height --- */
+        .w-full  { width: 100%; }
+        .w-1\.5  { width: 0.375rem; }
+        .w-2     { width: 0.5rem; }
+        .w-2\.5  { width: 0.625rem; }
+        .w-7     { width: 1.75rem; }
+        .w-8     { width: 2rem; }
+        .w-9     { width: 2.25rem; }
+        .w-10    { width: 2.5rem; }
+        .w-11    { width: 2.75rem; }
+        .w-16    { width: 4rem; }
+        .w-28    { width: 7rem; }
+        .w-64    { width: 16rem; }
+        .h-1\.5  { height: 0.375rem; }
+        .h-2     { height: 0.5rem; }
+        .h-2\.5  { height: 0.625rem; }
+        .h-6     { height: 1.5rem; }
+        .h-7     { height: 1.75rem; }
+        .h-8     { height: 2rem; }
+        .h-9     { height: 2.25rem; }
+        .h-10    { height: 2.5rem; }
+        .h-14    { height: 3.5rem; }
+        .h-16    { height: 4rem; }
+        .h-56    { height: 14rem; }
+        .h-64    { height: 16rem; }
+        .h-screen { height: 100vh; }
+        .min-h-0 { min-height: 0; }
+        .max-h-60 { max-height: 15rem; }
+        .max-h-96 { max-height: 24rem; }
+        .max-w-md  { max-width: 28rem; }
+        .max-w-2xl { max-width: 42rem; }
+        .min-w-0   { min-width: 0; }
+
+        /* --- Position --- */
+        .relative  { position: relative; }
+        .absolute  { position: absolute; }
+        .fixed     { position: fixed; }
+        .sticky    { position: sticky; }
+        .inset-0   { top: 0; right: 0; bottom: 0; left: 0; }
+        .top-0     { top: 0; }
+        .top-4     { top: 1rem; }
+        .right-4   { right: 1rem; }
+        .bottom-0  { bottom: 0; }
+        .left-0    { left: 0; }
+        .left-\[2px\] { left: 2px; }
+        .top-\[2px\]  { top: 2px; }
+
+        /* --- Z-index --- */
+        .z-50  { z-index: 50; }
+        .z-40  { z-index: 40; }
+        .z-35  { z-index: 35; }
+
+        /* --- Overflow --- */
+        .overflow-hidden  { overflow: hidden; }
+        .overflow-auto    { overflow: auto; }
+        .overflow-y-auto  { overflow-y: auto; }
+        .overflow-x-auto  { overflow-x: auto; }
+
+        /* --- Typography --- */
+        .text-xs     { font-size: 0.75rem; line-height: 1rem; }
+        .text-sm     { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-base   { font-size: 1rem; line-height: 1.5rem; }
+        .text-lg     { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-xl     { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-2xl    { font-size: 1.5rem; line-height: 2rem; }
+        .text-4xl    { font-size: 2.25rem; line-height: 2.5rem; }
+        .font-sans   { font-family: 'Inter', system-ui, sans-serif; }
+        .font-mono   { font-family: var(--font-mono); }
+        .font-light  { font-weight: 300; }
+        .font-normal { font-weight: 400; }
+        .font-medium { font-weight: 500; }
+        .font-semibold { font-weight: 600; }
+        .font-bold   { font-weight: 700; }
+        .font-extrabold { font-weight: 800; }
+        .antialiased { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .tracking-tight  { letter-spacing: -0.025em; }
+        .tracking-wider  { letter-spacing: 0.05em; }
+        .leading-tight   { line-height: 1.25; }
+        .leading-none    { line-height: 1; }
+        .text-left   { text-align: left; }
+        .text-center { text-align: center; }
+        .text-right  { text-align: right; }
+        .uppercase   { text-transform: uppercase; }
+        .truncate    { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .whitespace-nowrap { white-space: nowrap; }
+        .line-clamp-2 { -webkit-line-clamp: 2; -webkit-box-orient: vertical; display: -webkit-box; overflow: hidden; }
+
+        /* --- Colors (Tailwind equivalents) --- */
+        .text-gray-100  { color: #f3f4f6; }
+        .text-gray-200  { color: #e5e7eb; }
+        .text-gray-300  { color: #d1d5db; }
+        .text-gray-400  { color: #9ca3af; }
+        .text-gray-500  { color: #6b7280; }
+        .text-white     { color: #ffffff; }
+        .text-primary-400 { color: var(--c-green); }
+        .text-danger-400  { color: #f87171; }
+        .text-danger-500  { color: var(--c-red); }
+        .text-warning-400 { color: #fbbf24; }
+        .text-warning-500 { color: var(--c-amber); }
+        .text-blue-400    { color: #60a5fa; }
+        .text-yellow-400  { color: #facc15; }
+        .text-purple-400  { color: #c084fc; }
+        .text-orange-400  { color: #fb923c; }
+
+        /* Backgrounds */
+        .bg-dark-900      { background-color: #0f1117; }
+        .bg-dark-800      { background-color: var(--c-surface); }
+        .bg-dark-700      { background-color: var(--c-surface-2); }
+        .bg-dark-600      { background-color: var(--c-surface-3); }
+        .bg-dark-500      { background-color: #32324a; }
+        .bg-primary-500\/20 { background-color: var(--c-green-dim); }
+        .bg-danger-500\/20  { background-color: var(--c-red-dim); }
+        .bg-yellow-500\/20  { background-color: var(--c-amber-dim); }
+        .bg-primary-500\/10 { background-color: rgba(34,197,94,0.08); }
+        .bg-dark-800\/50    { background-color: rgba(18,18,26,0.5); }
+
+        /* Border */
+        .border         { border-width: 1px; border-style: solid; }
+        .border-t       { border-top-width: 1px; border-top-style: solid; }
+        .border-b       { border-bottom-width: 1px; border-bottom-style: solid; }
+        .border-l       { border-left-width: 1px; border-left-style: solid; }
+        .border-gray-300 { border-color: #d1d5db; }
+        .border-dark-500 { border-color: var(--c-surface-3); }
+        .border-dark-600 { border-color: var(--c-border); }
+        .border-primary-500\/30 { border-color: rgba(34,197,94,0.3); }
+        .border-purple-500\/30  { border-color: rgba(168,85,247,0.3); }
+        .border-white   { border-color: #ffffff; }
+
+        /* --- Border radius --- */
+        .rounded        { border-radius: 0.25rem; }
+        .rounded-full   { border-radius: 9999px; }
+        .rounded-lg     { border-radius: 0.5rem; }
+        .rounded-xl     { border-radius: 0.75rem; }
+        .rounded-2xl    { border-radius: 1rem; }
+
+        /* --- Shadow --- */
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3), 0 4px 6px -4px rgba(0,0,0,0.3); }
+
+        /* --- Cursor --- */
+        .cursor-pointer    { cursor: pointer; }
+        .cursor-help       { cursor: help; }
+        .cursor-not-allowed { cursor: not-allowed; }
+
+        /* --- User select --- */
+        .select-none { user-select: none; }
+
+        /* --- Opacity --- */
+        .opacity-40  { opacity: 0.4; }
+        .opacity-75  { opacity: 0.75; }
+
+        /* --- Transition --- */
+        .transition-all    { transition: all var(--t-med); }
+        .transition-colors { transition: color var(--t-fast), background-color var(--t-fast), border-color var(--t-fast); }
+        .duration-300      { transition-duration: 300ms; }
+
+        /* --- Transform --- */
+        .translate-x-full { transform: translateX(100%); }
+        .after\:translate-x-full::after { transform: translateX(100%); }
+
+        /* --- Misc --- */
+        .pointer-events-none { pointer-events: none; }
+        .list-decimal        { list-style-type: decimal; }
+        .object-cover        { object-fit: cover; }
+        .outline-none        { outline: none; }
+
+        /* --- Animation (from Tailwind animate-*) --- */
+        @keyframes ping {
+            75%, 100% { transform: scale(2); opacity: 0; }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+            50% { transform: translateY(0); animation-timing-function: cubic-bezier(0,0,0.2,1); }
+        }
+        @keyframes pulseTailwind {
+            50% { opacity: 0.5; }
+        }
+        .animate-ping    { animation: ping 1s cubic-bezier(0,0,0.2,1) infinite; }
+        .animate-bounce  { animation: bounce 1s infinite; }
+        .animate-pulse   { animation: pulseTailwind 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+        .fa-spin { animation: spin 1s linear infinite; }
+
+        /* Peer/after pseudo for custom checkbox toggle (from config tab) */
+        .peer:checked ~ .peer-checked\:bg-purple-500    { background-color: var(--c-purple); }
+        .peer:checked ~ .peer-checked\:after\:translate-x-full::after { transform: translateX(100%); }
+        .after\:content-\[\'_\'\]::after { content: ''; }
+        .after\:absolute::after     { position: absolute; }
+        .after\:top-\[2px\]::after  { top: 2px; }
+        .after\:left-\[2px\]::after { left: 2px; }
+        .after\:bg-white::after     { background-color: #fff; }
+        .after\:border-gray-300::after { border-color: #d1d5db; }
+        .after\:border::after       { border-width: 1px; border-style: solid; }
+        .after\:rounded-full::after { border-radius: 9999px; }
+        .after\:h-5::after          { height: 1.25rem; }
+        .after\:w-5::after          { width: 1.25rem; }
+        .after\:transition-all::after { transition: all var(--t-med); }
+
+        /* Focus ring for Tailwind peer focus */
+        .peer-focus\:outline-none:focus { outline: none; }
+
+        /* accent color */
+        .accent-green-500  { accent-color: var(--c-green); }
+        .accent-purple-500 { accent-color: var(--c-purple); }
+
+        /* Responsive: md: and lg: breakpoints */
+        @media (min-width: 640px) {
+            .sm\:flex        { display: flex; }
+            .sm\:flex-row    { flex-direction: row; }
+            .sm\:items-center { align-items: center; }
+            .sm\:hidden      { display: none !important; }
+        }
+        @media (min-width: 768px) {
+            .md\:flex         { display: flex; }
+            .md\:flex-row     { flex-direction: row; }
+            .md\:grid-cols-2  { grid-template-columns: repeat(2, minmax(0,1fr)); }
+            .md\:grid-cols-3  { grid-template-columns: repeat(3, minmax(0,1fr)); }
+            .md\:grid-cols-4  { grid-template-columns: repeat(4, minmax(0,1fr)); }
+            .md\:grid-cols-5  { grid-template-columns: repeat(5, minmax(0,1fr)); }
+            .md\:grid-cols-6  { grid-template-columns: repeat(6, minmax(0,1fr)); }
+            .md\:col-span-1   { grid-column: span 1; }
+            .md\:block        { display: block; }
+            .md\:hidden       { display: none !important; }
+        }
+        @media (min-width: 1024px) {
+            .lg\:flex          { display: flex; }
+            .lg\:hidden        { display: none !important; }
+            .lg\:col-span-2    { grid-column: span 2 / span 2; }
+            .lg\:grid-cols-2   { grid-template-columns: repeat(2, minmax(0,1fr)); }
+            .lg\:grid-cols-3   { grid-template-columns: repeat(3, minmax(0,1fr)); }
+            .lg\:flex-row      { flex-direction: row; }
+        }
+        @media (min-width: 1280px) {
+            .xl\:grid-cols-2   { grid-template-columns: repeat(2, minmax(0,1fr)); }
+            .xl\:flex          { display: flex; }
+        }
+
+        /* Responsive hidden/shown */
+        @media (max-width: 767px) {
+            .hidden.md\:flex   { display: none !important; }
+            .hidden.md\:block  { display: none !important; }
+        }
+        @media (min-width: 768px) {
+            .hidden.md\:flex   { display: flex !important; }
+            .hidden.md\:block  { display: block !important; }
+        }
+        @media (min-width: 1024px) {
+            .lg\:hidden        { display: none !important; }
+        }
+        @media (max-width: 1023px) {
+            .lg\:hidden { display: block; }
+        }
+
+        /* The analysis engine toggle visual (custom checkbox style) */
+        .relative.inline-flex.items-center.cursor-pointer input[type="checkbox"].peer {
+            position: absolute;
+            opacity: 0;
+            width: 0; height: 0;
+        }
+        .w-11.h-6.bg-dark-600.peer-focus\:outline-none.rounded-full.peer {
+            display: block;
+            width: 2.75rem; height: 1.5rem;
+            background: var(--c-surface-3);
+            border-radius: 9999px;
+            position: relative;
+            transition: background var(--t-med);
+        }
+        .w-11.h-6.bg-dark-600.peer-focus\:outline-none.rounded-full.peer::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            background: #fff;
+            border-radius: 50%;
+            height: 1.25rem; width: 1.25rem;
+            transition: transform var(--t-med);
+        }
+        input[type="checkbox"].peer:checked ~ .w-11.h-6.bg-dark-600.peer-focus\:outline-none.rounded-full.peer {
+            background: var(--c-purple);
+        }
+        input[type="checkbox"].peer:checked ~ .w-11.h-6.bg-dark-600.peer-focus\:outline-none.rounded-full.peer::after {
+            transform: translateX(100%);
+        }
+
+        /* max-\[80vh\] */
+        .max-h-\[80vh\] { max-height: 80vh; }
+
+        /* col-span full for special grid items */
+        .col-span-full { grid-column: 1 / -1; }
+
+        /* border-l-yellow-500\/50, border-l-primary-500\/50 used in mobile table JS */
+        .border-l-yellow-500\/50 { border-left-color: rgba(234, 179, 8, 0.5); }
+        .border-l-primary-500\/50 { border-left-color: rgba(34, 197, 94, 0.5); }
     </style>
 </head>
-<body class="bg-dark-900 text-gray-100 font-sans antialiased">
+<body style="background:var(--c-bg);color:var(--c-text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;">
     
     <!-- Loading Screen -->
     <div id="loading-screen" class="fixed inset-0 z-50 flex items-center justify-center" style="background:var(--c-bg)">
@@ -1673,11 +2002,11 @@
                                 <div class="text-xs mt-0.5" style="color:#4b5563">Buy + Tax</div>
                             </div>
                         </div>
-                        <div class="mt-3 p-3 bg-primary-500/10 rounded-lg border border-primary-500/20">
-                            <p class="text-sm text-gray-300">
-                                <i class="fas fa-info-circle text-primary-400 mr-2"></i>
-                                <strong>Break-even:</strong> Price shown in trade rows includes all costs. 
-                                Net P&L = Gross P&L - Total Costs. Example: ₹1L turnover costs ~₹53.
+                        <div class="mt-3 p-3 rounded-lg" style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2)">
+                            <p class="text-sm" style="color:#d1d5db">
+                                <i class="fas fa-info-circle mr-2" style="color:var(--c-green)"></i>
+                                <strong>Break-even:</strong> Price shown in trade rows includes all costs.
+                                Net P&amp;L = Gross P&amp;L - Total Costs. Example: ₹1L turnover costs ~₹53.
                             </p>
                         </div>
                     </div>
@@ -2849,18 +3178,19 @@
                                 </div>
                                 
                                 <!-- Trading Windows Info (Primary Setting) -->
-                                <div class="bg-primary-500/10 border border-primary-500/30 rounded-xl p-4">
+                                <div class="card-inner p-4" style="background:var(--c-green-dim);border:1px solid rgba(34,197,94,.3)">
                                     <h4 class="font-medium flex items-center gap-2 mb-2">
-                                        <i class="fas fa-clock text-primary-400"></i>
-                                        Trading Windows
-                                        <span class="px-2 py-0.5 bg-primary-500/20 rounded text-xs text-primary-400">PRIMARY</span>
+                                        <i class="fas fa-clock text-xs" style="color:var(--c-green)"></i>
+                                        <span>Trading Windows</span>
+                                        <span class="text-xs px-2 py-0.5 rounded font-medium"
+                                              style="background:rgba(34,197,94,.2);color:var(--c-green)">PRIMARY</span>
                                     </h4>
-                                    <p class="text-sm text-gray-300 mb-2">
-                                        Trading time windows are configured on the main dashboard. 
+                                    <p class="text-sm mb-2" style="color:#d1d5db">
+                                        Trading time windows are configured on the main dashboard.
                                         This allows multiple trading sessions (e.g., 09:15-12:00 and 13:30-15:30).
                                     </p>
-                                    <div class="flex items-center gap-2 text-xs text-gray-400">
-                                        <i class="fas fa-arrow-right text-primary-400"></i>
+                                    <div class="flex items-center gap-2 text-xs" style="color:#9ca3af">
+                                        <i class="fas fa-arrow-right text-xs" style="color:var(--c-green)"></i>
                                         <span>Go to Dashboard → Trading Windows section to configure</span>
                                     </div>
                                 </div>
@@ -2979,98 +3309,107 @@
                                 </div>
                                 
                                 <!-- Analysis Engine Settings -->
-                                <div class="bg-dark-800/50 rounded-xl p-4 border border-purple-500/30">
+                                <div class="card-inner p-4" style="border:1px solid rgba(168,85,247,.3)">
                                     <h4 class="font-medium flex items-center gap-2 mb-4">
-                                        <i class="fas fa-microscope text-purple-400"></i>
-                                        Analysis Engine Configuration
+                                        <i class="fas fa-microscope text-xs" style="color:#c084fc"></i>
+                                        <span style="color:#e2e8f0">Analysis Engine Configuration</span>
                                     </h4>
-                                    
+
                                     <!-- Enable/Disable -->
                                     <div class="flex items-center justify-between mb-4">
                                         <div>
                                             <div class="text-sm font-medium">Enable Analysis</div>
-                                            <div class="text-xs text-gray-500">Generate insights from trade data</div>
+                                            <div class="text-xs" style="color:#6b7280">Generate insights from trade data</div>
                                         </div>
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" id="analysis-enabled" class="sr-only peer" onchange="toggleAnalysisConfig()">
-                                            <div class="w-11 h-6 bg-dark-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                                        <label class="toggle-track" id="analysis-enabled-track"
+                                               onclick="this.classList.toggle('on');document.getElementById('analysis-enabled').checked=this.classList.contains('on');toggleAnalysisConfig()" title="Toggle analysis">
+                                            <input type="checkbox" id="analysis-enabled" class="sr-only">
+                                            <span class="toggle-thumb"></span>
                                         </label>
                                     </div>
-                                    
+
                                     <div id="analysis-config" class="space-y-4">
                                         <!-- Engine Type -->
                                         <div>
-                                            <label class="block text-xs text-gray-500 mb-1">Analysis Engine</label>
-                                            <select id="analysis-engine-type" class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-purple-500 focus:outline-none" onchange="toggleAIConfig()">
+                                            <label class="stat-label block mb-1">Analysis Engine</label>
+                                            <select id="analysis-engine-type"
+                                                    class="w-full px-3 py-2 rounded-lg text-sm"
+                                                    style="background:var(--c-surface-2);border:1px solid var(--c-border);color:#e5e7eb"
+                                                    onchange="toggleAIConfig()">
                                                 <option value="local">Local Rule-Based (Free)</option>
                                                 <option value="openai">OpenAI GPT</option>
                                                 <option value="claude">Claude (Anthropic)</option>
                                             </select>
-                                            <p class="text-xs text-gray-500 mt-1" id="engine-description">
+                                            <p class="text-xs mt-1" id="engine-description" style="color:#6b7280">
                                                 Uses built-in algorithms to analyze your trades
                                             </p>
                                         </div>
-                                        
+
                                         <!-- OpenAI API Key -->
                                         <div id="openai-config" class="hidden space-y-3">
                                             <div>
-                                                <label class="block text-xs text-gray-500 mb-1">OpenAI API Key</label>
-                                                <input type="password" id="openai-api-key" 
-                                                       class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-purple-500 focus:outline-none font-mono text-sm"
+                                                <label class="stat-label block mb-1">OpenAI API Key</label>
+                                                <input type="password" id="openai-api-key"
+                                                       class="w-full px-3 py-2 rounded-lg text-sm font-mono"
+                                                       style="background:var(--c-surface-2);border:1px solid var(--c-border);color:#e5e7eb"
                                                        placeholder="sk-...">
-                                                <p class="text-xs text-gray-500 mt-1">Your API key is stored securely and never shared</p>
+                                                <p class="text-xs mt-1" style="color:#6b7280">Your API key is stored securely and never shared</p>
                                             </div>
                                         </div>
-                                        
+
                                         <!-- Claude API Key -->
                                         <div id="claude-config" class="hidden space-y-3">
                                             <div>
-                                                <label class="block text-xs text-gray-500 mb-1">Claude API Key</label>
-                                                <input type="password" id="claude-api-key" 
-                                                       class="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 focus:border-purple-500 focus:outline-none font-mono text-sm"
+                                                <label class="stat-label block mb-1">Claude API Key</label>
+                                                <input type="password" id="claude-api-key"
+                                                       class="w-full px-3 py-2 rounded-lg text-sm font-mono"
+                                                       style="background:var(--c-surface-2);border:1px solid var(--c-border);color:#e5e7eb"
                                                        placeholder="sk-ant-...">
-                                                <p class="text-xs text-gray-500 mt-1">Your API key is stored securely and never shared</p>
+                                                <p class="text-xs mt-1" style="color:#6b7280">Your API key is stored securely and never shared</p>
                                             </div>
                                         </div>
-                                        
+
                                         <!-- Thresholds -->
-                                        <div class="border-t border-dark-600 pt-3">
-                                            <h5 class="text-sm font-medium text-gray-300 mb-3">Recommendation Thresholds</h5>
-                                            
+                                        <div class="space-y-3 pt-3" style="border-top:1px solid var(--c-border)">
+                                            <h5 class="text-sm font-medium mb-3" style="color:#d1d5db">Recommendation Thresholds</h5>
+
                                             <div class="space-y-3">
                                                 <div>
-                                                    <label class="block text-xs text-gray-500 mb-1">
-                                                        Min Trades for Recommendation: 
-                                                        <span id="min-trades-value" class="text-purple-400">5</span>
+                                                    <label class="stat-label block mb-1">
+                                                        Min Trades for Recommendation:
+                                                        <span id="min-trades-value" style="color:#c084fc">5</span>
                                                     </label>
-                                                    <input type="range" id="analysis-min-trades" min="3" max="20" value="5" 
-                                                           class="w-full accent-purple-500" oninput="document.getElementById('min-trades-value').textContent = this.value">
+                                                    <input type="range" id="analysis-min-trades" min="3" max="20" value="5"
+                                                           class="w-full accent-purple-500"
+                                                           oninput="document.getElementById('min-trades-value').textContent = this.value">
                                                 </div>
-                                                
+
                                                 <div>
-                                                    <label class="block text-xs text-gray-500 mb-1">
-                                                        Execution Gap Threshold: 
-                                                        <span id="gap-threshold-value" class="text-purple-400">20</span>%
+                                                    <label class="stat-label block mb-1">
+                                                        Execution Gap Threshold:
+                                                        <span id="gap-threshold-value" style="color:#c084fc">20</span>%
                                                     </label>
-                                                    <input type="range" id="analysis-gap-threshold" min="10" max="50" value="20" 
-                                                           class="w-full accent-purple-500" oninput="document.getElementById('gap-threshold-value').textContent = this.value">
+                                                    <input type="range" id="analysis-gap-threshold" min="10" max="50" value="20"
+                                                           class="w-full accent-purple-500"
+                                                           oninput="document.getElementById('gap-threshold-value').textContent = this.value">
                                                 </div>
-                                                
+
                                                 <div>
-                                                    <label class="block text-xs text-gray-500 mb-1">
-                                                        Min Win Rate for "Good": 
-                                                        <span id="win-rate-value" class="text-purple-400">60</span>%
+                                                    <label class="stat-label block mb-1">
+                                                        Min Win Rate for "Good":
+                                                        <span id="win-rate-value" style="color:#c084fc">60</span>%
                                                     </label>
-                                                    <input type="range" id="analysis-win-rate" min="50" max="80" value="60" 
-                                                           class="w-full accent-purple-500" oninput="document.getElementById('win-rate-value').textContent = this.value">
+                                                    <input type="range" id="analysis-win-rate" min="50" max="80" value="60"
+                                                           class="w-full accent-purple-500"
+                                                           oninput="document.getElementById('win-rate-value').textContent = this.value">
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <!-- Metrics to Analyze -->
-                                        <div class="border-t border-dark-600 pt-3">
-                                            <h5 class="text-sm font-medium text-gray-300 mb-3">Metrics to Analyze</h5>
-                                            
+                                        <div class="space-y-2 pt-3" style="border-top:1px solid var(--c-border)">
+                                            <h5 class="text-sm font-medium mb-3" style="color:#d1d5db">Metrics to Analyze</h5>
+
                                             <div class="space-y-2">
                                                 <label class="flex items-center gap-2 cursor-pointer">
                                                     <input type="checkbox" id="metric-time" checked class="accent-purple-500">
