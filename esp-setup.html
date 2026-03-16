@@ -41,216 +41,253 @@
         }
     </script>
     <style>
-        /* Safe area insets for notched phones */
         :root {
             --sat: env(safe-area-inset-top);
             --sar: env(safe-area-inset-right);
             --sab: env(safe-area-inset-bottom);
             --sal: env(safe-area-inset-left);
+            --c-bg: #0a0a0f;
+            --c-surface: #12121a;
+            --c-surface-2: #1a1a25;
+            --c-surface-3: #222230;
+            --c-border: rgba(255,255,255,0.07);
+            --c-text: #e2e8f0;
+            --c-muted: #6b7280;
+            --c-green: #22c55e;
+            --c-green-dim: rgba(34,197,94,0.12);
+            --c-red: #ef4444;
+            --c-red-dim: rgba(239,68,68,0.12);
+            --c-amber: #f59e0b;
+            --c-amber-dim: rgba(245,158,11,0.12);
+            --c-blue: #3b82f6;
+            --c-blue-dim: rgba(59,130,246,0.12);
+            --c-purple: #a855f7;
+            --c-purple-dim: rgba(168,85,247,0.12);
+            --radius-card: 16px;
+            --radius-inner: 10px;
         }
-        
+
+        *, *::before, *::after { box-sizing: border-box; }
+
         body {
+            background: var(--c-bg);
+            color: var(--c-text);
+            font-family: 'Inter', system-ui, sans-serif;
             overscroll-behavior-y: none;
             -webkit-tap-highlight-color: transparent;
+            margin: 0;
         }
-        
-        button, a, select, input {
-            touch-action: manipulation;
-        }
-        
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #12121a; }
-        ::-webkit-scrollbar-thumb { background: #32324a; border-radius: 4px; }
+
+        button, a, select, input { touch-action: manipulation; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--c-surface); }
+        ::-webkit-scrollbar-thumb { background: var(--c-surface-3); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #4a4a6a; }
-        
-        /* Mobile Responsiveness */
-        @media (max-width: 768px) {
-            header .max-w-7xl {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-            header h1 {
-                font-size: 1rem;
-            }
-            main.max-w-7xl {
-                padding: 1rem !important;
-            }
-            .text-4xl {
-                font-size: 1.75rem !important;
-            }
-            .grid.lg\:grid-cols-2 {
-                grid-template-columns: 1fr !important;
-            }
-            .board-toggle {
-                flex-direction: column;
-            }
-            .board-option {
-                padding: 10px 16px;
-            }
-            #board-info-container {
-                grid-template-columns: 1fr !important;
-            }
-            .code-block pre {
-                max-height: 400px;
-            }
-            .glass.rounded-2xl.p-6 {
-                padding: 1rem !important;
-            }
-            input, select, button {
-                font-size: 16px !important;
-            }
-            /* Features grid */
-            .grid.md\:grid-cols-3 {
-                grid-template-columns: 1fr !important;
-            }
+
+        /* ── Design System ─────────────────────────────── */
+        .card {
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: var(--radius-card);
         }
-        
-        .glass {
-            background: rgba(26, 26, 37, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+
+        .card-inner {
+            background: var(--c-surface-2);
+            border: 1px solid var(--c-border);
+            border-radius: var(--radius-inner);
         }
-        
+
+        .section-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: var(--c-green-dim);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--c-green);
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+        .section-icon.blue { background: var(--c-blue-dim); color: var(--c-blue); }
+        .section-icon.amber { background: var(--c-amber-dim); color: var(--c-amber); }
+        .section-icon.purple { background: var(--c-purple-dim); color: var(--c-purple); }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: .5rem 1rem;
+            border-radius: 10px;
+            font-size: .8rem; font-weight: 500;
+            cursor: pointer; border: none;
+            transition: all .18s;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background: var(--c-green);
+            color: #000;
+        }
+        .btn-primary:hover { background: #16a34a; }
+        .btn-ghost {
+            background: var(--c-surface-2);
+            border: 1px solid var(--c-border);
+            color: var(--c-text);
+        }
+        .btn-ghost:hover { background: var(--c-surface-3); }
+        .btn-blue {
+            background: var(--c-blue-dim);
+            border: 1px solid rgba(59,130,246,0.3);
+            color: var(--c-blue);
+        }
+        .btn-blue:hover { background: rgba(59,130,246,0.2); }
+
+        /* ── Badges ──────────────────────────────────────── */
+        .badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: 999px;
+            font-size: .7rem; font-weight: 600; letter-spacing: .02em;
+        }
+        .badge-green { background: var(--c-green-dim); color: var(--c-green); }
+        .badge-blue  { background: var(--c-blue-dim);  color: var(--c-blue); }
+        .badge-amber { background: var(--c-amber-dim); color: var(--c-amber); }
+        .badge-purple{ background: var(--c-purple-dim);color: var(--c-purple); }
+
+        /* ── Alert/Info boxes ─────────────────────────────── */
+        .info-box {
+            padding: 12px 14px;
+            border-radius: var(--radius-inner);
+            font-size: .8rem;
+            display: flex; gap: 8px; align-items: flex-start;
+        }
+        .info-box.blue   { background: var(--c-blue-dim);   border: 1px solid rgba(59,130,246,0.2);   color: #93c5fd; }
+        .info-box.green  { background: var(--c-green-dim);  border: 1px solid rgba(34,197,94,0.2);    color: #86efac; }
+        .info-box.amber  { background: var(--c-amber-dim);  border: 1px solid rgba(245,158,11,0.2);   color: #fcd34d; }
+        .info-box.purple { background: var(--c-purple-dim); border: 1px solid rgba(168,85,247,0.2);   color: #d8b4fe; }
+
+        /* ── Code blocks ──────────────────────────────────── */
         .code-block {
-            background: #0d0d12;
-            border: 1px solid #252536;
-            border-radius: 8px;
+            background: #080810;
+            border: 1px solid var(--c-border);
+            border-radius: var(--radius-inner);
             position: relative;
+            font-family: 'JetBrains Mono', monospace;
         }
-        
+
         .copy-btn {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 6px 12px;
-            background: #252536;
-            border: 1px solid #32324a;
+            top: 8px; right: 8px;
+            padding: 5px 10px;
+            background: var(--c-surface-2);
+            border: 1px solid var(--c-border);
             border-radius: 6px;
-            color: #9ca3af;
-            font-size: 12px;
+            color: var(--c-muted);
+            font-size: 11px;
             cursor: pointer;
             transition: all 0.2s;
+            font-family: inherit;
         }
-        
-        .copy-btn:hover {
-            background: #32324a;
-            color: #fff;
-        }
-        
-        .copy-btn.copied {
-            background: #16a34a;
-            color: #fff;
-        }
-        
+        .copy-btn:hover { background: var(--c-surface-3); color: #fff; }
+        .copy-btn.copied { background: rgba(34,197,94,0.2); border-color: rgba(34,197,94,0.3); color: var(--c-green); }
+
+        /* ── Step numbers ─────────────────────────────────── */
         .step-number {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            width: 32px; height: 32px; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--c-green) 0%, #16a34a 100%);
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 13px; color: #000;
         }
-        
-        .wiring-diagram {
-            font-family: 'JetBrains Mono', monospace;
-            line-height: 1.6;
-        }
-        
-        .pin { color: #f59e0b; }
-        .gnd { color: #ef4444; }
-        .vcc { color: #22c55e; }
-        .signal { color: #3b82f6; }
-        
-        /* Board Toggle Switch */
+
+        /* ── Wiring colors ────────────────────────────────── */
+        .wiring-diagram { font-family: 'JetBrains Mono', monospace; line-height: 1.8; }
+        .pin    { color: var(--c-amber); font-weight: 600; }
+        .gnd    { color: var(--c-red);   font-weight: 600; }
+        .vcc    { color: var(--c-green); font-weight: 600; }
+        .signal { color: var(--c-blue);  font-weight: 600; }
+
+        /* ── Feature icons ────────────────────────────────── */
+        .feature-check  { color: var(--c-green); }
+        .feature-x      { color: var(--c-red); }
+        .feature-partial{ color: var(--c-amber); }
+
+        /* ── Board Toggle ─────────────────────────────────── */
         .board-toggle {
             display: flex;
-            background: #0d0d12;
-            border: 1px solid #252536;
+            background: #080810;
+            border: 1px solid var(--c-border);
             border-radius: 12px;
             padding: 4px;
             gap: 4px;
         }
-        
         .board-option {
             flex: 1;
-            padding: 12px 20px;
+            padding: 11px 10px;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.25s;
             text-align: center;
             border: 1px solid transparent;
         }
-        
-        .board-option:hover {
-            background: rgba(255,255,255,0.05);
-        }
-        
+        .board-option:hover { background: rgba(255,255,255,0.05); }
         .board-option.active {
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            border-color: #22c55e;
+            background: linear-gradient(135deg, var(--c-green) 0%, #16a34a 100%);
+            border-color: var(--c-green);
+            box-shadow: 0 0 16px rgba(34,197,94,0.25);
         }
-        
-        .board-option.active .board-name {
-            color: white;
-        }
-        
-        .board-option.active .board-desc {
-            color: rgba(255,255,255,0.8);
-        }
-        
-        .board-name {
-            font-weight: 600;
-            font-size: 14px;
-            color: #9ca3af;
-            display: block;
-        }
-        
-        .board-desc {
-            font-size: 11px;
-            color: #6b7280;
-            margin-top: 2px;
-            display: block;
-        }
-        
-        /* Feature comparison */
-        .feature-check { color: #22c55e; }
-        .feature-x { color: #ef4444; }
-        .feature-partial { color: #f59e0b; }
-        
-        /* Animated transition */
-        .content-section {
-            animation: fadeIn 0.3s ease-out;
-        }
-        
+        .board-option.active .board-name,
+        .board-option.active .board-desc,
+        .board-option.active i { color: #000 !important; }
+
+        .board-name { font-weight: 600; font-size: 13px; color: #9ca3af; display: block; }
+        .board-desc { font-size: 10px; color: #6b7280; margin-top: 2px; display: block; }
+
+        /* ── Animated transition ──────────────────────────── */
+        .content-section { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-        
-        .hidden-section {
-            display: none;
+        .hidden-section { display: none; }
+
+        /* ── Header ───────────────────────────────────────── */
+        .site-header {
+            background: rgba(18,18,26,0.9);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--c-border);
+            position: sticky; top: 0; z-index: 50;
+        }
+
+        /* ── Step connector line ──────────────────────────── */
+        .step-item { position: relative; }
+        .step-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 15px; top: 38px;
+            width: 2px; height: calc(100% - 14px);
+            background: var(--c-border);
+        }
+
+        /* ── Responsive ───────────────────────────────────── */
+        @media (max-width: 768px) {
+            .board-toggle { flex-wrap: wrap; }
+            .board-option { min-width: calc(50% - 4px); }
+            #board-info-container { grid-template-columns: 1fr !important; }
         }
     </style>
 </head>
-<body class="bg-dark-900 text-gray-100 font-sans antialiased">
-    
+<body>
+
     <!-- Header -->
-    <header class="glass sticky top-0 z-50 border-b border-dark-600">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-                        <i class="fas fa-microchip text-white"></i>
+    <header class="site-header">
+        <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; height:60px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="section-icon" style="width:40px; height:40px; border-radius:12px;">
+                        <i class="fas fa-microchip" style="font-size:17px;"></i>
                     </div>
                     <div>
-                        <h1 class="font-bold text-lg">ESP Trading Display</h1>
-                        <p class="text-xs text-gray-500">Hardware Setup Guide</p>
+                        <div style="font-weight:700; font-size:.95rem; color:var(--c-text);">ESP Trading Display</div>
+                        <div style="font-size:.7rem; color:var(--c-muted);">Hardware Setup Guide</div>
                     </div>
                 </div>
-                <a href="/dashboard" class="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+                <a href="/dashboard" style="display:flex; align-items:center; gap:8px; color:var(--c-muted); font-size:.82rem; text-decoration:none; transition:color .2s;" onmouseover="this.style.color='var(--c-text)'" onmouseout="this.style.color='var(--c-muted)'">
                     <i class="fas fa-arrow-left"></i>
                     Back to Dashboard
                 </a>
@@ -258,474 +295,464 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+    <main style="max-width:1280px; margin:0 auto; padding:2rem 1.5rem 4rem;">
+
         <!-- Hero -->
-        <div class="text-center mb-8">
-            <h2 class="text-4xl font-bold mb-4">1.3" OLED Trading Terminal</h2>
-            <p class="text-gray-400 max-w-2xl mx-auto">
-                Build a dedicated hardware display for your trading bot. Works with both ESP8266 and ESP32 boards. 
+        <div style="text-align:center; margin-bottom:2.5rem;">
+            <div style="display:inline-flex; align-items:center; gap:8px; background:var(--c-green-dim); border:1px solid rgba(34,197,94,0.2); border-radius:999px; padding:4px 14px; font-size:.72rem; font-weight:600; color:var(--c-green); margin-bottom:1rem; letter-spacing:.06em; text-transform:uppercase;">
+                <i class="fas fa-microchip"></i> Hardware Extension
+            </div>
+            <h2 style="font-size:2.2rem; font-weight:800; margin:0 0 .75rem; line-height:1.2;">1.3&quot; OLED Trading Terminal</h2>
+            <p style="color:var(--c-muted); max-width:560px; margin:0 auto; font-size:.9rem; line-height:1.65;">
+                Build a dedicated hardware display for your trading bot. Works with both ESP8266 and ESP32 boards.
                 Choose your board below to see specific instructions.
             </p>
         </div>
 
         <!-- Board Selector -->
-        <div class="max-w-2xl mx-auto mb-12">
-            <div class="glass rounded-2xl p-6">
-                <h3 class="text-center text-sm font-medium text-gray-400 mb-4 uppercase tracking-wider">
+        <div style="max-width:680px; margin:0 auto 3rem;">
+            <div class="card" style="padding:1.25rem;">
+                <div style="font-size:.7rem; font-weight:600; color:var(--c-muted); text-align:center; text-transform:uppercase; letter-spacing:.08em; margin-bottom:1rem;">
                     Select Your Board
-                </h3>
+                </div>
                 <div class="board-toggle">
                     <div class="board-option" id="btn-universal" onclick="selectBoard('universal')">
-                        <i class="fas fa-magic mb-1"></i>
+                        <i class="fas fa-magic" style="color:#9ca3af; display:block; margin-bottom:3px;"></i>
                         <span class="board-name">Universal</span>
                         <span class="board-desc">Auto-detect</span>
                     </div>
                     <div class="board-option active" id="btn-esp8266" onclick="selectBoard('esp8266')">
-                        <i class="fas fa-microchip mb-1"></i>
+                        <i class="fas fa-microchip" style="color:#9ca3af; display:block; margin-bottom:3px;"></i>
                         <span class="board-name">ESP8266</span>
-                        <span class="board-desc">Basic • 80KB RAM</span>
+                        <span class="board-desc">OLED · 80KB RAM</span>
                     </div>
                     <div class="board-option" id="btn-esp32" onclick="selectBoard('esp32')">
-                        <i class="fas fa-rocket mb-1"></i>
-                        <span class="board-name">ESP32</span>
-                        <span class="board-desc">Premium • 520KB RAM</span>
+                        <i class="fas fa-rocket" style="color:#9ca3af; display:block; margin-bottom:3px;"></i>
+                        <span class="board-name">ESP32 OLED</span>
+                        <span class="board-desc">1.3&quot; · 520KB RAM</span>
+                    </div>
+                    <div class="board-option" id="btn-esp32-tft" onclick="selectBoard('esp32-tft')">
+                        <i class="fas fa-tablet-alt" style="color:#9ca3af; display:block; margin-bottom:3px;"></i>
+                        <span class="board-name">ESP32 TFT</span>
+                        <span class="board-desc">2.4&quot; Touch</span>
                     </div>
                 </div>
-                
+
                 <!-- Board Info Cards -->
-                <div class="mt-6 grid md:grid-cols-2 gap-4" id="board-info-container">
+                <div style="margin-top:1.25rem; display:grid; grid-template-columns:1fr 1fr; gap:12px;" id="board-info-container">
+
                     <!-- ESP8266 Info (default) -->
-                    <div id="info-esp8266" class="content-section">
-                        <div class="bg-dark-800/50 rounded-xl p-4 border border-dark-600">
-                            <div class="flex items-center gap-3 mb-3">
-                                <div class="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center">
-                                    <i class="fas fa-bolt text-yellow-400"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold">ESP8266 NodeMCU</h4>
-                                    <p class="text-xs text-gray-500">Budget-friendly option</p>
-                                </div>
+                    <div id="info-esp8266" class="content-section card-inner" style="padding:14px;">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                            <div style="width:30px; height:30px; border-radius:8px; background:var(--c-amber-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <i class="fas fa-bolt" style="color:var(--c-amber); font-size:13px;"></i>
                             </div>
-                            <ul class="text-sm text-gray-400 space-y-2">
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check feature-check"></i>
-                                    <span>3 screens (Dashboard, Positions, Stats)</span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check feature-check"></i>
-                                    <span>30fps refresh rate</span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check feature-check"></i>
-                                    <span>Basic alert sounds</span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-times feature-x"></i>
-                                    <span>No scrollable positions</span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-times feature-x"></i>
-                                    <span>No trade history</span>
-                                </li>
-                            </ul>
+                            <div>
+                                <div style="font-weight:600; font-size:.82rem;">ESP8266 NodeMCU</div>
+                                <div style="font-size:.68rem; color:var(--c-muted);">Budget-friendly option</div>
+                            </div>
                         </div>
+                        <ul style="list-style:none; margin:0; padding:0; font-size:.78rem; color:var(--c-muted); display:flex; flex-direction:column; gap:6px;">
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> 3 screens (Dashboard, Positions, Stats)</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> 30fps refresh rate</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> Basic alert sounds</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-times feature-x"></i> No scrollable positions</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-times feature-x"></i> No trade history</li>
+                        </ul>
                     </div>
-                    
-                    <!-- ESP32 Info (hidden by default) -->
-                    <div id="info-esp32" class="hidden-section">
-                        <div class="bg-dark-800/50 rounded-xl p-4 border border-accent-500/30">
-                            <div class="flex items-center gap-3 mb-3">
-                                <div class="w-8 h-8 rounded-lg bg-accent-500/20 flex items-center justify-center">
-                                    <i class="fas fa-rocket text-accent-400"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-accent-400">ESP32-WROOM-32</h4>
-                                    <p class="text-xs text-gray-500">Premium performance</p>
-                                </div>
+
+                    <!-- ESP32 Info (hidden) -->
+                    <div id="info-esp32" class="hidden-section card-inner" style="padding:14px; border-color:rgba(59,130,246,0.2);">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                            <div style="width:30px; height:30px; border-radius:8px; background:var(--c-blue-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <i class="fas fa-rocket" style="color:var(--c-blue); font-size:13px;"></i>
                             </div>
-                            <ul class="text-sm text-gray-400 space-y-2">
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check feature-check"></i>
-                                    <span><strong>6 screens</strong> + Detail view</span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check feature-check"></i>
-                                    <span><strong>60fps</strong> smooth animations</span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check feature-check"></i>
-                                    <span>Multi-pattern melodies</span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check feature-check"></i>
-                                    <span><strong>Scrollable positions</strong> (up to 5)</span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check feature-check"></i>
-                                    <span><strong>Trade history log</strong></span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check feature-check"></i>
-                                    <span>Auto screen cycling</span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check feature-check"></i>
-                                    <span>OTA updates + System info</span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <i class="fas fa-check feature-check"></i>
-                                    <span>Dual-core optimization</span>
-                                </li>
-                            </ul>
+                            <div>
+                                <div style="font-weight:600; font-size:.82rem; color:var(--c-blue);">ESP32-WROOM-32</div>
+                                <div style="font-size:.68rem; color:var(--c-muted);">Premium performance</div>
+                            </div>
                         </div>
+                        <ul style="list-style:none; margin:0; padding:0; font-size:.78rem; color:var(--c-muted); display:flex; flex-direction:column; gap:5px;">
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> <strong>6 screens</strong> + Detail view</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> <strong>60fps</strong> smooth animations</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> Multi-pattern melodies</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> <strong>Scrollable positions</strong> (up to 5)</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> <strong>Trade history log</strong></li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> OTA updates + System info</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> Dual-core optimization</li>
+                        </ul>
                     </div>
-                    
-                    <!-- Comparison Chart -->
-                    <div class="md:col-span-1">
-                        <div class="bg-dark-800/30 rounded-xl p-4 h-full">
-                            <h4 class="font-semibold mb-3 text-sm">Hardware Specs</h4>
-                            <div id="specs-esp8266" class="content-section">
-                                <table class="w-full text-sm text-gray-400">
-                                    <tr class="border-b border-dark-600">
-                                        <td class="py-2">Processor</td>
-                                        <td class="py-2 text-right">80MHz Tensilica</td>
-                                    </tr>
-                                    <tr class="border-b border-dark-600">
-                                        <td class="py-2">RAM</td>
-                                        <td class="py-2 text-right">80KB</td>
-                                    </tr>
-                                    <tr class="border-b border-dark-600">
-                                        <td class="py-2">Flash</td>
-                                        <td class="py-2 text-right">4MB</td>
-                                    </tr>
-                                    <tr class="border-b border-dark-600">
-                                        <td class="py-2">WiFi</td>
-                                        <td class="py-2 text-right">802.11 b/g/n</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-2">Price</td>
-                                        <td class="py-2 text-right text-primary-400">~$3-5</td>
-                                    </tr>
-                                </table>
+
+                    <!-- ESP32-TFT Info (hidden) -->
+                    <div id="info-esp32-tft" class="hidden-section card-inner" style="padding:14px; border-color:rgba(168,85,247,0.2);">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                            <div style="width:30px; height:30px; border-radius:8px; background:var(--c-purple-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <i class="fas fa-tablet-alt" style="color:var(--c-purple); font-size:13px;"></i>
                             </div>
-                            <div id="specs-esp32" class="hidden-section">
-                                <table class="w-full text-sm text-gray-400">
-                                    <tr class="border-b border-dark-600">
-                                        <td class="py-2">Processor</td>
-                                        <td class="py-2 text-right">240MHz Dual-core Xtensa</td>
-                                    </tr>
-                                    <tr class="border-b border-dark-600">
-                                        <td class="py-2">RAM</td>
-                                        <td class="py-2 text-right text-accent-400 font-semibold">520KB</td>
-                                    </tr>
-                                    <tr class="border-b border-dark-600">
-                                        <td class="py-2">Flash</td>
-                                        <td class="py-2 text-right">4MB (up to 16MB)</td>
-                                    </tr>
-                                    <tr class="border-b border-dark-600">
-                                        <td class="py-2">WiFi + BT</td>
-                                        <td class="py-2 text-right">802.11 b/g/n + BLE</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-2">Price</td>
-                                        <td class="py-2 text-right text-primary-400">~$5-8</td>
-                                    </tr>
-                                </table>
+                            <div>
+                                <div style="font-weight:600; font-size:.82rem; color:var(--c-purple);">ESP32-2432S024C</div>
+                                <div style="font-size:.68rem; color:var(--c-muted);">2.4&quot; TFT Touch Display</div>
                             </div>
+                        </div>
+                        <ul style="list-style:none; margin:0; padding:0; font-size:.78rem; color:var(--c-muted); display:flex; flex-direction:column; gap:5px;">
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> <strong>240×320</strong> Color TFT Display</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> <strong>Capacitive Touch</strong> Screen</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> <strong>Rich Graphics</strong> + Charts</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> <strong>Touch Navigation</strong> (No buttons)</li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> <strong>All ESP32 Features</strong></li>
+                            <li style="display:flex; align-items:center; gap:7px;"><i class="fas fa-check feature-check"></i> Built-in SD Card Slot</li>
+                        </ul>
+                    </div>
+
+                    <!-- Hardware Specs -->
+                    <div class="card-inner" style="padding:14px;">
+                        <div style="font-weight:600; font-size:.8rem; margin-bottom:10px; color:var(--c-text);">Hardware Specs</div>
+                        <div id="specs-esp8266" class="content-section">
+                            <table style="width:100%; font-size:.77rem; border-collapse:collapse;">
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">Processor</td><td style="padding:5px 0; text-align:right; color:var(--c-text);">80MHz Tensilica</td></tr>
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">RAM</td><td style="padding:5px 0; text-align:right; color:var(--c-text);">80KB</td></tr>
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">Flash</td><td style="padding:5px 0; text-align:right; color:var(--c-text);">4MB</td></tr>
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">WiFi</td><td style="padding:5px 0; text-align:right; color:var(--c-text);">802.11 b/g/n</td></tr>
+                                <tr><td style="padding:5px 0; color:var(--c-muted);">Price</td><td style="padding:5px 0; text-align:right; color:var(--c-green); font-weight:600;">~$3–5</td></tr>
+                            </table>
+                        </div>
+                        <div id="specs-esp32" class="hidden-section">
+                            <table style="width:100%; font-size:.77rem; border-collapse:collapse;">
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">Processor</td><td style="padding:5px 0; text-align:right; color:var(--c-text);">240MHz Dual-core Xtensa</td></tr>
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">RAM</td><td style="padding:5px 0; text-align:right; color:var(--c-blue); font-weight:600;">520KB</td></tr>
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">Flash</td><td style="padding:5px 0; text-align:right; color:var(--c-text);">4MB (up to 16MB)</td></tr>
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">WiFi + BT</td><td style="padding:5px 0; text-align:right; color:var(--c-text);">802.11 b/g/n + BLE</td></tr>
+                                <tr><td style="padding:5px 0; color:var(--c-muted);">Price</td><td style="padding:5px 0; text-align:right; color:var(--c-green); font-weight:600;">~$5–8</td></tr>
+                            </table>
+                        </div>
+                        <div id="specs-esp32-tft" class="hidden-section">
+                            <table style="width:100%; font-size:.77rem; border-collapse:collapse;">
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">Processor</td><td style="padding:5px 0; text-align:right; color:var(--c-text);">240MHz Dual-core Xtensa</td></tr>
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">Display</td><td style="padding:5px 0; text-align:right; color:var(--c-purple); font-weight:600;">2.4&quot; 240×320 TFT</td></tr>
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">Touch</td><td style="padding:5px 0; text-align:right; color:var(--c-text);">Capacitive (FT5206)</td></tr>
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">Driver</td><td style="padding:5px 0; text-align:right; color:var(--c-text);">ILI9341 (SPI)</td></tr>
+                                <tr style="border-bottom:1px solid var(--c-border);"><td style="padding:5px 0; color:var(--c-muted);">RAM</td><td style="padding:5px 0; text-align:right; color:var(--c-text);">520KB</td></tr>
+                                <tr><td style="padding:5px 0; color:var(--c-muted);">Price</td><td style="padding:5px 0; text-align:right; color:var(--c-green); font-weight:600;">~$12–18</td></tr>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="grid lg:grid-cols-2 gap-8">
-            
+        <!-- Two column layout -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start;">
+
             <!-- Left Column: Setup Steps -->
-            <div class="space-y-6">
-                
+            <div style="display:flex; flex-direction:column; gap:1.25rem;">
+
                 <!-- Parts List -->
-                <div class="glass rounded-2xl p-6">
-                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <i class="fas fa-shopping-cart text-primary-500"></i>
-                        Required Parts
-                    </h3>
-                    <ul class="space-y-3">
-                        <li class="flex items-center gap-3">
-                            <i class="fas fa-check-circle text-primary-500"></i>
-                            <span id="part-board"><strong>ESP8266</strong> - NodeMCU v3 or Wemos D1 Mini</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i class="fas fa-check-circle text-primary-500"></i>
-                            <span><strong>OLED Display</strong> - 1.3" 128x64 SSD1306/SH1106 I2C (4-pin)</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i class="fas fa-check-circle text-primary-500"></i>
-                            <span><strong>Push Button</strong> - Momentary switch</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i class="fas fa-check-circle text-primary-500"></i>
-                            <span><strong>Buzzer</strong> - Active piezo buzzer (optional)</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i class="fas fa-check-circle text-primary-500"></i>
-                            <span><strong>Jumper Wires</strong> - Female-to-female Dupont cables</span>
-                        </li>
-                    </ul>
-                    <div class="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                        <p class="text-sm text-blue-400">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            <strong>Note:</strong> 1.3" OLEDs may use address <code>0x3C</code> or <code>0x3D</code>. 
-                            If display is blank, try changing OLED_ADDR in the code.
-                        </p>
+                <div class="card" style="padding:1.25rem;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
+                        <div class="section-icon"><i class="fas fa-shopping-cart"></i></div>
+                        <div style="font-weight:600; font-size:.95rem;">Required Parts</div>
+                    </div>
+
+                    <!-- ESP8266 Parts -->
+                    <div id="parts-esp8266" class="content-section">
+                        <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px;">
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;">
+                                <i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i>
+                                <span id="part-board"><strong>ESP8266</strong> — NodeMCU v3 or Wemos D1 Mini</span>
+                            </li>
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;">
+                                <i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i>
+                                <span><strong>OLED Display</strong> — 1.3&quot; 128×64 SSD1306/SH1106 I2C (4-pin)</span>
+                            </li>
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;">
+                                <i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i>
+                                <span><strong>Push Button</strong> — Momentary switch</span>
+                            </li>
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;">
+                                <i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i>
+                                <span><strong>Buzzer</strong> — Active piezo buzzer (optional)</span>
+                            </li>
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;">
+                                <i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i>
+                                <span><strong>Jumper Wires</strong> — Female-to-female Dupont cables</span>
+                            </li>
+                        </ul>
+                        <div class="info-box blue" style="margin-top:12px;">
+                            <i class="fas fa-info-circle" style="margin-top:1px; flex-shrink:0;"></i>
+                            <span><strong>Note:</strong> 1.3&quot; OLEDs may use address <code>0x3C</code> or <code>0x3D</code>. If display is blank, try changing OLED_ADDR in the code.</span>
+                        </div>
+                    </div>
+
+                    <!-- ESP32 Parts -->
+                    <div id="parts-esp32" class="hidden-section">
+                        <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px;">
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;"><i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i><span><strong>ESP32</strong> — ESP32-WROOM-32 DevKit V1</span></li>
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;"><i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i><span><strong>OLED Display</strong> — 1.3&quot; 128×64 SSD1306/SH1106 I2C (4-pin)</span></li>
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;"><i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i><span><strong>Push Button</strong> — Momentary switch</span></li>
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;"><i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i><span><strong>Buzzer</strong> — Active piezo buzzer (optional)</span></li>
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;"><i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i><span><strong>Jumper Wires</strong> — Female-to-female Dupont cables</span></li>
+                        </ul>
+                    </div>
+
+                    <!-- ESP32-TFT Parts -->
+                    <div id="parts-esp32-tft" class="hidden-section">
+                        <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px;">
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;"><i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i><span><strong>ESP32-2432S024C</strong> — 2.4&quot; TFT Touch Display (All-in-one)</span></li>
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;"><i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i><span><strong>USB-C Cable</strong> — For power and programming</span></li>
+                            <li style="display:flex; align-items:flex-start; gap:9px; font-size:.82rem;"><i class="fas fa-check-circle" style="color:var(--c-green); margin-top:2px; flex-shrink:0;"></i><span><strong>Micro SD Card</strong> — Optional, for data logging</span></li>
+                        </ul>
+                        <div class="info-box purple" style="margin-top:12px;">
+                            <i class="fas fa-info-circle" style="margin-top:1px; flex-shrink:0;"></i>
+                            <span><strong>All-in-one:</strong> The ESP32-2432S024C includes the ESP32, 2.4&quot; TFT display, capacitive touch, and SD card slot on a single board. No wiring needed!</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Wiring Diagram -->
-                <div id="wiring" class="glass rounded-2xl p-6">
-                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <i class="fas fa-project-diagram text-primary-500"></i>
-                        Wiring Diagram
-                    </h3>
-                    
-                    <div class="space-y-4">
+                <div id="wiring" class="card" style="padding:1.25rem;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
+                        <div class="section-icon"><i class="fas fa-project-diagram"></i></div>
+                        <div style="font-weight:600; font-size:.95rem;">Wiring Diagram</div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:10px;">
                         <!-- OLED -->
-                        <div class="bg-dark-800/50 rounded-xl p-4">
-                            <h4 class="font-medium mb-3 text-primary-400">1.3" OLED Display (I2C)</h4>
-                            <div class="wiring-diagram text-sm">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div><span class="gnd">GND</span> → <span class="gnd">GND</span></div>
-                                    <div><span class="vcc">VCC</span> → <span class="vcc">3V3</span></div>
-                                    <div><span class="signal">SCL</span> → <span class="pin" id="pin-scl">D1 (GPIO5)</span></div>
-                                    <div><span class="signal">SDA</span> → <span class="pin" id="pin-sda">D2 (GPIO4)</span></div>
-                                </div>
+                        <div class="card-inner" style="padding:14px;">
+                            <div style="font-size:.8rem; font-weight:600; color:var(--c-green); margin-bottom:10px;">1.3&quot; OLED Display (I2C)</div>
+                            <div class="wiring-diagram" style="font-size:.78rem; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+                                <div><span class="gnd">GND</span> <span style="color:var(--c-muted);">→</span> <span class="gnd">GND</span></div>
+                                <div><span class="vcc">VCC</span> <span style="color:var(--c-muted);">→</span> <span class="vcc">3V3</span></div>
+                                <div><span class="signal">SCL</span> <span style="color:var(--c-muted);">→</span> <span class="pin" id="pin-scl">D1 (GPIO5)</span></div>
+                                <div><span class="signal">SDA</span> <span style="color:var(--c-muted);">→</span> <span class="pin" id="pin-sda">D2 (GPIO4)</span></div>
                             </div>
                         </div>
 
                         <!-- Button -->
-                        <div class="bg-dark-800/50 rounded-xl p-4">
-                            <h4 class="font-medium mb-3 text-primary-400">Navigation Button</h4>
-                            <div class="wiring-diagram text-sm">
-                                <span class="pin" id="pin-btn">D6 (GPIO12)</span> → Button → <span class="gnd">GND</span>
+                        <div class="card-inner" style="padding:14px;">
+                            <div style="font-size:.8rem; font-weight:600; color:var(--c-green); margin-bottom:8px;">Navigation Button</div>
+                            <div class="wiring-diagram" style="font-size:.78rem;">
+                                <span class="pin" id="pin-btn">D6 (GPIO12)</span>
+                                <span style="color:var(--c-muted);"> → Button → </span>
+                                <span class="gnd">GND</span>
                             </div>
-                            <p class="text-xs text-gray-500 mt-2" id="btn-note">
-                                *Use <strong>D6 (GPIO12)</strong> NOT D3 - D3 is the FLASH button used for programming mode
+                            <p style="font-size:.72rem; color:var(--c-muted); margin:8px 0 0;" id="btn-note">
+                                *Use <strong>D6 (GPIO12)</strong> NOT D3 — D3 is the FLASH button used for programming mode
                             </p>
                         </div>
 
                         <!-- Buzzer -->
-                        <div class="bg-dark-800/50 rounded-xl p-4">
-                            <h4 class="font-medium mb-3 text-primary-400">Alert Buzzer (Optional)</h4>
-                            <div class="wiring-diagram text-sm">
-                                <span class="pin" id="pin-buzzer">D5 (GPIO14)</span> → Buzzer+ → Buzzer- → <span class="gnd">GND</span>
+                        <div class="card-inner" style="padding:14px;">
+                            <div style="font-size:.8rem; font-weight:600; color:var(--c-green); margin-bottom:8px;">Alert Buzzer <span style="font-weight:400; color:var(--c-muted);">(Optional)</span></div>
+                            <div class="wiring-diagram" style="font-size:.78rem;">
+                                <span class="pin" id="pin-buzzer">D5 (GPIO14)</span>
+                                <span style="color:var(--c-muted);"> → Buzzer+ → Buzzer- → </span>
+                                <span class="gnd">GND</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Software Setup -->
-                <div class="glass rounded-2xl p-6">
-                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <i class="fas fa-laptop-code text-primary-500"></i>
-                        Software Setup
-                    </h3>
-                    
-                    <div class="space-y-6">
+                <div class="card" style="padding:1.25rem;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.25rem;">
+                        <div class="section-icon"><i class="fas fa-laptop-code"></i></div>
+                        <div style="font-weight:600; font-size:.95rem;">Software Setup</div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:0;">
                         <!-- Step 1 -->
-                        <div class="flex gap-4">
-                            <div class="step-number">1</div>
-                            <div>
-                                <h4 class="font-medium mb-1">Install Arduino IDE</h4>
-                                <p class="text-sm text-gray-400 mb-2">Download from <a href="https://www.arduino.cc/en/software" target="_blank" class="text-primary-400 hover:underline">arduino.cc</a></p>
+                        <div class="step-item" style="display:flex; gap:14px; padding-bottom:1.25rem;">
+                            <div class="step-number" style="margin-top:2px;">1</div>
+                            <div style="flex:1;">
+                                <div style="font-weight:600; font-size:.85rem; margin-bottom:4px;">Install Arduino IDE</div>
+                                <p style="font-size:.8rem; color:var(--c-muted); margin:0;">Download from <a href="https://www.arduino.cc/en/software" target="_blank" style="color:var(--c-green); text-decoration:none;">arduino.cc/en/software</a></p>
                             </div>
                         </div>
 
                         <!-- Step 2 -->
-                        <div class="flex gap-4">
-                            <div class="step-number">2</div>
-                            <div>
-                                <h4 class="font-medium mb-1">Add Board Support</h4>
-                                <p class="text-sm text-gray-400 mb-2">File → Preferences → Additional Board URLs:</p>
-                                <div id="board-url-esp8266" class="content-section code-block p-3">
+                        <div class="step-item" style="display:flex; gap:14px; padding-bottom:1.25rem;">
+                            <div class="step-number" style="margin-top:2px;">2</div>
+                            <div style="flex:1;">
+                                <div style="font-weight:600; font-size:.85rem; margin-bottom:4px;">Add Board Support</div>
+                                <p style="font-size:.8rem; color:var(--c-muted); margin:0 0 8px;">File → Preferences → Additional Board URLs:</p>
+                                <div id="board-url-esp8266" class="content-section code-block" style="padding:10px 12px; padding-right:70px;">
                                     <button class="copy-btn" data-clipboard-text="http://arduino.esp8266.com/stable/package_esp8266com_index.json">
                                         <i class="fas fa-copy"></i> Copy
                                     </button>
-                                    <code class="text-xs text-gray-300">http://arduino.esp8266.com/stable/package_esp8266com_index.json</code>
+                                    <code style="font-size:.7rem; color:#9ca3af; word-break:break-all;">http://arduino.esp8266.com/stable/package_esp8266com_index.json</code>
                                 </div>
-                                <div id="board-url-esp32" class="hidden-section code-block p-3">
+                                <div id="board-url-esp32" class="hidden-section code-block" style="padding:10px 12px; padding-right:70px;">
                                     <button class="copy-btn" data-clipboard-text="https://dl.espressif.com/dl/package_esp32_index.json">
                                         <i class="fas fa-copy"></i> Copy
                                     </button>
-                                    <code class="text-xs text-gray-300">https://dl.espressif.com/dl/package_esp32_index.json</code>
+                                    <code style="font-size:.7rem; color:#9ca3af; word-break:break-all;">https://dl.espressif.com/dl/package_esp32_index.json</code>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Step 3 -->
-                        <div class="flex gap-4">
-                            <div class="step-number">3</div>
-                            <div>
-                                <h4 class="font-medium mb-1">Install Libraries</h4>
-                                <p class="text-sm text-gray-400 mb-2">Sketch → Include Library → Manage Libraries:</p>
-                                <ul class="text-sm text-gray-400 space-y-1 ml-4">
-                                    <li>• <strong>ArduinoJson</strong> by Benoit Blanchon</li>
-                                    <li>• <strong>Adafruit SSD1306</strong> by Adafruit</li>
-                                    <li>• <strong>Adafruit GFX Library</strong> by Adafruit</li>
+                        <div class="step-item" style="display:flex; gap:14px; padding-bottom:1.25rem;">
+                            <div class="step-number" style="margin-top:2px;">3</div>
+                            <div style="flex:1;">
+                                <div style="font-weight:600; font-size:.85rem; margin-bottom:4px;">Install Libraries</div>
+                                <p style="font-size:.8rem; color:var(--c-muted); margin:0 0 8px;">Sketch → Include Library → Manage Libraries:</p>
+                                <ul style="list-style:none; margin:0; padding:0; font-size:.8rem; color:var(--c-muted); display:flex; flex-direction:column; gap:4px;">
+                                    <li style="display:flex; align-items:center; gap:6px;"><i class="fas fa-cube" style="color:var(--c-muted); font-size:10px; flex-shrink:0;"></i> <strong>ArduinoJson</strong> by Benoit Blanchon</li>
+                                    <li style="display:flex; align-items:center; gap:6px;"><i class="fas fa-cube" style="color:var(--c-muted); font-size:10px; flex-shrink:0;"></i> <strong>Adafruit SSD1306</strong> by Adafruit</li>
+                                    <li style="display:flex; align-items:center; gap:6px;"><i class="fas fa-cube" style="color:var(--c-muted); font-size:10px; flex-shrink:0;"></i> <strong>Adafruit GFX Library</strong> by Adafruit</li>
                                 </ul>
-                                <p class="text-xs text-gray-500 mt-2" id="lib-extra"></p>
+                                <p style="font-size:.75rem; color:var(--c-blue); margin:8px 0 0;" id="lib-extra"></p>
                             </div>
                         </div>
 
                         <!-- Step 4 -->
-                        <div class="flex gap-4">
-                            <div class="step-number">4</div>
-                            <div>
-                                <h4 class="font-medium mb-1">Configure & Upload</h4>
-                                <p class="text-sm text-gray-400">Copy the code below, update WiFi credentials, then upload to your board.</p>
+                        <div style="display:flex; gap:14px;">
+                            <div class="step-number" style="margin-top:2px;">4</div>
+                            <div style="flex:1;">
+                                <div style="font-weight:600; font-size:.85rem; margin-bottom:4px;">Configure &amp; Upload</div>
+                                <p style="font-size:.8rem; color:var(--c-muted); margin:0;">Copy the code on the right, update WiFi credentials, then upload to your board.</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: The Code -->
-            <div id="code" class="space-y-6">
-                <div class="glass rounded-2xl p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xl font-semibold flex items-center gap-2">
-                            <i class="fas fa-file-code text-primary-500"></i>
-                            <span id="code-title">Arduino Code</span>
-                        </h3>
-                        <div class="flex gap-2">
-                            <button class="copy-btn relative" data-clipboard-target="#arduino-code">
+            <!-- Right Column: Code + Extras -->
+            <div id="code" style="display:flex; flex-direction:column; gap:1.25rem;">
+
+                <!-- Code Card -->
+                <div class="card" style="padding:1.25rem;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="section-icon blue"><i class="fas fa-file-code"></i></div>
+                            <div style="font-weight:600; font-size:.95rem;" id="code-title">Arduino Code (ESP8266)</div>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="btn btn-ghost" data-clipboard-target="#arduino-code" style="position:relative;">
                                 <i class="fas fa-copy"></i> Copy All
                             </button>
-                            <button onclick="downloadCode()" class="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-medium transition-all">
+                            <button onclick="downloadCode()" class="btn btn-primary">
                                 <i class="fas fa-download"></i> Download .ino
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- ESP8266 Features -->
-                    <div id="features-esp8266" class="content-section mb-4 p-4 bg-dark-800/50 rounded-xl">
-                        <h4 class="font-medium mb-3 text-primary-400">✨ ESP8266 Optimizations</h4>
-                        <ul class="text-sm text-gray-400 space-y-2">
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>State machine button</strong> - 100% reliable, non-blocking</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>50ms debounce + 200ms cooldown</strong> - no double presses</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>D6 (GPIO12)</strong> - avoids Flash mode conflict</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>400kHz I2C</strong> - faster OLED refresh</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>500ms HTTP timeout</strong> - UI stays responsive</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-primary-500"></i> <strong>DynamicJsonDocument</strong> - prevents stack overflow</li>
+                    <div id="features-esp8266" class="content-section card-inner" style="padding:12px; margin-bottom:12px; border-color:rgba(34,197,94,0.15);">
+                        <div style="font-size:.78rem; font-weight:600; color:var(--c-green); margin-bottom:8px;"><i class="fas fa-sparkles" style="margin-right:5px;"></i>ESP8266 Optimizations</div>
+                        <ul style="list-style:none; margin:0; padding:0; font-size:.77rem; color:var(--c-muted); display:flex; flex-direction:column; gap:5px;">
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>State machine button</strong> — 100% reliable, non-blocking</span></li>
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>50ms debounce + 200ms cooldown</strong> — no double presses</span></li>
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>D6 (GPIO12)</strong> — avoids Flash mode conflict</span></li>
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>400kHz I2C</strong> — faster OLED refresh</span></li>
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>500ms HTTP timeout</strong> — UI stays responsive</span></li>
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>DynamicJsonDocument</strong> — prevents stack overflow</span></li>
                         </ul>
                     </div>
-                    
+
                     <!-- ESP32 Features -->
-                    <div id="features-esp32" class="hidden-section mb-4 p-4 bg-accent-500/10 border border-accent-500/20 rounded-xl">
-                        <h4 class="font-medium mb-3 text-accent-400">🚀 ESP32 Premium Features</h4>
-                        <ul class="text-sm text-gray-400 space-y-2">
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>Dual-core operation</strong> - UI on Core 1, Network on Core 0</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>60fps refresh</strong> - buttery smooth animations</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>6 screens</strong> - Dashboard, Positions, Detail, Stats, Trade Log, System Info</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>Scrollable positions</strong> - view up to 5 positions</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>Trade history</strong> - last 20 trades stored</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>Auto screen cycling</strong> - configurable timer</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>Multi-pattern melodies</strong> - different sounds for different events</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>OTA updates</strong> - update firmware over WiFi</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>System monitoring</strong> - CPU temp, free heap, WiFi RSSI</li>
-                            <li class="flex items-center gap-2"><i class="fas fa-check text-accent-500"></i> <strong>800kHz I2C</strong> - 2x faster than ESP8266</li>
+                    <div id="features-esp32" class="hidden-section card-inner" style="padding:12px; margin-bottom:12px; border-color:rgba(59,130,246,0.2);">
+                        <div style="font-size:.78rem; font-weight:600; color:var(--c-blue); margin-bottom:8px;"><i class="fas fa-rocket" style="margin-right:5px;"></i>ESP32 Premium Features</div>
+                        <ul style="list-style:none; margin:0; padding:0; font-size:.77rem; color:var(--c-muted); display:flex; flex-direction:column; gap:5px;">
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>Dual-core operation</strong> — UI on Core 1, Network on Core 0</span></li>
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>60fps refresh</strong> — buttery smooth animations</span></li>
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>6 screens</strong> — Dashboard, Positions, Detail, Stats, Trade Log, System Info</span></li>
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>Scrollable positions</strong> — view up to 5 positions</span></li>
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>Trade history</strong> — last 20 trades stored</span></li>
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>OTA updates</strong> — update firmware over WiFi</span></li>
+                            <li style="display:flex; gap:7px;"><i class="fas fa-check feature-check" style="margin-top:2px; flex-shrink:0;"></i><span><strong>800kHz I2C</strong> — 2× faster than ESP8266</span></li>
                         </ul>
                     </div>
-                    
-                    <div class="code-block overflow-hidden">
-                        <pre id="arduino-code" class="p-4 text-xs overflow-x-auto text-gray-300" style="max-height: 600px; overflow-y: auto;">
-<!-- Code will be loaded dynamically -->
-</pre>
+
+                    <div class="code-block" style="overflow:hidden;">
+                        <pre id="arduino-code" style="margin:0; padding:1rem; font-size:.7rem; overflow:auto; max-height:520px; color:#9ca3af; line-height:1.5;"><!-- Code will be loaded dynamically --></pre>
                     </div>
-                    
-                    <div class="mt-4 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-                        <h4 class="font-medium text-blue-400 mb-2">
-                            <i class="fas fa-download mr-2"></i>Download Options
-                        </h4>
-                        <div class="flex flex-wrap gap-3">
-                            <a id="download-link-esp8266" href="/static/esp8266_trading_display.ino" download class="content-section px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm transition-colors inline-flex items-center">
-                                <i class="fas fa-file-download mr-2"></i>Download ESP8266 .ino
+
+                    <!-- Download options -->
+                    <div class="info-box blue" style="margin-top:12px; flex-direction:column; gap:10px;">
+                        <div style="font-weight:600; font-size:.8rem; color:var(--c-blue); display:flex; align-items:center; gap:6px;">
+                            <i class="fas fa-download"></i> Download Options
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                            <a id="download-link-esp8266" href="/static/esp8266_trading_display.ino" download class="content-section btn btn-primary" style="font-size:.75rem;">
+                                <i class="fas fa-file-download"></i> ESP8266 .ino
                             </a>
-                            <a id="download-link-esp32" href="/static/esp32wroom_trading_display.ino" download class="hidden-section px-4 py-2 bg-accent-600 hover:bg-accent-500 rounded-lg text-sm transition-colors inline-flex items-center">
-                                <i class="fas fa-file-download mr-2"></i>Download ESP32 .ino
+                            <a id="download-link-esp32" href="/static/esp32wroom_trading_display.ino" download class="hidden-section btn btn-blue" style="font-size:.75rem;">
+                                <i class="fas fa-file-download"></i> ESP32 .ino
                             </a>
-                            <button onclick="copyCode()" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded-lg text-sm transition-colors">
-                                <i class="fas fa-copy mr-2"></i>Copy to Clipboard
+                            <button onclick="copyCode()" class="btn btn-ghost" style="font-size:.75rem;">
+                                <i class="fas fa-copy"></i> Copy to Clipboard
                             </button>
                         </div>
-                        <p class="text-xs text-gray-400 mt-2">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Tip: Download is recommended. Copy/paste may have formatting issues.
+                        <p style="margin:0; font-size:.72rem; opacity:.8;">
+                            <i class="fas fa-info-circle" style="margin-right:4px;"></i>
+                            Download is recommended — copy/paste may lose formatting.
                         </p>
                     </div>
                 </div>
 
                 <!-- Troubleshooting -->
-                <div class="glass rounded-2xl p-6">
-                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <i class="fas fa-wrench text-warning-500"></i>
-                        Troubleshooting
-                    </h3>
-                    <div class="space-y-3 text-sm">
-                        <div class="p-3 bg-dark-800/50 rounded-lg">
-                            <strong class="text-white">Display stays blank?</strong>
-                            <p class="text-gray-400 mt-1">Try changing OLED_ADDR to 0x3D in the code. Some 1.3" OLEDs use different I2C addresses.</p>
+                <div class="card" style="padding:1.25rem;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
+                        <div class="section-icon amber"><i class="fas fa-wrench"></i></div>
+                        <div style="font-weight:600; font-size:.95rem;">Troubleshooting</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div class="card-inner" style="padding:12px;">
+                            <div style="font-size:.82rem; font-weight:600; color:var(--c-text); margin-bottom:4px;">Display stays blank?</div>
+                            <p style="font-size:.78rem; color:var(--c-muted); margin:0;">Try changing OLED_ADDR to <code style="background:var(--c-surface-3); padding:1px 5px; border-radius:4px;">0x3D</code> in the code. Some 1.3&quot; OLEDs use different I2C addresses.</p>
                         </div>
-                        <div class="p-3 bg-dark-800/50 rounded-lg">
-                            <strong class="text-white">Button works randomly/inconsistently?</strong>
-                            <p class="text-gray-400 mt-1" id="troubleshoot-btn">
+                        <div class="card-inner" style="padding:12px;">
+                            <div style="font-size:.82rem; font-weight:600; color:var(--c-text); margin-bottom:4px;">Button works randomly?</div>
+                            <p style="font-size:.78rem; color:var(--c-muted); margin:0; line-height:1.7;" id="troubleshoot-btn">
                                 1. Use <strong>D6 (GPIO12)</strong> NOT D3<br>
-                                2. Open Serial Monitor at 115200 baud to see <code>[BTN]</code> debug messages<br>
+                                2. Open Serial Monitor at 115200 baud to see <code style="background:var(--c-surface-3); padding:1px 5px; border-radius:4px;">[BTN]</code> debug messages<br>
                                 3. Check wiring: D6 → Button → GND<br>
-                                4. Try a different button - some cheap buttons have poor contacts
+                                4. Try a different button — cheap buttons have poor contacts
                             </p>
                         </div>
-                        <div class="p-3 bg-dark-800/50 rounded-lg">
-                            <strong class="text-white">Button double-presses?</strong>
-                            <p class="text-gray-400 mt-1">This is button "bounce". The code has debounce + cooldown. If still bouncing, increase the cooldown value in the code.</p>
+                        <div class="card-inner" style="padding:12px;">
+                            <div style="font-size:.82rem; font-weight:600; color:var(--c-text); margin-bottom:4px;">Button double-presses?</div>
+                            <p style="font-size:.78rem; color:var(--c-muted); margin:0;">This is button &quot;bounce&quot;. The code includes debounce + cooldown. If still bouncing, increase the cooldown value in the code.</p>
                         </div>
-                        <div class="p-3 bg-dark-800/50 rounded-lg">
-                            <strong class="text-white">WiFi not connecting?</strong>
-                            <p class="text-gray-400 mt-1">Update ssid and password in the CONFIG section. Check serial monitor at 115200 baud.</p>
+                        <div class="card-inner" style="padding:12px;">
+                            <div style="font-size:.82rem; font-weight:600; color:var(--c-text); margin-bottom:4px;">WiFi not connecting?</div>
+                            <p style="font-size:.78rem; color:var(--c-muted); margin:0;">Update <code style="background:var(--c-surface-3); padding:1px 5px; border-radius:4px;">ssid</code> and <code style="background:var(--c-surface-3); padding:1px 5px; border-radius:4px;">password</code> in the CONFIG section. Check serial monitor at 115200 baud.</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Server URL Helper -->
-                <div class="glass rounded-2xl p-6">
-                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <i class="fas fa-server text-primary-500"></i>
-                        Your Server URL
-                    </h3>
-                    <div class="code-block p-4">
+                <!-- Server URL -->
+                <div class="card" style="padding:1.25rem;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
+                        <div class="section-icon"><i class="fas fa-server"></i></div>
+                        <div style="font-weight:600; font-size:.95rem;">Your Server URL</div>
+                    </div>
+                    <div class="code-block" style="padding:12px 14px; padding-right:70px;">
                         <button class="copy-btn" data-clipboard-text="https://coolify.themelon.in">
                             <i class="fas fa-copy"></i> Copy
                         </button>
-                        <code class="text-sm text-primary-400">https://coolify.themelon.in</code>
+                        <code style="font-size:.82rem; color:var(--c-green);">https://coolify.themelon.in</code>
                     </div>
-                    <p class="text-sm text-gray-400 mt-2">
-                        Use this URL in the Arduino code above. The ESP will connect to this server to fetch trading data.
+                    <p style="font-size:.78rem; color:var(--c-muted); margin:10px 0 0;">
+                        Use this URL in the Arduino code above. The ESP will poll this server for trading data.
                     </p>
                 </div>
 
                 <!-- API Test -->
-                <div class="glass rounded-2xl p-6">
-                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <i class="fas fa-vial text-primary-500"></i>
-                        Test Connection
-                    </h3>
-                    <div class="space-y-2">
-                        <a href="/api/esp/stats" target="_blank" class="block p-3 bg-dark-800/50 rounded-lg hover:bg-dark-700 transition-colors text-sm">
-                            <i class="fas fa-external-link-alt mr-2 text-gray-500"></i>
-                            Test /api/esp/stats endpoint
+                <div class="card" style="padding:1.25rem;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
+                        <div class="section-icon blue"><i class="fas fa-vial"></i></div>
+                        <div style="font-weight:600; font-size:.95rem;">Test Connection</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <a href="/api/esp/stats" target="_blank" class="card-inner" style="padding:11px 13px; display:flex; align-items:center; gap:8px; text-decoration:none; font-size:.8rem; color:var(--c-text); transition:background .15s;" onmouseover="this.style.background='var(--c-surface-3)'" onmouseout="this.style.background=''">
+                            <i class="fas fa-external-link-alt" style="color:var(--c-muted); font-size:11px;"></i>
+                            Test <code style="background:var(--c-surface-3); padding:1px 6px; border-radius:4px; font-size:.75rem;">/api/esp/stats</code> endpoint
                         </a>
-                        <a href="/api/esp/positions" target="_blank" class="block p-3 bg-dark-800/50 rounded-lg hover:bg-dark-700 transition-colors text-sm">
-                            <i class="fas fa-external-link-alt mr-2 text-gray-500"></i>
-                            Test /api/esp/positions endpoint
+                        <a href="/api/esp/positions" target="_blank" class="card-inner" style="padding:11px 13px; display:flex; align-items:center; gap:8px; text-decoration:none; font-size:.8rem; color:var(--c-text); transition:background .15s;" onmouseover="this.style.background='var(--c-surface-3)'" onmouseout="this.style.background=''">
+                            <i class="fas fa-external-link-alt" style="color:var(--c-muted); font-size:11px;"></i>
+                            Test <code style="background:var(--c-surface-3); padding:1px 6px; border-radius:4px; font-size:.75rem;">/api/esp/positions</code> endpoint
                         </a>
                     </div>
                 </div>
@@ -733,37 +760,35 @@
         </div>
 
         <!-- Features Grid -->
-        <div class="mt-12 grid md:grid-cols-3 gap-6">
-            <div class="glass rounded-2xl p-6 text-center">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-500/20 flex items-center justify-center">
-                    <i class="fas fa-hand-pointer text-3xl text-primary-400"></i>
+        <div style="margin-top:3rem; display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem;">
+            <div class="card" style="padding:1.5rem; text-align:center;">
+                <div style="width:56px; height:56px; border-radius:16px; background:var(--c-green-dim); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                    <i class="fas fa-hand-pointer" style="font-size:22px; color:var(--c-green);"></i>
                 </div>
-                <h4 class="font-semibold mb-2">Reliable Button</h4>
-                <p class="text-sm text-gray-400">State machine debounce with 100% consistent detection</p>
+                <div style="font-weight:600; font-size:.88rem; margin-bottom:6px;">Reliable Button</div>
+                <p style="font-size:.78rem; color:var(--c-muted); margin:0; line-height:1.55;">State machine debounce with 100% consistent detection</p>
             </div>
-            <div class="glass rounded-2xl p-6 text-center">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-500/20 flex items-center justify-center">
-                    <i class="fas fa-tachometer-alt text-3xl text-blue-400"></i>
+            <div class="card" style="padding:1.5rem; text-align:center;">
+                <div style="width:56px; height:56px; border-radius:16px; background:var(--c-blue-dim); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                    <i class="fas fa-tachometer-alt" style="font-size:22px; color:var(--c-blue);"></i>
                 </div>
-                <h4 class="font-semibold mb-2">Fast I2C</h4>
-                <p class="text-sm text-gray-400">400-800kHz I2C for responsive OLED updates</p>
+                <div style="font-weight:600; font-size:.88rem; margin-bottom:6px;">Fast I2C</div>
+                <p style="font-size:.78rem; color:var(--c-muted); margin:0; line-height:1.55;">400–800kHz I2C for responsive OLED updates</p>
             </div>
-            <div class="glass rounded-2xl p-6 text-center">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-purple-500/20 flex items-center justify-center">
-                    <i class="fas fa-memory text-3xl text-purple-400"></i>
+            <div class="card" style="padding:1.5rem; text-align:center;">
+                <div style="width:56px; height:56px; border-radius:16px; background:var(--c-purple-dim); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                    <i class="fas fa-memory" style="font-size:22px; color:var(--c-purple);"></i>
                 </div>
-                <h4 class="font-semibold mb-2">Memory Safe</h4>
-                <p class="text-sm text-gray-400">DynamicJsonDocument prevents stack overflow crashes</p>
+                <div style="font-weight:600; font-size:.88rem; margin-bottom:6px;">Memory Safe</div>
+                <p style="font-size:.78rem; color:var(--c-muted); margin:0; line-height:1.55;">DynamicJsonDocument prevents stack overflow crashes</p>
             </div>
         </div>
 
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-dark-600 mt-12 py-8">
-        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-            <p>Melon Trading Bot Hardware Extension</p>
-        </div>
+    <footer style="border-top:1px solid var(--c-border); padding:2rem 1.5rem; text-align:center;">
+        <p style="font-size:.78rem; color:var(--c-muted); margin:0;">Melon Trading Bot Hardware Extension</p>
     </footer>
 
     <script>
@@ -1395,6 +1420,7 @@ void playMelody(Melody melody) {
 
         // ESP32 Code placeholder - will be loaded from file
         let esp32Code = "// Loading ESP32 code...";
+        let esp32TftCode = "// Loading ESP32 TFT code...";
         
         // Try to load ESP32 code from the file
         fetch('/static/esp32wroom_trading_display.ino')
@@ -1411,6 +1437,21 @@ void playMelody(Melody melody) {
                 esp32Code = "// Please download the ESP32 code file from the download link below";
             });
         
+        // Try to load ESP32-TFT code from the file
+        fetch('/static/esp32_tft_trading_display.ino')
+            .then(response => response.text())
+            .then(text => {
+                esp32TftCode = text;
+                // Update code display if ESP32-TFT is selected
+                if (currentBoard === 'esp32-tft') {
+                    document.getElementById('arduino-code').textContent = esp32TftCode;
+                }
+            })
+            .catch(err => {
+                console.log('Could not load ESP32-TFT code file, using placeholder');
+                esp32TftCode = "// Please download the ESP32-TFT code file from the download link below";
+            });
+        
         let currentBoard = 'esp8266';
         
         function selectBoard(board) {
@@ -1420,18 +1461,23 @@ void playMelody(Melody melody) {
             document.getElementById('btn-universal').classList.toggle('active', board === 'universal');
             document.getElementById('btn-esp8266').classList.toggle('active', board === 'esp8266');
             document.getElementById('btn-esp32').classList.toggle('active', board === 'esp32');
+            document.getElementById('btn-esp32-tft').classList.toggle('active', board === 'esp32-tft');
             
             // Update info sections
             document.getElementById('info-esp8266').classList.toggle('hidden-section', board !== 'esp8266');
             document.getElementById('info-esp8266').classList.toggle('content-section', board === 'esp8266');
             document.getElementById('info-esp32').classList.toggle('hidden-section', board !== 'esp32');
             document.getElementById('info-esp32').classList.toggle('content-section', board === 'esp32');
+            document.getElementById('info-esp32-tft').classList.toggle('hidden-section', board !== 'esp32-tft');
+            document.getElementById('info-esp32-tft').classList.toggle('content-section', board === 'esp32-tft');
             
             // Update specs
             document.getElementById('specs-esp8266').classList.toggle('hidden-section', board !== 'esp8266');
             document.getElementById('specs-esp8266').classList.toggle('content-section', board === 'esp8266');
             document.getElementById('specs-esp32').classList.toggle('hidden-section', board !== 'esp32');
             document.getElementById('specs-esp32').classList.toggle('content-section', board === 'esp32');
+            document.getElementById('specs-esp32-tft').classList.toggle('hidden-section', board !== 'esp32-tft');
+            document.getElementById('specs-esp32-tft').classList.toggle('content-section', board === 'esp32-tft');
             
             // Update board URL
             document.getElementById('board-url-esp8266').classList.toggle('hidden-section', board !== 'esp8266');
@@ -1445,7 +1491,15 @@ void playMelody(Melody melody) {
             document.getElementById('features-esp32').classList.toggle('hidden-section', board !== 'esp32');
             document.getElementById('features-esp32').classList.toggle('content-section', board === 'esp32');
             
-            // Update wiring pins
+            // Update parts list
+            document.getElementById('parts-esp8266').classList.toggle('hidden-section', board !== 'esp8266');
+            document.getElementById('parts-esp8266').classList.toggle('content-section', board === 'esp8266');
+            document.getElementById('parts-esp32').classList.toggle('hidden-section', board !== 'esp32');
+            document.getElementById('parts-esp32').classList.toggle('content-section', board === 'esp32');
+            document.getElementById('parts-esp32-tft').classList.toggle('hidden-section', board !== 'esp32-tft');
+            document.getElementById('parts-esp32-tft').classList.toggle('content-section', board === 'esp32-tft');
+            
+            // Update wiring pins and board-specific info
             if (board === 'esp8266') {
                 document.getElementById('pin-scl').textContent = 'D1 (GPIO5)';
                 document.getElementById('pin-sda').textContent = 'D2 (GPIO4)';
@@ -1455,6 +1509,15 @@ void playMelody(Melody melody) {
                 document.getElementById('part-board').innerHTML = '<strong>ESP8266</strong> - NodeMCU v3 or Wemos D1 Mini';
                 document.getElementById('code-title').textContent = 'Arduino Code (ESP8266)';
                 document.getElementById('lib-extra').textContent = '';
+            } else if (board === 'esp32-tft') {
+                document.getElementById('pin-scl').textContent = 'GPIO18 (SCK)';
+                document.getElementById('pin-sda').textContent = 'GPIO23 (MOSI)';
+                document.getElementById('pin-btn').textContent = 'Touch Screen';
+                document.getElementById('pin-buzzer').textContent = 'GPIO26';
+                document.getElementById('btn-note').innerHTML = '*<strong>ESP32-2432S024C</strong> has built-in touch - no external button needed';
+                document.getElementById('part-board').innerHTML = '<strong>ESP32-2432S024C</strong> - 2.4" TFT Touch Display';
+                document.getElementById('code-title').textContent = 'Arduino Code (ESP32 2.4" TFT)';
+                document.getElementById('lib-extra').textContent = 'Also install: TFT_eSPI, XPT2046_Touchscreen';
             } else {
                 document.getElementById('pin-scl').textContent = 'GPIO22 (D22)';
                 document.getElementById('pin-sda').textContent = 'GPIO21 (D21)';
@@ -1478,6 +1541,8 @@ void playMelody(Melody melody) {
                 codeToShow = esp8266Code;
             } else if (board === 'esp32') {
                 codeToShow = esp32Code;
+            } else if (board === 'esp32-tft') {
+                codeToShow = esp32TftCode;
             } else {
                 codeToShow = universalCode;
             }
