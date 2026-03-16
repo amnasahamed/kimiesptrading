@@ -1,103 +1,439 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Turbo Mode Debug</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turbo Mode Diagnostic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: system-ui, sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; }
-        .box { background: #1e293b; padding: 15px; margin: 10px 0; border-radius: 8px; }
-        .success { color: #4ade80; }
-        .error { color: #f87171; }
-        .info { color: #60a5fa; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #3b82f6; color: white; border: none; border-radius: 4px; }
-        button:hover { background: #2563eb; }
-        pre { background: #0f172a; padding: 10px; overflow-x: auto; border-radius: 4px; font-size: 12px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #334155; }
-        th { background: #1e293b; }
-        .badge { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-        .bg-red { background: #ef4444; color: white; }
-        .bg-green { background: #22c55e; color: white; }
-        .bg-blue { background: #3b82f6; color: white; }
+        :root {
+            --c-bg: #0a0a0f;
+            --c-surface: #12121a;
+            --c-surface-2: #1a1a25;
+            --c-surface-3: #222230;
+            --c-border: rgba(255,255,255,0.07);
+            --c-text: #e2e8f0;
+            --c-muted: #6b7280;
+            --c-green: #22c55e;
+            --c-green-dim: rgba(34,197,94,0.12);
+            --c-red: #ef4444;
+            --c-red-dim: rgba(239,68,68,0.12);
+            --c-amber: #f59e0b;
+            --c-amber-dim: rgba(245,158,11,0.12);
+            --c-blue: #3b82f6;
+            --c-blue-dim: rgba(59,130,246,0.12);
+            --c-purple: #a855f7;
+            --c-purple-dim: rgba(168,85,247,0.12);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--c-bg);
+            color: var(--c-text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--c-surface);
+            border-bottom: 1px solid var(--c-border);
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(12px);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--c-amber-dim);
+            border: 1px solid rgba(245,158,11,0.25);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--c-text);
+        }
+
+        .header-subtitle {
+            font-size: 0.75rem;
+            color: var(--c-muted);
+            margin-top: 1px;
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--c-muted);
+            text-decoration: none;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--c-border);
+            background: var(--c-surface-2);
+            transition: color 0.15s, border-color 0.15s;
+        }
+
+        .back-link:hover { color: var(--c-text); border-color: rgba(255,255,255,0.15); }
+
+        /* Main layout */
+        .main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Step cards */
+        .card {
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--c-border);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .step-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            flex-shrink: 0;
+        }
+
+        .step-badge.green {
+            background: var(--c-green-dim);
+            border: 1px solid rgba(34,197,94,0.25);
+            color: var(--c-green);
+        }
+
+        .step-badge.blue {
+            background: var(--c-blue-dim);
+            border: 1px solid rgba(59,130,246,0.25);
+            color: var(--c-blue);
+        }
+
+        .step-badge.purple {
+            background: var(--c-purple-dim);
+            border: 1px solid rgba(168,85,247,0.25);
+            color: var(--c-purple);
+        }
+
+        .card-title {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--c-text);
+        }
+
+        .card-subtitle {
+            font-size: 0.75rem;
+            color: var(--c-muted);
+            margin-top: 2px;
+        }
+
+        .card-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Button */
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--c-green);
+            color: #000;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
+            align-self: flex-start;
+        }
+
+        .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+
+        /* Result area (step 1) */
+        .result-area {
+            background: var(--c-surface-2);
+            border: 1px solid var(--c-border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 0.875rem;
+            min-height: 48px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .result-area:empty { display: none; }
+
+        .success { color: var(--c-green); }
+        .error { color: var(--c-red); }
+        .info { color: var(--c-blue); }
+
+        /* Pre / code */
+        pre {
+            background: #080810;
+            border: 1px solid var(--c-border);
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            padding: 16px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Table */
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: var(--c-surface-2);
+            color: var(--c-muted);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 11px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--c-border);
+        }
+
+        tbody td {
+            padding: 12px 16px;
+            font-size: 0.875rem;
+            color: var(--c-text);
+            border-bottom: 1px solid var(--c-border);
+            vertical-align: middle;
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background: var(--c-surface-2); }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .badge-green { background: var(--c-green-dim); color: var(--c-green); border: 1px solid rgba(34,197,94,0.2); }
+        .badge-red { background: var(--c-red-dim); color: var(--c-red); border: 1px solid rgba(239,68,68,0.2); }
+        .badge-blue { background: var(--c-blue-dim); color: var(--c-blue); border: 1px solid rgba(59,130,246,0.2); }
+        .badge-amber { background: var(--c-amber-dim); color: var(--c-amber); border: 1px solid rgba(245,158,11,0.2); }
+        .badge-muted { background: rgba(107,114,128,0.12); color: var(--c-muted); border: 1px solid rgba(107,114,128,0.2); }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 36px 24px;
+            color: var(--c-muted);
+            font-size: 0.875rem;
+        }
+
+        /* Item count pill */
+        .count-pill {
+            margin-left: auto;
+        }
     </style>
 </head>
 <body>
-    <h1>🚀 Turbo Mode Diagnostic</h1>
-    
-    <div class="box">
-        <h3>Step 1: Test API Connection</h3>
-        <button onclick="testAPI()">Fetch Turbo Data</button>
-        <div id="api-result"></div>
-    </div>
-    
-    <div class="box">
-        <h3>Step 2: View Raw Data</h3>
-        <div id="raw-data"></div>
-    </div>
-    
-    <div class="box">
-        <h3>Step 3: Signal Table</h3>
-        <div id="signal-table"></div>
-    </div>
-    
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="header-icon">&#128270;</div>
+            <div>
+                <div class="header-title">Turbo Mode Diagnostic</div>
+                <div class="header-subtitle">Step-by-step API health check</div>
+            </div>
+        </div>
+        <a href="/" class="back-link">&#8592; Dashboard</a>
+    </header>
+
+    <main class="main">
+
+        <!-- Step 1: Test API Connection -->
+        <div class="card">
+            <div class="card-header">
+                <div class="step-badge green">1</div>
+                <div>
+                    <div class="card-title">Test API Connection</div>
+                    <div class="card-subtitle">Fetch live data from /api/turbo/status</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <button class="btn-primary" onclick="testAPI()">&#9889; Fetch Turbo Data</button>
+                <div id="api-result"></div>
+            </div>
+        </div>
+
+        <!-- Step 2: Raw JSON -->
+        <div class="card">
+            <div class="card-header">
+                <div class="step-badge blue">2</div>
+                <div>
+                    <div class="card-title">View Raw Data</div>
+                    <div class="card-subtitle">Full JSON response payload</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="raw-data">
+                    <div class="empty-state">Run Step 1 to populate raw data</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Signal Table -->
+        <div class="card">
+            <div class="card-header">
+                <div class="step-badge purple">3</div>
+                <div>
+                    <div class="card-title">Signal Table</div>
+                    <div class="card-subtitle">Parsed recent_items list</div>
+                </div>
+                <span class="count-pill" id="table-count-badge"></span>
+            </div>
+            <div class="card-body" style="padding:0;">
+                <div id="signal-table">
+                    <div class="empty-state">Run Step 1 to populate signals</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
     <script>
         async function testAPI() {
             const resultDiv = document.getElementById('api-result');
-            resultDiv.innerHTML = '<p class="info">Fetching...</p>';
-            
+            resultDiv.innerHTML = '<p class="info">Fetching&hellip;</p>';
+
             try {
                 const response = await fetch('/api/turbo/status?_=' + Date.now());
                 const data = await response.json();
-                
-                let html = `<p class="success">✓ API Response: HTTP ${response.status}</p>`;
+
+                let html = `<p class="success">&#10003; API Response: HTTP ${response.status}</p>`;
                 html += `<p>Status: <strong>${data.status}</strong></p>`;
                 html += `<p>Total Items: <strong class="info">${data.counts?.total || 0}</strong></p>`;
                 html += `<p>Recent Items: <strong class="info">${data.recent_items?.length || 0}</strong></p>`;
-                
+
                 resultDiv.innerHTML = html;
-                
+
                 // Show raw data
-                document.getElementById('raw-data').innerHTML = 
+                document.getElementById('raw-data').innerHTML =
                     '<pre>' + JSON.stringify(data, null, 2).substring(0, 3000) + '...</pre>';
-                
+
                 // Render table
                 renderTable(data.recent_items || []);
-                
+
             } catch (err) {
-                resultDiv.innerHTML = `<p class="error">✗ Error: ${err.message}</p>`;
+                resultDiv.innerHTML = `<p class="error">&#10007; Error: ${err.message}</p>`;
             }
         }
-        
+
         function renderTable(items) {
             const tableDiv = document.getElementById('signal-table');
-            
+
             if (items.length === 0) {
-                tableDiv.innerHTML = '<p class="error">No items found</p>';
+                document.getElementById('table-count-badge').innerHTML = '';
+                tableDiv.innerHTML = '<div class="empty-state">No items found</div>';
                 return;
             }
-            
-            let html = `<p>Showing ${items.length} items:</p>`;
-            html += '<table><thead><tr>';
+
+            document.getElementById('table-count-badge').innerHTML =
+                `<span class="badge badge-blue">${items.length} items</span>`;
+
+            let html = `<div class="table-wrap"><table>`;
+            html += '<thead><tr>';
             html += '<th>Time</th><th>Symbol</th><th>Direction</th><th>Status</th><th>Alert Price</th>';
             html += '</tr></thead><tbody>';
-            
+
             items.slice().reverse().forEach(item => {
                 const time = item.timestamp ? new Date(item.timestamp).toLocaleString() : '-';
-                const statusClass = item.status === 'EXECUTED' ? 'bg-green' : 
-                                   item.status === 'TREND_MISMATCH' ? 'bg-red' : 'bg-blue';
-                
+                const statusBadge = item.status === 'EXECUTED'
+                    ? `<span class="badge badge-green">EXECUTED</span>`
+                    : item.status === 'TREND_MISMATCH'
+                    ? `<span class="badge badge-red">TREND_MISMATCH</span>`
+                    : item.status === 'MONITORING'
+                    ? `<span class="badge badge-amber">MONITORING</span>`
+                    : `<span class="badge badge-blue">${item.status || '-'}</span>`;
+
                 html += `<tr>`;
-                html += `<td>${time}</td>`;
+                html += `<td class="mono">${time}</td>`;
                 html += `<td><strong>${item.symbol}</strong></td>`;
                 html += `<td>${item.direction}</td>`;
-                html += `<td><span class="badge ${statusClass}">${item.status}</span></td>`;
-                html += `<td>${item.alert_price || '-'}</td>`;
+                html += `<td>${statusBadge}</td>`;
+                html += `<td class="mono">${item.alert_price ? '&#8377;' + item.alert_price : '-'}</td>`;
                 html += `</tr>`;
             });
-            
-            html += '</tbody></table>';
+
+            html += '</tbody></table></div>';
             tableDiv.innerHTML = html;
         }
-        
+
         // Auto-load on page open
         window.onload = testAPI;
     </script>

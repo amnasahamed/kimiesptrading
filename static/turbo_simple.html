@@ -1,88 +1,461 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Turbo Mode - Simple View</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turbo Mode Signals</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: system-ui, sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
-        th { background: #1e293b; position: sticky; top: 0; }
-        tr:hover { background: #1e293b; }
-        .status-TREND_MISMATCH { color: #f87171; }
-        .status-QUEUED { color: #60a5fa; }
-        .status-EXECUTED { color: #4ade80; }
-        .status-MONITORING { color: #fbbf24; }
-        button { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #2563eb; }
-        .error { color: #f87171; }
-        .success { color: #4ade80; }
+        :root {
+            --c-bg: #0a0a0f;
+            --c-surface: #12121a;
+            --c-surface-2: #1a1a25;
+            --c-surface-3: #222230;
+            --c-border: rgba(255,255,255,0.07);
+            --c-text: #e2e8f0;
+            --c-muted: #6b7280;
+            --c-green: #22c55e;
+            --c-green-dim: rgba(34,197,94,0.12);
+            --c-red: #ef4444;
+            --c-red-dim: rgba(239,68,68,0.12);
+            --c-amber: #f59e0b;
+            --c-amber-dim: rgba(245,158,11,0.12);
+            --c-blue: #3b82f6;
+            --c-blue-dim: rgba(59,130,246,0.12);
+            --c-purple: #a855f7;
+            --c-purple-dim: rgba(168,85,247,0.12);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--c-bg);
+            color: var(--c-text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Sticky Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--c-surface);
+            border-bottom: 1px solid var(--c-border);
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            backdrop-filter: blur(12px);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--c-green-dim);
+            border: 1px solid rgba(34,197,94,0.25);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--c-text);
+        }
+
+        .header-subtitle {
+            font-size: 0.75rem;
+            color: var(--c-muted);
+            margin-top: 1px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Auto-refresh indicator */
+        .refresh-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--c-muted);
+            padding: 5px 10px;
+            background: var(--c-surface-2);
+            border: 1px solid var(--c-border);
+            border-radius: 8px;
+        }
+
+        .refresh-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--c-muted);
+            transition: background 0.3s;
+        }
+
+        .refresh-dot.active { background: var(--c-green); }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--c-muted);
+            text-decoration: none;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--c-border);
+            background: var(--c-surface-2);
+            transition: color 0.15s, border-color 0.15s;
+        }
+
+        .back-link:hover { color: var(--c-text); border-color: rgba(255,255,255,0.15); }
+
+        /* Main layout */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Toolbar row */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--c-green);
+            color: #000;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+
+        .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .last-updated {
+            font-size: 0.8rem;
+            color: var(--c-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Stats summary bar */
+        .stats-bar {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 14px 20px;
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-item-label {
+            font-size: 0.75rem;
+            color: var(--c-muted);
+            font-weight: 500;
+        }
+
+        .stat-item-value {
+            font-size: 0.875rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-item-value.green { color: var(--c-green); }
+        .stat-item-value.blue { color: var(--c-blue); }
+        .stat-item-value.amber { color: var(--c-amber); }
+
+        .stats-divider {
+            width: 1px;
+            height: 20px;
+            background: var(--c-border);
+        }
+
+        /* Info/status text */
+        #info {
+            font-size: 0.875rem;
+        }
+
+        .success { color: var(--c-green); }
+        .error { color: var(--c-red); }
+
+        /* Table card */
+        .card {
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            position: sticky;
+            top: 60px; /* account for sticky app header */
+            z-index: 10;
+        }
+
+        thead th {
+            background: var(--c-surface-2);
+            color: var(--c-muted);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 11px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--c-border);
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 13px 16px;
+            font-size: 0.875rem;
+            color: var(--c-text);
+            border-bottom: 1px solid var(--c-border);
+            vertical-align: middle;
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background: var(--c-surface-2); }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+        }
+
+        .symbol-strong {
+            font-weight: 600;
+            color: var(--c-text);
+        }
+
+        /* Status text colours */
+        .status-EXECUTED     { color: var(--c-green); font-weight: 600; }
+        .status-TREND_MISMATCH { color: var(--c-red); font-weight: 600; }
+        .status-QUEUED       { color: var(--c-blue); font-weight: 600; }
+        .status-MONITORING   { color: var(--c-amber); font-weight: 600; }
+
+        /* Trend-aligned badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .badge-yes { background: var(--c-green-dim); color: var(--c-green); border: 1px solid rgba(34,197,94,0.2); }
+        .badge-no  { background: var(--c-red-dim);   color: var(--c-red);   border: 1px solid rgba(239,68,68,0.2); }
+        .badge-na  { background: rgba(107,114,128,0.12); color: var(--c-muted); border: 1px solid rgba(107,114,128,0.2); }
+
+        /* Empty / placeholder rows */
+        .placeholder-row td {
+            text-align: center;
+            padding: 56px 24px;
+            color: var(--c-muted);
+            font-size: 0.875rem;
+        }
     </style>
 </head>
 <body>
-    <h1>🚀 Turbo Mode Signals</h1>
-    <button onclick="loadData()">Refresh Data</button>
-    <div id="info"></div>
-    <table id="signals-table">
-        <thead>
-            <tr>
-                <th>Time</th>
-                <th>Symbol</th>
-                <th>Direction</th>
-                <th>Alert Price</th>
-                <th>Status</th>
-                <th>Trend Aligned</th>
-            </tr>
-        </thead>
-        <tbody id="table-body">
-            <tr><td colspan="6" style="text-align:center;padding:40px;">Click Refresh to load data</td></tr>
-        </tbody>
-    </table>
-    
+
+    <!-- Sticky Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="header-icon">🚀</div>
+            <div>
+                <div class="header-title">Turbo Mode Signals</div>
+                <div class="header-subtitle">Live signal monitor</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="refresh-indicator">
+                <div class="refresh-dot" id="refresh-dot"></div>
+                <span id="refresh-label">idle</span>
+            </div>
+            <a href="/" class="back-link">&#8592; Dashboard</a>
+        </div>
+    </header>
+
+    <main class="main">
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <button class="btn-primary" onclick="loadData()">&#8635; Refresh Data</button>
+            <span class="last-updated" id="last-updated-ts"></span>
+        </div>
+
+        <!-- Stats summary bar -->
+        <div class="stats-bar" id="stats-bar" style="display:none;">
+            <div class="stat-item">
+                <span class="stat-item-label">Total Loaded</span>
+                <span class="stat-item-value blue" id="sb-loaded">0</span>
+            </div>
+            <div class="stats-divider"></div>
+            <div class="stat-item">
+                <span class="stat-item-label">Queue Total</span>
+                <span class="stat-item-value amber" id="sb-total">0</span>
+            </div>
+            <div class="stats-divider"></div>
+            <div class="stat-item" id="sb-info-wrap">
+                <span id="info"></span>
+            </div>
+        </div>
+
+        <!-- Fallback info (shown before first load) -->
+        <div id="info-fallback" style="font-size:.875rem;"></div>
+
+        <!-- Signals table -->
+        <div class="card">
+            <div class="table-wrap">
+                <table id="signals-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Symbol</th>
+                            <th>Direction</th>
+                            <th>Alert Price</th>
+                            <th>Status</th>
+                            <th>Trend Aligned</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr class="placeholder-row">
+                            <td colspan="6">Click Refresh to load data</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
     <script>
         async function loadData() {
             const info = document.getElementById('info');
             const tbody = document.getElementById('table-body');
-            
-            info.innerHTML = '<p>Loading...</p>';
-            
+            const dot = document.getElementById('refresh-dot');
+            const label = document.getElementById('refresh-label');
+            const infoFallback = document.getElementById('info-fallback');
+
+            // Indicate loading
+            dot.classList.add('active');
+            label.textContent = 'loading…';
+            infoFallback.innerHTML = '';
+            info.innerHTML = '<span style="color:var(--c-muted)">Loading&hellip;</span>';
+
             try {
                 const res = await fetch('/api/turbo/status?_=' + Date.now());
                 const data = await res.json();
-                
+
                 if (!res.ok) {
                     throw new Error('HTTP ' + res.status);
                 }
-                
+
                 const items = data.recent_items || [];
-                info.innerHTML = `<p class="success">✓ Loaded ${items.length} items (Total: ${data.counts?.total || 0})</p>`;
-                
+
+                // Update stats bar
+                document.getElementById('stats-bar').style.display = 'flex';
+                document.getElementById('sb-loaded').textContent = items.length;
+                document.getElementById('sb-total').textContent = data.counts?.total || 0;
+                info.innerHTML = `<span class="success">&#10003; Loaded ${items.length} items (Total: ${data.counts?.total || 0})</span>`;
+
+                // Update refresh indicator
+                dot.classList.add('active');
+                label.textContent = 'live';
+
+                // Update last-updated timestamp
+                const now = new Date();
+                document.getElementById('last-updated-ts').textContent =
+                    'Updated ' + now.toLocaleTimeString();
+
                 if (items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No items found</td></tr>';
+                    tbody.innerHTML = '<tr class="placeholder-row"><td colspan="6">No items found</td></tr>';
                     return;
                 }
-                
+
                 tbody.innerHTML = items.slice().reverse().map(item => {
                     const time = item.timestamp ? new Date(item.timestamp).toLocaleString() : '-';
-                    const trendStatus = item.trend_aligned === null ? 'N/A' : 
+                    const trendStatus = item.trend_aligned === null ? 'N/A' :
                                        item.trend_aligned ? 'Yes' : 'No';
+                    const trendBadge = trendStatus === 'Yes'
+                        ? `<span class="badge badge-yes">Yes</span>`
+                        : trendStatus === 'No'
+                        ? `<span class="badge badge-no">No</span>`
+                        : `<span class="badge badge-na">N/A</span>`;
+
                     return `
                         <tr>
-                            <td>${time}</td>
-                            <td><strong>${item.symbol}</strong></td>
+                            <td class="mono">${time}</td>
+                            <td class="symbol-strong">${item.symbol}</td>
                             <td>${item.direction}</td>
-                            <td>₹${item.alert_price || '-'}</td>
+                            <td class="mono">&#8377;${item.alert_price || '-'}</td>
                             <td class="status-${item.status}">${item.status}</td>
-                            <td>${trendStatus}</td>
+                            <td>${trendBadge}</td>
                         </tr>
                     `;
                 }).join('');
-                
+
             } catch (err) {
-                info.innerHTML = `<p class="error">✗ Error: ${err.message}</p>`;
-                tbody.innerHTML = `<tr><td colspan="6" class="error" style="text-align:center;padding:40px;">Failed to load: ${err.message}</td></tr>`;
+                dot.classList.remove('active');
+                label.textContent = 'error';
+                info.innerHTML = `<span class="error">&#10007; Error: ${err.message}</span>`;
+                tbody.innerHTML = `<tr class="placeholder-row"><td colspan="6" style="color:var(--c-red);">Failed to load: ${err.message}</td></tr>`;
             }
         }
-        
+
         // Auto-load
         window.onload = loadData;
     </script>

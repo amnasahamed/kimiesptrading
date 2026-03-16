@@ -1,67 +1,539 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>CORS Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Health Check</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --c-bg: #0a0a0f;
+            --c-surface: #12121a;
+            --c-surface-2: #1a1a25;
+            --c-surface-3: #222230;
+            --c-border: rgba(255,255,255,0.07);
+            --c-text: #e2e8f0;
+            --c-muted: #6b7280;
+            --c-green: #22c55e;
+            --c-green-dim: rgba(34,197,94,0.12);
+            --c-red: #ef4444;
+            --c-red-dim: rgba(239,68,68,0.12);
+            --c-amber: #f59e0b;
+            --c-amber-dim: rgba(245,158,11,0.12);
+            --c-blue: #3b82f6;
+            --c-blue-dim: rgba(59,130,246,0.12);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--c-bg);
+            color: var(--c-text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(18,18,26,0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--c-border);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .section-icon.green {
+            background: var(--c-green-dim);
+            border: 1px solid rgba(34,197,94,0.25);
+        }
+
+        .header-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--c-text);
+            letter-spacing: -0.01em;
+        }
+
+        .header-sub {
+            font-size: 0.75rem;
+            color: var(--c-muted);
+            margin-top: 1px;
+        }
+
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--c-muted);
+            background: transparent;
+            border: 1px solid var(--c-border);
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.15s, background 0.15s, border-color 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-ghost:hover {
+            color: var(--c-text);
+            background: var(--c-surface-2);
+            border-color: rgba(255,255,255,0.14);
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #fff;
+            background: var(--c-green);
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .btn-primary:hover { opacity: 0.88; }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        /* ── Layout ── */
+        .main {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 32px 24px 64px;
+        }
+
+        /* ── Summary bar ── */
+        .summary-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .summary-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .summary-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--c-text);
+        }
+
+        /* ── Badges ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-green {
+            background: var(--c-green-dim);
+            color: var(--c-green);
+            border: 1px solid rgba(34,197,94,0.25);
+        }
+
+        .badge-red {
+            background: var(--c-red-dim);
+            color: var(--c-red);
+            border: 1px solid rgba(239,68,68,0.25);
+        }
+
+        .badge-amber {
+            background: var(--c-amber-dim);
+            color: var(--c-amber);
+            border: 1px solid rgba(245,158,11,0.25);
+        }
+
+        .badge-blue {
+            background: var(--c-blue-dim);
+            color: var(--c-blue);
+            border: 1px solid rgba(59,130,246,0.25);
+        }
+
+        .badge-neutral {
+            background: var(--c-surface-3);
+            color: var(--c-muted);
+            border: 1px solid var(--c-border);
+        }
+
+        /* ── Card ── */
+        .card {
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: 16px;
+            padding: 6px;
+            margin-bottom: 20px;
+        }
+
+        .card-inner {
+            background: var(--c-surface-2);
+            border: 1px solid var(--c-border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: background 0.15s;
+        }
+
+        .card-inner + .card-inner {
+            margin-top: 4px;
+        }
+
+        .card-inner:hover {
+            background: var(--c-surface-3);
+        }
+
+        /* ── Test row layout ── */
+        .test-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+            background: var(--c-surface-3);
+            border: 1px solid var(--c-border);
+        }
+
+        .test-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .test-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--c-text);
+        }
+
+        .test-url {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--c-muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .test-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .test-detail {
+            font-size: 0.72rem;
+            color: var(--c-muted);
+            font-family: 'JetBrains Mono', monospace;
+            text-align: right;
+        }
+
+        /* ── Spinner ── */
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .spinner {
+            width: 13px;
+            height: 13px;
+            border: 2px solid rgba(255,255,255,0.08);
+            border-top-color: var(--c-amber);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: inline-block;
+        }
+
+        /* ── Overall result banner ── */
+        .result-banner {
+            border-radius: 10px;
+            padding: 14px 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .result-banner.show { display: flex; }
+
+        .result-banner.all-pass {
+            background: var(--c-green-dim);
+            border: 1px solid rgba(34,197,94,0.25);
+            color: var(--c-green);
+        }
+
+        .result-banner.has-fail {
+            background: var(--c-red-dim);
+            border: 1px solid rgba(239,68,68,0.25);
+            color: var(--c-red);
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 600px) {
+            .header { padding: 0 16px; }
+            .main { padding: 20px 16px 48px; }
+            .card-inner { flex-wrap: wrap; gap: 10px; }
+            .test-right { align-items: flex-start; }
+            .test-detail { text-align: left; }
+        }
+    </style>
 </head>
 <body>
-    <h1>CORS Test</h1>
-    <div id="result"></div>
-    <button onclick="testAPI()">Test API</button>
-    
+
+    <!-- ── Header ── -->
+    <header class="header">
+        <div class="header-left">
+            <div class="section-icon green">🩺</div>
+            <div>
+                <div class="header-title">API Health Check</div>
+                <div class="header-sub">3 endpoints tested</div>
+            </div>
+        </div>
+        <a href="/dashboard" class="btn-ghost">
+            ← Dashboard
+        </a>
+    </header>
+
+    <!-- ── Main ── -->
+    <main class="main">
+
+        <!-- Summary bar -->
+        <div class="summary-bar">
+            <div class="summary-left">
+                <span class="summary-title">Endpoint Tests</span>
+                <span id="summary-badge" class="badge badge-neutral">— / 3 passed</span>
+            </div>
+            <button class="btn-primary" id="run-btn" onclick="testAPI()">▶ Run Tests</button>
+        </div>
+
+        <!-- Overall result banner (shown after run) -->
+        <div id="result-banner" class="result-banner"></div>
+
+        <!-- Test rows card -->
+        <div class="card">
+            <!-- Config row -->
+            <div class="card-inner" id="row-config">
+                <div class="test-icon">⚙️</div>
+                <div class="test-info">
+                    <div class="test-name">Config</div>
+                    <div class="test-url">/api/config</div>
+                </div>
+                <div class="test-right">
+                    <span id="badge-config" class="badge badge-neutral">Pending</span>
+                    <span id="detail-config" class="test-detail">—</span>
+                </div>
+            </div>
+
+            <!-- Stats row -->
+            <div class="card-inner" id="row-stats">
+                <div class="test-icon">📊</div>
+                <div class="test-info">
+                    <div class="test-name">Stats</div>
+                    <div class="test-url">/api/stats</div>
+                </div>
+                <div class="test-right">
+                    <span id="badge-stats" class="badge badge-neutral">Pending</span>
+                    <span id="detail-stats" class="test-detail">—</span>
+                </div>
+            </div>
+
+            <!-- Trades row -->
+            <div class="card-inner" id="row-trades">
+                <div class="test-icon">📈</div>
+                <div class="test-info">
+                    <div class="test-name">Trades</div>
+                    <div class="test-url">/api/trades</div>
+                </div>
+                <div class="test-right">
+                    <span id="badge-trades" class="badge badge-neutral">Pending</span>
+                    <span id="detail-trades" class="test-detail">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Raw log (hidden div kept for legacy JS writes) -->
+        <div id="result" style="display:none;"></div>
+
+    </main>
+
     <script>
+        /* ── UI helpers (new, wrap the original logic) ── */
+        let passCount = 0;
+
+        function resetUI() {
+            passCount = 0;
+            ['config','stats','trades'].forEach(key => {
+                const b = document.getElementById('badge-' + key);
+                b.className = 'badge badge-neutral';
+                b.innerHTML = '<span class="spinner"></span>';
+                document.getElementById('detail-' + key).textContent = '—';
+            });
+            document.getElementById('summary-badge').className = 'badge badge-neutral';
+            document.getElementById('summary-badge').textContent = '— / 3 passed';
+            const banner = document.getElementById('result-banner');
+            banner.className = 'result-banner';
+            banner.textContent = '';
+            document.getElementById('run-btn').disabled = true;
+        }
+
+        function setTestPass(key, detail) {
+            passCount++;
+            const b = document.getElementById('badge-' + key);
+            b.className = 'badge badge-green';
+            b.textContent = '✓ Pass';
+            document.getElementById('detail-' + key).textContent = detail;
+            updateSummary();
+        }
+
+        function setTestFail(key, detail) {
+            const b = document.getElementById('badge-' + key);
+            b.className = 'badge badge-red';
+            b.textContent = '✕ Fail';
+            document.getElementById('detail-' + key).textContent = detail;
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const sb = document.getElementById('summary-badge');
+            sb.textContent = `${passCount} / 3 passed`;
+            sb.className = 'badge ' + (passCount === 3 ? 'badge-green' : passCount === 0 ? 'badge-red' : 'badge-amber');
+        }
+
+        function finishUI(allPassed) {
+            const banner = document.getElementById('result-banner');
+            if (allPassed) {
+                banner.className = 'result-banner all-pass show';
+                banner.textContent = '✅  All tests passed — API is healthy.';
+            } else {
+                banner.className = 'result-banner has-fail show';
+                banner.textContent = '❌  One or more tests failed — check details above.';
+            }
+            document.getElementById('run-btn').disabled = false;
+        }
+
+        /* ── Original JS logic (unchanged) ── */
         async function testAPI() {
+            resetUI();
+
             const result = document.getElementById('result');
             result.innerHTML = 'Testing...';
-            
+
             try {
                 const cacheBuster = Date.now();
-                
+
                 // Test config endpoint
                 result.innerHTML += '<br>Fetching config...';
                 const configResp = await fetch(`/api/config?_=${cacheBuster}`);
                 result.innerHTML += ` Status: ${configResp.status}`;
-                
+
                 if (!configResp.ok) {
                     throw new Error(`Config failed: ${configResp.status}`);
                 }
-                
+
                 const config = await configResp.json();
                 result.innerHTML += `<br>✅ Config loaded: system_enabled=${config.system_enabled}`;
-                
+                setTestPass('config', `system_enabled=${config.system_enabled}`);
+
                 // Test stats endpoint
                 result.innerHTML += '<br>Fetching stats...';
                 const statsResp = await fetch(`/api/stats?_=${cacheBuster}`);
                 result.innerHTML += ` Status: ${statsResp.status}`;
-                
+
                 if (!statsResp.ok) {
                     throw new Error(`Stats failed: ${statsResp.status}`);
                 }
-                
+
                 const stats = await statsResp.json();
                 result.innerHTML += `<br>✅ Stats loaded: trades=${stats.today_trades}`;
-                
+                setTestPass('stats', `today_trades=${stats.today_trades}`);
+
                 // Test trades endpoint
                 result.innerHTML += '<br>Fetching trades...';
                 const tradesResp = await fetch(`/api/trades?_=${cacheBuster}`);
                 result.innerHTML += ` Status: ${tradesResp.status}`;
-                
+
                 if (!tradesResp.ok) {
                     throw new Error(`Trades failed: ${tradesResp.status}`);
                 }
-                
+
                 const trades = await tradesResp.json();
                 result.innerHTML += `<br>✅ Trades loaded: count=${trades.length}`;
-                
+                setTestPass('trades', `count=${trades.length}`);
+
                 result.innerHTML += '<br><br>✅ ALL TESTS PASSED!';
-                
+                finishUI(true);
+
             } catch (error) {
                 result.innerHTML += `<br><br>❌ ERROR: ${error.message}`;
                 console.error('Full error:', error);
+
+                // Mark remaining pending tests as failed
+                ['config','stats','trades'].forEach(key => {
+                    const b = document.getElementById('badge-' + key);
+                    if (b.querySelector('.spinner') || b.textContent.trim() === 'Pending') {
+                        setTestFail(key, error.message);
+                    }
+                });
+                finishUI(false);
+                document.getElementById('run-btn').disabled = false;
             }
         }
-        
+
         // Auto-run on page load
         window.onload = testAPI;
     </script>
+
 </body>
 </html>

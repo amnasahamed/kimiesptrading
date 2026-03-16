@@ -1,26 +1,385 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Learning System Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning System Diagnostics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        body { font-family: system-ui, sans-serif; padding: 20px; background: #0f172a; color: #fff; }
-        .box { background: #1e293b; padding: 15px; margin: 10px 0; border-radius: 8px; }
-        button { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        pre { background: #0f172a; padding: 10px; overflow-x: auto; font-size: 12px; max-height: 300px; }
-        .error { color: #f87171; }
-        .success { color: #4ade80; }
+        :root {
+            --c-bg: #0a0a0f;
+            --c-surface: #12121a;
+            --c-surface-2: #1a1a25;
+            --c-surface-3: #222230;
+            --c-border: rgba(255,255,255,0.07);
+            --c-text: #e2e8f0;
+            --c-muted: #6b7280;
+            --c-green: #22c55e;
+            --c-green-dim: rgba(34,197,94,0.12);
+            --c-red: #ef4444;
+            --c-red-dim: rgba(239,68,68,0.12);
+            --c-blue: #3b82f6;
+            --c-blue-dim: rgba(59,130,246,0.12);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--c-bg);
+            color: var(--c-text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ── Sticky Header ── */
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--c-surface);
+            border-bottom: 1px solid var(--c-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .header-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 58px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .section-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .section-icon.blue {
+            background: var(--c-blue-dim);
+            color: var(--c-blue);
+            border: 1px solid rgba(59,130,246,0.2);
+        }
+
+        .header-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--c-text);
+            flex: 1;
+            letter-spacing: -0.01em;
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--c-muted);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--c-border);
+            transition: color 0.15s, border-color 0.15s, background 0.15s;
+        }
+
+        .back-link:hover {
+            color: var(--c-text);
+            border-color: rgba(255,255,255,0.15);
+            background: var(--c-surface-2);
+        }
+
+        /* ── Page Container ── */
+        .page {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 24px 64px;
+        }
+
+        /* ── Hero ── */
+        .hero {
+            margin-bottom: 28px;
+        }
+
+        .hero h1 {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: var(--c-text);
+            margin-bottom: 6px;
+        }
+
+        .hero p {
+            font-size: 14px;
+            color: var(--c-muted);
+        }
+
+        /* ── Controls Bar ── */
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 20px;
+            background: var(--c-blue);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
+            letter-spacing: -0.01em;
+        }
+
+        .btn-primary:hover { opacity: 0.88; }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .summary-badge {
+            display: none;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid;
+        }
+
+        .summary-badge.visible { display: inline-flex; }
+
+        .summary-badge.all-pass {
+            background: var(--c-green-dim);
+            color: var(--c-green);
+            border-color: rgba(34,197,94,0.2);
+        }
+
+        .summary-badge.partial {
+            background: rgba(251,191,36,0.1);
+            color: #fbbf24;
+            border-color: rgba(251,191,36,0.2);
+        }
+
+        .summary-badge.all-fail {
+            background: var(--c-red-dim);
+            color: var(--c-red);
+            border-color: rgba(239,68,68,0.2);
+        }
+
+        /* ── Test Cards ── */
+        #results {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Skeleton state */
+        .skeleton-card {
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            animation: pulse 1.6s ease-in-out infinite;
+        }
+
+        .skeleton-line {
+            height: 13px;
+            border-radius: 6px;
+            background: var(--c-surface-3);
+        }
+
+        .skeleton-badge {
+            width: 76px;
+            height: 26px;
+            border-radius: 20px;
+            background: var(--c-surface-3);
+            flex-shrink: 0;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.55; }
+        }
+
+        /* Result card */
+        .card-inner {
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .card-inner:hover { border-color: rgba(255,255,255,0.12); }
+
+        .card-inner.pass { border-left: 3px solid var(--c-green); }
+        .card-inner.fail { border-left: 3px solid var(--c-red); }
+
+        .card-row {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .card-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--c-text);
+            margin-bottom: 3px;
+            letter-spacing: -0.01em;
+        }
+
+        .card-url {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+            color: var(--c-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .status-badge.pass {
+            background: var(--c-green-dim);
+            color: var(--c-green);
+        }
+
+        .status-badge.fail {
+            background: var(--c-red-dim);
+            color: var(--c-red);
+        }
+
+        .status-badge.loading {
+            background: var(--c-blue-dim);
+            color: var(--c-blue);
+        }
+
+        .spin { animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Card body (JSON / error) */
+        .card-body {
+            border-top: 1px solid var(--c-border);
+            padding: 14px 20px;
+        }
+
+        .card-body pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+            color: #94a3b8;
+            background: var(--c-bg);
+            border: 1px solid var(--c-border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            overflow-x: auto;
+            max-height: 260px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .card-body .error-msg {
+            font-size: 13px;
+            color: var(--c-red);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
     </style>
 </head>
 <body>
-    <h1>🧠 Learning System Diagnostics</h1>
-    <button onclick="testAll()">Run All Tests</button>
-    <div id="results"></div>
-    
+
+    <!-- Sticky Header -->
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="section-icon blue">
+                <i class="fa-solid fa-brain"></i>
+            </div>
+            <span class="header-title">Learning Diagnostics</span>
+            <a href="/" class="back-link">
+                <i class="fa-solid fa-arrow-left"></i>
+                Dashboard
+            </a>
+        </div>
+    </header>
+
+    <!-- Page -->
+    <div class="page">
+
+        <!-- Hero -->
+        <div class="hero">
+            <h1>Learning System Diagnostics</h1>
+            <p>Test all learning API endpoints and inspect their responses</p>
+        </div>
+
+        <!-- Controls Bar -->
+        <div class="controls-bar">
+            <button class="btn-primary" onclick="testAll()" id="run-btn">
+                <i class="fa-solid fa-brain"></i>
+                Run All Tests
+            </button>
+            <span class="summary-badge" id="summary-badge"></span>
+        </div>
+
+        <!-- Results -->
+        <div id="results"></div>
+
+    </div>
+
     <script>
         async function testAll() {
             const results = document.getElementById('results');
-            results.innerHTML = '<p>Testing...</p>';
-            
+            const runBtn = document.getElementById('run-btn');
+            const summaryBadge = document.getElementById('summary-badge');
+
+            // Disable button & hide badge during run
+            runBtn.disabled = true;
+            summaryBadge.className = 'summary-badge';
+            summaryBadge.textContent = '';
+
             const tests = [
                 { name: 'Summary API', url: '/api/learning/summary' },
                 { name: 'Symbols API', url: '/api/learning/symbols' },
@@ -28,33 +387,92 @@
                 { name: 'Time Patterns API', url: '/api/learning/time-patterns' },
                 { name: 'Full Report API', url: '/api/learning/report' }
             ];
-            
+
+            // Show skeleton cards while running
+            results.innerHTML = tests.map(() => `
+                <div class="skeleton-card">
+                    <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                        <div class="skeleton-line" style="width:38%;"></div>
+                        <div class="skeleton-line" style="width:55%;opacity:.6;"></div>
+                    </div>
+                    <div class="skeleton-badge"></div>
+                </div>
+            `).join('');
+
             let html = '';
+            let passed = 0;
+
             for (const test of tests) {
                 try {
                     const res = await fetch(test.url + '?_=' + Date.now());
                     if (res.ok) {
                         const data = await res.json();
-                        html += `<div class="box">
-                            <h3 class="success">✓ ${test.name}</h3>
-                            <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                        passed++;
+                        html += `<div class="card-inner pass">
+                            <div class="card-row">
+                                <div class="card-left">
+                                    <div class="card-name">${test.name}</div>
+                                    <div class="card-url">${test.url}</div>
+                                </div>
+                                <span class="status-badge pass">
+                                    <i class="fa-solid fa-check"></i> Passed
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                            </div>
                         </div>`;
                     } else {
-                        html += `<div class="box">
-                            <h3 class="error">✗ ${test.name}</h3>
-                            <p>HTTP ${res.status}</p>
+                        html += `<div class="card-inner fail">
+                            <div class="card-row">
+                                <div class="card-left">
+                                    <div class="card-name">${test.name}</div>
+                                    <div class="card-url">${test.url}</div>
+                                </div>
+                                <span class="status-badge fail">
+                                    <i class="fa-solid fa-xmark"></i> Failed
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <p class="error-msg"><i class="fa-solid fa-triangle-exclamation"></i> HTTP ${res.status}</p>
+                            </div>
                         </div>`;
                     }
                 } catch (e) {
-                    html += `<div class="box">
-                        <h3 class="error">✗ ${test.name}</h3>
-                        <p>${e.message}</p>
+                    html += `<div class="card-inner fail">
+                        <div class="card-row">
+                            <div class="card-left">
+                                <div class="card-name">${test.name}</div>
+                                <div class="card-url">${test.url}</div>
+                            </div>
+                            <span class="status-badge fail">
+                                <i class="fa-solid fa-xmark"></i> Failed
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <p class="error-msg"><i class="fa-solid fa-triangle-exclamation"></i> ${e.message}</p>
+                        </div>
                     </div>`;
                 }
             }
+
             results.innerHTML = html;
+            runBtn.disabled = false;
+
+            // Update summary badge
+            const total = tests.length;
+            if (passed === total) {
+                summaryBadge.className = 'summary-badge visible all-pass';
+                summaryBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${passed}/${total} passed`;
+            } else if (passed === 0) {
+                summaryBadge.className = 'summary-badge visible all-fail';
+                summaryBadge.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${passed}/${total} passed`;
+            } else {
+                summaryBadge.className = 'summary-badge visible partial';
+                summaryBadge.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${passed}/${total} passed`;
+            }
         }
-        
+
         // Auto-run
         window.onload = testAll;
     </script>
