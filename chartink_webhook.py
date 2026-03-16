@@ -3401,13 +3401,96 @@ async def process_chartink_alert(alert: ChartinkAlert) -> Dict[str, Any]:
 # API Endpoints
 # ============================================================================
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return {
-        "status": "running",
-        "service": "Chartink Trading Bot",
-        "version": "1.0"
-    }
+    """Landing page with quick links."""
+    return """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>Melon Trading Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --c-bg:#0a0a0f; --c-surface:#12121a; --c-surface-2:#1a1a25; --c-surface-3:#222230;
+            --c-border:rgba(255,255,255,0.07); --c-text:#e2e8f0; --c-muted:#6b7280;
+            --c-green:#22c55e; --c-green-dim:rgba(34,197,94,0.12);
+            --c-blue:#3b82f6;  --c-blue-dim:rgba(59,130,246,0.12);
+            --c-amber:#f59e0b; --c-amber-dim:rgba(245,158,11,0.12);
+            --c-purple:#a855f7;--c-purple-dim:rgba(168,85,247,0.12);
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:var(--c-bg);color:var(--c-text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;}
+        .card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:16px;}
+        .logo-icon{width:64px;height:64px;border-radius:20px;background:var(--c-green-dim);display:flex;align-items:center;justify-content:center;color:var(--c-green);font-size:28px;margin:0 auto 1.25rem;}
+        .status-dot{width:8px;height:8px;border-radius:50%;background:var(--c-green);display:inline-block;margin-right:6px;box-shadow:0 0 8px rgba(34,197,94,.6);animation:pulse 2s infinite;}
+        @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+        .nav-link{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:10px;text-decoration:none;color:var(--c-text);background:var(--c-surface-2);border:1px solid var(--c-border);transition:all .18s;font-size:.84rem;font-weight:500;}
+        .nav-link:hover{background:var(--c-surface-3);border-color:rgba(255,255,255,0.12);transform:translateY(-1px);}
+        .nav-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;}
+        .ni-green{background:var(--c-green-dim);color:var(--c-green);}
+        .ni-blue{background:var(--c-blue-dim);color:var(--c-blue);}
+        .ni-amber{background:var(--c-amber-dim);color:var(--c-amber);}
+        .ni-purple{background:var(--c-purple-dim);color:var(--c-purple);}
+        .badge{font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:auto;}
+        .badge-green{background:var(--c-green-dim);color:var(--c-green);}
+        .badge-blue{background:var(--c-blue-dim);color:var(--c-blue);}
+    </style>
+</head>
+<body>
+    <div class="card" style="padding:2rem;width:100%;max-width:440px;">
+        <div style="text-align:center;margin-bottom:2rem;">
+            <div class="logo-icon"><i class="fas fa-seedling"></i></div>
+            <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:.4rem;">Melon Trading Bot</h1>
+            <div style="font-size:.78rem;color:var(--c-muted);display:flex;align-items:center;justify-content:center;gap:4px;">
+                <span class="status-dot"></span> Running &mdash; Chartink Webhook Active
+            </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+            <a href="/dashboard" class="nav-link">
+                <div class="nav-icon ni-green"><i class="fas fa-chart-line"></i></div>
+                <div>
+                    <div style="font-weight:600;">Dashboard</div>
+                    <div style="font-size:.72rem;color:var(--c-muted);">P&L, positions, configuration</div>
+                </div>
+                <span class="badge badge-green">Main</span>
+            </a>
+            <a href="/esp-setup" class="nav-link">
+                <div class="nav-icon ni-blue"><i class="fas fa-microchip"></i></div>
+                <div>
+                    <div style="font-weight:600;">ESP Hardware Setup</div>
+                    <div style="font-size:.72rem;color:var(--c-muted);">OLED display firmware &amp; wiring</div>
+                </div>
+            </a>
+            <a href="/upload" class="nav-link">
+                <div class="nav-icon ni-amber"><i class="fas fa-upload"></i></div>
+                <div>
+                    <div style="font-weight:600;">Upload Files</div>
+                    <div style="font-size:.72rem;color:var(--c-muted);">CSV/margin data upload</div>
+                </div>
+            </a>
+            <a href="/health" class="nav-link">
+                <div class="nav-icon ni-purple"><i class="fas fa-heartbeat"></i></div>
+                <div>
+                    <div style="font-weight:600;">Health Check</div>
+                    <div style="font-size:.72rem;color:var(--c-muted);">System status &amp; API checks</div>
+                </div>
+                <span class="badge badge-blue">JSON</span>
+            </a>
+        </div>
+
+        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--c-border);display:flex;justify-content:center;gap:1.5rem;">
+            <a href="/api/trades" style="font-size:.72rem;color:var(--c-muted);text-decoration:none;" onmouseover="this.style.color='var(--c-text)'" onmouseout="this.style.color='var(--c-muted)'">Trades API</a>
+            <a href="/api/positions" style="font-size:.72rem;color:var(--c-muted);text-decoration:none;" onmouseover="this.style.color='var(--c-text)'" onmouseout="this.style.color='var(--c-muted)'">Positions API</a>
+            <a href="/api/config" style="font-size:.72rem;color:var(--c-muted);text-decoration:none;" onmouseover="this.style.color='var(--c-text)'" onmouseout="this.style.color='var(--c-muted)'">Config API</a>
+        </div>
+    </div>
+</body>
+</html>"""
 
 
 @app.get("/health")
@@ -5310,53 +5393,373 @@ import shutil
 
 @app.get("/upload", response_class=HTMLResponse)
 async def upload_page():
-    """Simple file upload page."""
-    return """
-<!DOCTYPE html>
-<html>
+    """File upload page."""
+    return """<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Upload CSV/Data Files</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>Upload Files | Melon Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
-        h1 { color: #333; }
-        .upload-box { border: 2px dashed #ccc; padding: 40px; text-align: center; border-radius: 10px; }
-        .upload-box:hover { border-color: #4CAF50; background: #f9f9f9; }
-        input[type="file"] { margin: 20px 0; }
-        button { background: #4CAF50; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #45a049; }
-        .info { background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; }
+        :root {
+            --c-bg: #0a0a0f;
+            --c-surface: #12121a;
+            --c-surface-2: #1a1a25;
+            --c-surface-3: #222230;
+            --c-border: rgba(255,255,255,0.07);
+            --c-text: #e2e8f0;
+            --c-muted: #6b7280;
+            --c-green: #22c55e;
+            --c-green-dim: rgba(34,197,94,0.12);
+            --c-blue: #3b82f6;
+            --c-blue-dim: rgba(59,130,246,0.12);
+            --c-amber: #f59e0b;
+            --c-amber-dim: rgba(245,158,11,0.12);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--c-bg);
+            color: var(--c-text);
+            font-family: 'Inter', system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--c-surface); }
+        ::-webkit-scrollbar-thumb { background: var(--c-surface-3); border-radius: 4px; }
+
+        header {
+            background: rgba(18,18,26,0.9);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--c-border);
+            padding: 0 1.5rem;
+        }
+        .header-inner {
+            max-width: 860px; margin: 0 auto;
+            height: 60px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: var(--c-green-dim); display: flex; align-items: center; justify-content: center;
+            color: var(--c-green); font-size: 15px;
+        }
+        .logo-text { font-weight: 700; font-size: .9rem; }
+        .logo-sub { font-size: .68rem; color: var(--c-muted); }
+        .back-link {
+            display: flex; align-items: center; gap: 6px;
+            color: var(--c-muted); font-size: .8rem; text-decoration: none;
+            transition: color .2s;
+        }
+        .back-link:hover { color: var(--c-text); }
+
+        main { flex: 1; max-width: 860px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; width: 100%; }
+
+        .card {
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: 16px;
+        }
+        .card-inner {
+            background: var(--c-surface-2);
+            border: 1px solid var(--c-border);
+            border-radius: 10px;
+        }
+        .section-icon {
+            width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+        }
+        .si-green { background: var(--c-green-dim); color: var(--c-green); }
+        .si-blue  { background: var(--c-blue-dim);  color: var(--c-blue); }
+        .si-amber { background: var(--c-amber-dim); color: var(--c-amber); }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: .55rem 1.1rem; border-radius: 10px;
+            font-size: .82rem; font-weight: 600; cursor: pointer;
+            border: none; transition: all .18s; font-family: inherit;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--c-green); color: #000; }
+        .btn-primary:hover { background: #16a34a; }
+        .btn-ghost {
+            background: var(--c-surface-2); border: 1px solid var(--c-border); color: var(--c-text);
+        }
+        .btn-ghost:hover { background: var(--c-surface-3); }
+
+        .info-box {
+            padding: 12px 14px; border-radius: 10px;
+            font-size: .8rem; display: flex; gap: 8px; align-items: flex-start;
+        }
+        .info-green { background: var(--c-green-dim); border: 1px solid rgba(34,197,94,.2); color: #86efac; }
+        .info-blue  { background: var(--c-blue-dim);  border: 1px solid rgba(59,130,246,.2); color: #93c5fd; }
+        .info-amber { background: var(--c-amber-dim); border: 1px solid rgba(245,158,11,.2); color: #fcd34d; }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--c-surface-3); padding: 1px 6px; border-radius: 4px; font-size: .85em;
+        }
+        pre {
+            font-family: 'JetBrains Mono', monospace;
+            background: #080810; border: 1px solid var(--c-border); border-radius: 10px;
+            padding: 14px 16px; font-size: .75rem; color: #9ca3af;
+            overflow-x: auto; line-height: 1.6;
+        }
+
+        /* Upload drop zone */
+        .drop-zone {
+            border: 2px dashed var(--c-border);
+            border-radius: 12px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all .2s;
+            position: relative;
+        }
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--c-green);
+            background: var(--c-green-dim);
+        }
+        .drop-zone input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .drop-icon {
+            width: 56px; height: 56px; border-radius: 16px;
+            background: var(--c-green-dim); display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1rem; color: var(--c-green); font-size: 22px;
+        }
+        .drop-title { font-weight: 600; font-size: 1rem; margin-bottom: 6px; }
+        .drop-sub { font-size: .8rem; color: var(--c-muted); margin-bottom: 1rem; }
+        .drop-formats { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+        .format-chip {
+            background: var(--c-surface-3); border: 1px solid var(--c-border);
+            padding: 2px 9px; border-radius: 999px; font-size: .7rem; color: var(--c-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        #file-name-display {
+            margin-top: 10px; font-size: .8rem; color: var(--c-green);
+            display: none; align-items: center; gap: 6px;
+        }
+
+        /* Upload result */
+        #upload-result { display: none; }
+        #upload-result.success .result-box { border-color: rgba(34,197,94,.3); background: var(--c-green-dim); }
+        #upload-result.error   .result-box { border-color: rgba(239,68,68,.3);  background: rgba(239,68,68,.1); }
+
+        footer {
+            border-top: 1px solid var(--c-border);
+            padding: 1.5rem; text-align: center;
+            font-size: .75rem; color: var(--c-muted);
+        }
     </style>
 </head>
 <body>
-    <h1>📁 Upload CSV/Data Files</h1>
-    
-    <div class="info">
-        <strong>Upload your margin/leverage CSV file here.</strong><br>
-        The file will be saved to the server and can be used to improve position sizing.
+
+<header>
+    <div class="header-inner">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-seedling"></i></div>
+            <div>
+                <div class="logo-text">Melon Bot</div>
+                <div class="logo-sub">File Upload</div>
+            </div>
+        </div>
+        <a href="/dashboard" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
     </div>
-    
-    <div class="upload-box">
-        <form action="/api/upload" method="post" enctype="multipart/form-data">
-            <input type="file" name="file" accept=".csv,.json,.xlsx,.txt" required>
-            <br><br>
-            <button type="submit">Upload File</button>
-        </form>
+</header>
+
+<main>
+    <!-- Hero -->
+    <div style="margin-bottom:2rem;">
+        <h1 style="font-size:1.6rem; font-weight:800; margin-bottom:.4rem;">Upload Data Files</h1>
+        <p style="color:var(--c-muted); font-size:.85rem;">Upload margin/leverage CSV files to improve position sizing calculations.</p>
     </div>
-    
-    <h3>Alternative: Use cURL</h3>
-    <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">
-curl -X POST 'https://coolify.themelon.in/api/upload' \\
-  -F 'file=@your-file.csv'
-    </pre>
-    
-    <h3>Alternative: Use SCP</h3>
-    <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">
-scp your-file.csv root@coolify.themelon.in:/root/trading-bot/uploads/
-    </pre>
+
+    <div style="display:grid; grid-template-columns:1fr 360px; gap:1.25rem; align-items:start;">
+
+        <!-- Upload Card -->
+        <div class="card" style="padding:1.5rem;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.25rem;">
+                <div class="section-icon si-green"><i class="fas fa-cloud-upload-alt"></i></div>
+                <div style="font-weight:600; font-size:.95rem;">Upload File</div>
+            </div>
+
+            <div class="info-box info-blue" style="margin-bottom:1.25rem;">
+                <i class="fas fa-info-circle" style="margin-top:1px; flex-shrink:0;"></i>
+                <span>Upload your broker margin/leverage CSV file. It will be saved to the server and used to improve position sizing accuracy.</span>
+            </div>
+
+            <form id="upload-form" action="/api/upload" method="post" enctype="multipart/form-data">
+                <div class="drop-zone" id="drop-zone">
+                    <input type="file" name="file" id="file-input" accept=".csv,.json,.xlsx,.txt" required>
+                    <div class="drop-icon"><i class="fas fa-file-upload"></i></div>
+                    <div class="drop-title">Drop your file here</div>
+                    <div class="drop-sub">or click to browse</div>
+                    <div class="drop-formats">
+                        <span class="format-chip">.csv</span>
+                        <span class="format-chip">.json</span>
+                        <span class="format-chip">.xlsx</span>
+                        <span class="format-chip">.txt</span>
+                    </div>
+                </div>
+
+                <div id="file-name-display">
+                    <i class="fas fa-file-check" style="color:var(--c-green);"></i>
+                    <span id="file-name-text"></span>
+                </div>
+
+                <div style="margin-top:1rem; display:flex; gap:8px;">
+                    <button type="submit" class="btn btn-primary" id="upload-btn">
+                        <i class="fas fa-upload"></i> Upload File
+                    </button>
+                    <button type="button" class="btn btn-ghost" onclick="document.getElementById('file-input').value=''; document.getElementById('file-name-display').style.display='none';">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+            </form>
+
+            <!-- Result -->
+            <div id="upload-result" style="margin-top:1rem;">
+                <div class="result-box card-inner" style="padding:12px 14px; border:1px solid var(--c-border);">
+                    <div style="display:flex; align-items:center; gap:8px; font-size:.82rem; font-weight:600;" id="result-title"></div>
+                    <p style="font-size:.78rem; color:var(--c-muted); margin:4px 0 0;" id="result-message"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div style="display:flex; flex-direction:column; gap:1.25rem;">
+
+            <!-- cURL -->
+            <div class="card" style="padding:1.25rem;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
+                    <div class="section-icon si-blue"><i class="fas fa-terminal"></i></div>
+                    <div style="font-weight:600; font-size:.88rem;">cURL</div>
+                </div>
+                <pre>curl -X POST \\
+  'https://coolify.themelon.in/api/upload' \\
+  -F 'file=@your-file.csv'</pre>
+            </div>
+
+            <!-- SCP -->
+            <div class="card" style="padding:1.25rem;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
+                    <div class="section-icon si-amber"><i class="fas fa-server"></i></div>
+                    <div style="font-weight:600; font-size:.88rem;">SCP (Direct)</div>
+                </div>
+                <pre>scp your-file.csv \\
+  root@coolify.themelon.in:\\
+  /root/trading-bot/uploads/</pre>
+            </div>
+
+            <!-- Uploaded files list -->
+            <div class="card" style="padding:1.25rem;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
+                    <div class="section-icon si-green"><i class="fas fa-folder-open"></i></div>
+                    <div style="font-weight:600; font-size:.88rem;">Uploaded Files</div>
+                </div>
+                <div id="files-list" style="font-size:.8rem; color:var(--c-muted);">
+                    <div style="display:flex; align-items:center; gap:6px; padding:6px 0;">
+                        <i class="fas fa-circle-notch fa-spin" style="font-size:11px;"></i> Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer>Melon Trading Bot &mdash; File Management</footer>
+
+<script>
+    // Drag & drop visual feedback
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const fileNameDisplay = document.getElementById('file-name-display');
+    const fileNameText = document.getElementById('file-name-text');
+
+    ['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.add('drag-over'); }));
+    ['dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.remove('drag-over'); }));
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files[0]) {
+            fileNameText.textContent = fileInput.files[0].name;
+            fileNameDisplay.style.display = 'flex';
+        }
+    });
+
+    // AJAX upload
+    document.getElementById('upload-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('upload-btn');
+        const result = document.getElementById('upload-result');
+        const resultTitle = document.getElementById('result-title');
+        const resultMsg = document.getElementById('result-message');
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        btn.disabled = true;
+
+        try {
+            const formData = new FormData(e.target);
+            const res = await fetch('/api/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            result.style.display = 'block';
+            if (data.status === 'success') {
+                result.className = 'success';
+                resultTitle.innerHTML = '<i class="fas fa-check-circle" style="color:#22c55e;"></i> Upload successful';
+                resultMsg.textContent = data.message + (data.size ? ' (' + (data.size / 1024).toFixed(1) + ' KB)' : '');
+                loadFiles();
+            } else {
+                result.className = 'error';
+                resultTitle.innerHTML = '<i class="fas fa-times-circle" style="color:#ef4444;"></i> Upload failed';
+                resultMsg.textContent = data.message || 'Unknown error';
+            }
+        } catch (err) {
+            result.style.display = 'block';
+            result.className = 'error';
+            resultTitle.innerHTML = '<i class="fas fa-times-circle" style="color:#ef4444;"></i> Network error';
+            resultMsg.textContent = err.message;
+        } finally {
+            btn.innerHTML = '<i class="fas fa-upload"></i> Upload File';
+            btn.disabled = false;
+        }
+    });
+
+    // Load uploaded files list
+    async function loadFiles() {
+        const container = document.getElementById('files-list');
+        try {
+            const res = await fetch('/api/uploaded-files');
+            const data = await res.json();
+            if (!data.files || data.files.length === 0) {
+                container.innerHTML = '<span style="color:var(--c-muted); font-size:.78rem;">No files uploaded yet.</span>';
+                return;
+            }
+            container.innerHTML = data.files.map(f => `
+                <div style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--c-border);">
+                    <i class="fas fa-file-alt" style="color:var(--c-muted); font-size:11px; flex-shrink:0;"></i>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:.78rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.name || f}</div>
+                        ${f.size ? '<div style="font-size:.68rem; color:var(--c-muted);">' + (f.size/1024).toFixed(1) + ' KB</div>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            container.innerHTML = '<span style="color:var(--c-muted); font-size:.78rem;">Could not load files.</span>';
+        }
+    }
+
+    loadFiles();
+</script>
 </body>
-</html>
-    """
+</html>"""
 
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...)):
