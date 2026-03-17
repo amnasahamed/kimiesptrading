@@ -2,6 +2,7 @@
 Configuration API routes — GET/POST /api/config, POST /api/test-kite
 """
 import json
+import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
@@ -16,25 +17,41 @@ router = APIRouter(tags=["config"])
 
 CONFIG_FILE = Path("config.json")
 
+# In-memory config cache — avoids disk reads on every incoming signal
+_config_cache: Dict[str, Any] = {}
+_config_cache_ts: float = 0.0
+_CONFIG_CACHE_TTL = 30.0  # seconds
+
 
 def load_config() -> Dict[str, Any]:
-    """Load config.json from disk."""
+    """Load config.json, using a 30-second in-memory cache."""
+    global _config_cache, _config_cache_ts
+    now = time.monotonic()
+    if _config_cache and (now - _config_cache_ts) < _CONFIG_CACHE_TTL:
+        return _config_cache
     if not CONFIG_FILE.exists():
         return {}
     try:
         with open(CONFIG_FILE) as f:
-            return json.load(f)
+            data = json.load(f)
+        _config_cache = data
+        _config_cache_ts = now
+        return data
     except Exception as e:
         logger.error(f"Error loading config: {e}")
-        return {}
+        return _config_cache or {}
 
 
 def save_config(config: Dict[str, Any]):
-    """Save config.json to disk."""
+    """Save config.json to disk and bust the in-memory cache."""
+    global _config_cache, _config_cache_ts
     try:
         with open(CONFIG_FILE, "w") as f:
             json.dump(config, f, indent=2)
             f.flush()
+        # Bust cache so next read picks up the new file
+        _config_cache = config
+        _config_cache_ts = time.monotonic()
     except Exception as e:
         logger.error(f"Error saving config: {e}")
         raise

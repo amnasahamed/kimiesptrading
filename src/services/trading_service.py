@@ -81,11 +81,11 @@ class TradingService:
                     "timestamp": start_time.isoformat()
                 }
         
-        # 4. Calculate position size
+        # 4. Calculate position size (reuse quote already fetched above)
         position_calc = await self.risk.calculate_position(
             symbol=symbol,
             entry_price=current_price,
-            atr=await self._get_atr(symbol),
+            atr=self._atr_from_quote(quote),
             paper_trading=is_paper
         )
         
@@ -159,7 +159,11 @@ class TradingService:
                 "alert_name": scan_name
             }
             trade_repo.create(trade_data)
-            
+
+            # Bust analytics cache so dashboard reflects this trade immediately
+            from src.services.learning_service import _bust_analytics_cache
+            _bust_analytics_cache()
+
             log_trade(
                 symbol=symbol,
                 action=action,
@@ -240,13 +244,17 @@ class TradingService:
             position_repo.close_position(position_id, exit_price, pnl, "MANUAL")
             
             # Update trade record
-            trade = trade_repo.db.query(trade_repo.db.query(TradeRepository).filter_by(
-                position_id=position_id
-            ).first().__class__).first()
+            from src.models.database import Trade
+            trade = trade_repo.db.query(Trade).filter(
+                Trade.position_id == position_id
+            ).first()
             
             if trade:
                 trade_repo.update_pnl(trade.id, exit_price, pnl)
-            
+
+            from src.services.learning_service import _bust_analytics_cache
+            _bust_analytics_cache()
+
             logger.info(f"Closed position {position_id}: P&L ₹{pnl:.2f}")
             
             return {
@@ -307,13 +315,11 @@ class TradingService:
         from src.api.routes.config import load_config
         return load_config()
 
-    async def _get_atr(self, symbol: str) -> float:
-        """Get ATR for symbol (simplified)."""
-        # In production, fetch historical data and calculate real ATR
-        quote = await self.kite.get_quote(symbol)
-        if quote:
-            return (quote.high - quote.low) * 0.5  # Simplified estimate
-        return 2.0  # Default
+    def _atr_from_quote(self, quote) -> float:
+        """Estimate ATR from an already-fetched quote (no extra API call)."""
+        if quote and quote.high and quote.low and quote.high > quote.low:
+            return (quote.high - quote.low) * 0.5
+        return 2.0  # Default fallback
 
 
 # Global service instance

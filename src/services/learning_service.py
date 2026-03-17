@@ -4,8 +4,9 @@ Learning service — absorbs learning_engine.py + enhanced_learning.py.
 Reads from the SQLite DB (trades, signals, insights tables) instead of JSON files.
 All public functions are sync (engines run quickly on in-memory data).
 """
+import time
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
@@ -16,12 +17,31 @@ from src.models.database import get_db_session
 logger = get_logger()
 
 # ---------------------------------------------------------------------------
+# Analytics in-memory result cache (busted when new trades land)
+# ---------------------------------------------------------------------------
+_analytics_cache: Dict[str, Any] = {}
+_analytics_cache_ts: float = 0.0
+_ANALYTICS_TTL = 120.0  # 2 minutes
+
+
+def _bust_analytics_cache():
+    global _analytics_cache, _analytics_cache_ts
+    _analytics_cache = {}
+    _analytics_cache_ts = 0.0
+
+
+# ---------------------------------------------------------------------------
 # DB helpers
 # ---------------------------------------------------------------------------
 
+# Only load trades from the last N days — avoids full-table scans
+_TRADE_HISTORY_DAYS = 90
+
+
 def _load_trades_from_db(db: Session) -> List[Dict]:
     from src.models.database import Trade
-    rows = db.query(Trade).all()
+    cutoff = datetime.utcnow() - timedelta(days=_TRADE_HISTORY_DAYS)
+    rows = db.query(Trade).filter(Trade.date >= cutoff).all()
     result = []
     for t in rows:
         order_id = str(t.order_id or "")
@@ -43,7 +63,8 @@ def _load_trades_from_db(db: Session) -> List[Dict]:
 
 def _load_signals_from_db(db: Session) -> List[Dict]:
     from src.models.database import Signal
-    rows = db.query(Signal).all()
+    cutoff = datetime.utcnow() - timedelta(days=_TRADE_HISTORY_DAYS)
+    rows = db.query(Signal).filter(Signal.timestamp >= cutoff).all()
     return [
         {
             "symbol": s.symbol,
@@ -414,28 +435,40 @@ def _engine_from_db(db: Session) -> LearningEngine:
     )
 
 
+def _cached(key: str, db: Session, fn):
+    """Return cached result if fresh, otherwise recompute and cache."""
+    global _analytics_cache, _analytics_cache_ts
+    now = time.monotonic()
+    if key in _analytics_cache and (now - _analytics_cache_ts) < _ANALYTICS_TTL:
+        return _analytics_cache[key]
+    result = fn()
+    _analytics_cache[key] = result
+    _analytics_cache_ts = now
+    return result
+
+
 def get_learning_report(db: Session) -> Dict:
-    return _engine_from_db(db).get_full_report()
+    return _cached("report", db, lambda: _engine_from_db(db).get_full_report())
 
 
 def get_learning_summary(db: Session) -> Dict:
-    return _engine_from_db(db).get_summary()
+    return _cached("summary", db, lambda: _engine_from_db(db).get_summary())
 
 
 def get_symbol_performance(db: Session) -> Dict:
-    return _engine_from_db(db).get_symbol_performance()
+    return _cached("symbol_perf", db, lambda: _engine_from_db(db).get_symbol_performance())
 
 
 def get_signal_analysis(db: Session) -> Dict:
-    return _engine_from_db(db).get_signal_analysis()
+    return _cached("signal_analysis", db, lambda: _engine_from_db(db).get_signal_analysis())
 
 
 def get_time_patterns(db: Session) -> Dict:
-    return _engine_from_db(db).get_time_analysis()
+    return _cached("time_patterns", db, lambda: _engine_from_db(db).get_time_analysis())
 
 
 def get_recommendations(db: Session) -> List[Dict]:
-    return _engine_from_db(db).get_recommendations()
+    return _cached("recommendations", db, lambda: _engine_from_db(db).get_recommendations())
 
 
 def get_strategy_analytics(db: Session, config: Dict) -> Dict:
