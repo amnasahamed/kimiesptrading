@@ -57,3 +57,4 @@ Thumbs.db
 
 # Git Push Script (contains PAT token)
 git-push.sh
+.worktrees/
