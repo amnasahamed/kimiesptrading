@@ -243,6 +243,35 @@ class KiteService:
             "message": "Max retries exceeded"
         }
 
+    async def exchange_request_token(
+        self,
+        request_token: str,
+        api_key: str,
+        api_secret: str,
+    ) -> Optional[str]:
+        """Exchange a request_token for a long-lived access_token."""
+        if not request_token or not api_secret:
+            return None
+        import hashlib
+        checksum = hashlib.sha256(
+            (api_key + request_token + api_secret).encode("utf-8")
+        ).hexdigest()
+        url = f"{self.base_url}/session/token"
+        data = {
+            "api_key": api_key,
+            "request_token": request_token,
+            "checksum": checksum,
+        }
+        try:
+            client = await self._get_client()
+            resp = await client.post(url, data=data)
+            result = resp.json()
+            if result.get("status") == "success":
+                return result["data"].get("access_token")
+        except Exception as e:
+            logger.error(f"Token exchange error: {e}")
+        return None
+
 
 # Global service instance
 _kite_service: Optional[KiteService] = None
