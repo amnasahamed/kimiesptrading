@@ -2149,6 +2149,10 @@
         .border-2   { border-width: 2px; border-style: solid; }
         .border-l   { border-left-width: 1px; border-left-style: solid; }
         .shadow-lg  { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3), 0 4px 6px -4px rgba(0,0,0,0.3); }
+        @media (min-width: 1024px) { #current-time { display: block !important; } }
+        @media (max-width: 1023px) { #current-time { display: none !important; } }
+        @media (min-width: 1024px) { #page-title-mobile { display: none !important; } }
+        @media (max-width: 1023px) { #page-title-mobile { display: block !important; } }
     </style>
 </head>
 <body style="background:var(--c-bg);color:var(--c-text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;">
@@ -2178,8 +2182,142 @@
     <!-- Mobile Sidebar Overlay -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
-    <div class="flex h-screen overflow-hidden">
-        
+    <div id="app-wrapper">
+
+<!-- TOP NAVBAR (desktop ≥1024px) -->
+<nav id="top-navbar">
+    <div class="tnav-logo">
+        <div style="width:2rem;height:2rem;border-radius:0.75rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 4px 14px rgba(34,197,94,.35)">
+            <i class="fas fa-robot" style="color:#fff;font-size:0.875rem"></i>
+        </div>
+        <div>
+            <h1 style="font-weight:700;font-size:0.875rem;line-height:1.25;letter-spacing:-0.01em">Melon Bot</h1>
+            <p id="page-title" style="font-size:0.75rem;color:#6b7280">Dashboard</p>
+        </div>
+    </div>
+    <div class="tnav-center">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard"
+                class="tnav-btn nav-item nav-item-active">
+            <i class="fas fa-chart-line" style="font-size:0.75rem"></i> Dashboard
+        </button>
+        <button onclick="switchTab('positions')" id="nav-positions"
+                class="tnav-btn nav-item">
+            <i class="fas fa-briefcase" style="font-size:0.75rem"></i> Positions
+        </button>
+        <button onclick="switchTab('trades')" id="nav-trades"
+                class="tnav-btn nav-item">
+            <i class="fas fa-history" style="font-size:0.75rem"></i> Trades
+        </button>
+        <button onclick="switchTab('analytics')" id="nav-analytics"
+                class="tnav-btn nav-item">
+            <i class="fas fa-chart-bar" style="font-size:0.75rem"></i> Analytics
+        </button>
+        <button onclick="switchTab('learning')" id="nav-learning"
+                class="tnav-btn nav-item">
+            <i class="fas fa-graduation-cap" style="font-size:0.75rem"></i> Learning
+        </button>
+        <button onclick="switchTab('alerts')" id="nav-alerts"
+                class="tnav-btn nav-item">
+            <i class="fas fa-satellite-dish" style="font-size:0.75rem"></i> Alerts
+        </button>
+        <button onclick="switchTab('turbo')" id="nav-turbo"
+                class="tnav-btn nav-item">
+            <i class="fas fa-rocket" style="font-size:0.75rem"></i> Turbo
+        </button>
+    </div>
+    <div class="tnav-right">
+        <p id="current-time" style="font-size:0.75rem;font-family:'JetBrains Mono',monospace;color:#4b5563">--</p>
+        <div style="display:flex;align-items:center;gap:6px;padding:0 8px">
+            <div id="connection-status" class="status-dot active"></div>
+            <span id="connection-text" style="font-size:0.75rem;color:#6b7280">Live</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:0.75rem;background:var(--c-surface-2);border:1px solid var(--c-border)">
+            <span style="font-size:0.75rem;font-weight:500;color:#9ca3af">Trading</span>
+            <button id="trading-toggle" onclick="toggleTrading()"
+                    class="toggle-track ripple-btn"
+                    title="Enable/disable trading system">
+                <span id="trading-toggle-dot" class="toggle-thumb"></span>
+            </button>
+        </div>
+        <button onclick="switchTab('config')" id="nav-config"
+                class="tnav-btn nav-item" style="width:2.25rem;height:2.25rem;padding:0;justify-content:center;border-radius:0.5rem" title="Configuration">
+            <i class="fas fa-cog" style="font-size:0.875rem"></i>
+        </button>
+        <!-- Hidden nav-gtt stub — keeps switchTab('gtt') working without throwing -->
+        <button id="nav-gtt" class="nav-item" style="display:none" onclick="switchTab('gtt')"></button>
+    </div>
+</nav>
+
+<!-- MOBILE TOP BAR (<1024px) -->
+<div id="mobile-top-bar">
+    <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:1.75rem;height:1.75rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:linear-gradient(135deg,#22c55e,#16a34a)">
+            <i class="fas fa-robot" style="color:#fff;font-size:0.75rem"></i>
+        </div>
+        <div>
+            <span style="font-weight:700;font-size:0.875rem">Melon Bot</span>
+            <p id="page-title-mobile" style="font-size:0.75rem;color:#6b7280;display:none">Dashboard</p>
+        </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+        <div id="mobile-live-dot" class="status-dot active"></div>
+        <div style="display:flex;align-items:center;gap:8px;padding:4px 10px;border-radius:0.75rem;background:var(--c-surface-2);border:1px solid var(--c-border)">
+            <span style="font-size:0.75rem;color:#9ca3af">Trading</span>
+            <button id="trading-toggle-mobile" onclick="toggleTrading()"
+                    class="toggle-track ripple-btn" style="width:2.25rem;height:1.375rem"
+                    title="Enable/disable trading">
+                <span id="trading-toggle-dot-mobile" class="toggle-thumb" style="width:14px;height:14px"></span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- BOTTOM TAB BAR (<1024px) -->
+<div id="bottom-tab-bar">
+    <div class="btb-inner">
+        <button onclick="switchTab('dashboard')" data-tab="dashboard"
+                class="btb-btn nav-item nav-item-active">
+            <i class="fas fa-chart-line"></i>
+            <span>Home</span>
+        </button>
+        <button onclick="switchTab('positions')" data-tab="positions"
+                class="btb-btn nav-item">
+            <i class="fas fa-briefcase"></i>
+            <span>Positions</span>
+        </button>
+        <button onclick="switchTab('trades')" data-tab="trades"
+                class="btb-btn nav-item">
+            <i class="fas fa-history"></i>
+            <span>Trades</span>
+        </button>
+        <button onclick="switchTab('analytics')" data-tab="analytics"
+                class="btb-btn nav-item">
+            <i class="fas fa-chart-bar"></i>
+            <span>Analytics</span>
+        </button>
+        <button onclick="switchTab('learning')" data-tab="learning"
+                class="btb-btn nav-item">
+            <i class="fas fa-graduation-cap"></i>
+            <span>Learn</span>
+        </button>
+        <button onclick="switchTab('alerts')" data-tab="alerts"
+                class="btb-btn nav-item">
+            <i class="fas fa-satellite-dish"></i>
+            <span>Alerts</span>
+        </button>
+        <button onclick="switchTab('turbo')" data-tab="turbo"
+                class="btb-btn nav-item">
+            <i class="fas fa-rocket"></i>
+            <span>Turbo</span>
+        </button>
+        <button onclick="switchTab('config')" data-tab="config"
+                class="btb-btn nav-item">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </button>
+    </div>
+</div>
+
         <!-- Sidebar -->
         <aside id="sidebar" class="w-64 flex flex-col" style="background:var(--c-surface);border-right:1px solid var(--c-border)">
             <!-- Logo -->
@@ -2305,46 +2443,9 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 overflow-hidden flex flex-col">
+        <div id="app-body">
             
             <!-- Header -->
-            <header class="flex items-center justify-between px-5 h-14 flex-shrink-0"
-                    style="background:rgba(16,18,28,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--c-border)">
-                <div class="flex items-center gap-3">
-                    <!-- Mobile Menu Toggle -->
-                    <button id="mobile-menu-btn" onclick="toggleMobileSidebar()"
-                            class="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg transition-colors ripple-btn"
-                            style="color:#9ca3af;background:var(--c-surface-2)">
-                        <i class="fas fa-bars text-sm"></i>
-                    </button>
-                    <div>
-                        <h2 id="page-title" class="text-base font-semibold tracking-tight leading-tight">Dashboard</h2>
-                        <p id="current-time" class="text-xs font-mono" style="color:#4b5563">--</p>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <!-- Trading Toggle -->
-                    <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl"
-                         style="background:var(--c-surface-2);border:1px solid var(--c-border)">
-                        <span class="text-xs font-medium" style="color:#9ca3af">Trading</span>
-                        <button id="trading-toggle" onclick="toggleTrading()"
-                                class="toggle-track ripple-btn"
-                                title="Enable/disable trading system">
-                            <span id="trading-toggle-dot" class="toggle-thumb"></span>
-                        </button>
-                    </div>
-
-                    <!-- Quick Chart -->
-                    <button onclick="openQuickChart()"
-                            class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ripple-btn"
-                            style="background:var(--c-surface-2);border:1px solid var(--c-border);color:#9ca3af"
-                            title="Open TradingView chart">
-                        <i class="fas fa-chart-line text-primary-400"></i>
-                        <span>Chart</span>
-                    </button>
-                </div>
-            </header>
             
             <!-- GLOBAL SYSTEM STATUS BAR -->
             <div id="system-status-bar" class="px-5 py-2 flex items-center justify-between flex-shrink-0 flex-wrap gap-2"
@@ -4118,7 +4219,7 @@
                 </div>
 
             </div>
-        </main>
+        </div>
     </div>
 
     <script>
@@ -5934,6 +6035,11 @@
                 nav.style.background = 'var(--c-green-dim)';
                 nav.style.border = '1px solid rgba(34,197,94,.15)';
             }
+            // Activate matching data-tab bottom-bar button (mobile) — unconditional
+            const mobileBtn = document.querySelector('[data-tab="' + tab + '"]');
+            if (mobileBtn) {
+                mobileBtn.classList.add('nav-item-active');
+            }
 
             // Update page title
             const titles = {
@@ -5948,6 +6054,9 @@
                 config: 'Configuration'
             };
             document.getElementById('page-title').textContent = titles[tab] || tab;
+            // Sync mobile page title
+            const mobileTitleEl = document.getElementById('page-title-mobile');
+            if (mobileTitleEl) mobileTitleEl.textContent = titles[tab] || tab;
 
             // Tab-specific data loading
             if (tab === 'learning') {
@@ -5981,6 +6090,12 @@
             } catch (err) {
                 showToast('Failed to toggle', 'error');
             }
+            // Sync mobile toggle UI
+            document.getElementById('trading-toggle-dot-mobile')?.style &&
+                (document.getElementById('trading-toggle-dot-mobile').style.transform =
+                    document.getElementById('trading-toggle-dot').style.transform);
+            document.getElementById('trading-toggle-mobile')?.classList.toggle('on',
+                document.getElementById('trading-toggle').classList.contains('on'));
         }
 
         // Toggle Turbo Mode
