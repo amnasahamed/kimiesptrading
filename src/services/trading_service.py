@@ -30,18 +30,23 @@ class TradingService:
         symbol: str,
         alert_price: Optional[float],
         scan_name: str,
-        action: str = "BUY"
+        action: str = "BUY",
+        config: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Process a trading signal end-to-end.
         """
         start_time = datetime.utcnow()
-        is_paper = self.settings.paper_trading
-        
+        cfg = config or self._load_config()
+        paper_setting = cfg.get("paper_trading", self.settings.paper_trading)
+        is_paper = paper_setting if isinstance(paper_setting, bool) else bool(paper_setting)
+
         logger.info(f"Processing signal: {symbol} ({'PAPER' if is_paper else 'LIVE'})")
-        
+
         # 1. Validate signal
-        validation_result = await self.risk.validate_signal(symbol, is_paper)
+        validation_result = await self.risk.validate_signal(
+            symbol, is_paper, kite=self.kite, config=cfg
+        )
         if not validation_result.is_valid:
             log_signal(symbol, "REJECTED", validation_result.reason, paper=is_paper)
             return {
@@ -298,6 +303,10 @@ class TradingService:
         finally:
             db.close()
     
+    def _load_config(self) -> Dict[str, Any]:
+        from src.api.routes.config import load_config
+        return load_config()
+
     async def _get_atr(self, symbol: str) -> float:
         """Get ATR for symbol (simplified)."""
         # In production, fetch historical data and calculate real ATR

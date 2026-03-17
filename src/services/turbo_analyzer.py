@@ -30,7 +30,7 @@ import statistics
 
 # Import Kite API for data fetching
 try:
-    from kite import KiteAPI
+    from src.services.kite_service import KiteService as KiteAPI
 except ImportError:
     KiteAPI = Any
 
@@ -102,13 +102,8 @@ class TurboAnalyzer:
     def _get_kite(self) -> KiteAPI:
         """Lazy initialization of Kite API"""
         if self.kite is None:
-            from kite import KiteAPI as KiteAPIClass
-            kite_config = self.config.get("kite", {})
-            self.kite = KiteAPIClass(
-                api_key=kite_config.get("api_key", ""),
-                access_token=kite_config.get("access_token", ""),
-                base_url=kite_config.get("base_url", "https://api.kite.trade")
-            )
+            from src.services.kite_service import KiteService
+            self.kite = KiteService()
         return self.kite
     
     def is_market_open(self) -> bool:

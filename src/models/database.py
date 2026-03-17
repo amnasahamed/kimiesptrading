@@ -103,13 +103,13 @@ class Trade(Base):
 class Signal(Base):
     """Signal tracking for analysis."""
     __tablename__ = "signals"
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
     symbol = Column(String(20), nullable=False, index=True)
     status = Column(String(20), nullable=False)  # RECEIVED, VALIDATED, EXECUTING, EXECUTED, REJECTED
     reason = Column(Text)
-    metadata = Column(JSON)
+    signal_metadata = Column(JSON)  # renamed from metadata (reserved by SQLAlchemy)
     paper_trading = Column(Boolean, default=False)
     
     __table_args__ = (
@@ -140,11 +140,71 @@ class IncomingAlert(Base):
 class Config(Base):
     """Application configuration storage."""
     __tablename__ = "config"
-    
+
     id = Column(Integer, primary_key=True, default=1)
     key = Column(String(100), unique=True, nullable=False)
     value = Column(JSON)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Insight(Base):
+    """Per-symbol trade analytics (replaces trade_insights.json)."""
+    __tablename__ = "insights"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    symbol = Column(String(20), nullable=False, index=True)
+    date = Column(DateTime, default=datetime.utcnow, index=True)
+    trades = Column(Integer, default=0)
+    wins = Column(Integer, default=0)
+    losses = Column(Integer, default=0)
+    total_pnl = Column(Float, default=0.0)
+    avg_pnl = Column(Float, default=0.0)
+    win_rate = Column(Float, default=0.0)
+    avg_hold_minutes = Column(Float, default=0.0)
+    best_pnl = Column(Float, default=0.0)
+    worst_pnl = Column(Float, default=0.0)
+    extra = Column(JSON, default=dict)
+
+    __table_args__ = (
+        Index('idx_insight_symbol_date', 'symbol', 'date'),
+    )
+
+
+class TurboQueueItem(Base):
+    """Multi-timeframe signal queue (replaces turbo_queue.json)."""
+    __tablename__ = "turbo_queue"
+
+    id = Column(String(100), primary_key=True)
+    symbol = Column(String(20), nullable=False, index=True)
+    scan_name = Column(String(200))
+    alert_price = Column(Float)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    status = Column(String(20), default="pending", index=True)  # pending, processing, done, failed
+    timeframes_confirmed = Column(JSON, default=list)
+    timeframes_required = Column(JSON, default=list)
+    result = Column(Text)
+    processed_at = Column(DateTime)
+    extra = Column(JSON, default=dict)
+
+    __table_args__ = (
+        Index('idx_turbo_symbol_status', 'symbol', 'status'),
+    )
+
+
+class ErrorLog(Base):
+    """Centralized error tracking (replaces error_log.json)."""
+    __tablename__ = "error_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    category = Column(String(50), index=True)
+    message = Column(Text, nullable=False)
+    details = Column(JSON, default=dict)
+    resolved = Column(Boolean, default=False)
+
+    __table_args__ = (
+        Index('idx_error_ts', 'timestamp', 'category'),
+    )
 
 
 # Database engine and session
