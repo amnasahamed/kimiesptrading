@@ -2160,6 +2160,47 @@
         @media (min-width: 1024px) { #page-title-mobile { display: none !important; } }
         @media (max-width: 1023px) { #page-title-mobile { display: block !important; } }
 
+        /* ============================================================
+           COMPACT MODE — space-saving overrides
+           ============================================================ */
+
+        /* Scrollable content area: tighter padding */
+        .flex-1.overflow-y-auto.p-6 { padding: 12px !important; }
+
+        /* Tab section gaps */
+        .space-y-6 > * + * { margin-top: 12px !important; }
+        .space-y-4 > * + * { margin-top: 10px !important; }
+
+        /* Card padding */
+        .p-6 { padding: 12px !important; }
+        .p-5 { padding: 10px !important; }
+        .p-4 { padding: 8px !important; }
+        .px-5 { padding-left: 12px !important; padding-right: 12px !important; }
+        .py-4 { padding-top: 8px !important; padding-bottom: 8px !important; }
+        .py-5 { padding-top: 10px !important; padding-bottom: 10px !important; }
+
+        /* Grid gaps */
+        .gap-6 { gap: 10px !important; }
+        .gap-4 { gap: 8px !important; }
+        .gap-3 { gap: 6px !important; }
+        #tab-dashboard .grid { gap: 10px !important; }
+        #tab-analytics .grid { gap: 10px !important; }
+        #tab-learning .grid { gap: 10px !important; }
+        #tab-turbo .grid { gap: 10px !important; }
+        #tab-config .grid { gap: 10px !important; }
+
+        /* Stat values — slightly smaller to fit more on screen */
+        .stat-value { font-size: 1.375rem !important; }
+
+        /* Section headers tighter */
+        .section-header { margin-bottom: 6px !important; }
+
+        /* Card border radius tighter on mobile */
+        @media (max-width: 1023px) {
+            .card { border-radius: 10px !important; }
+            .card-inner { border-radius: 8px !important; }
+        }
+
     </style>
 </head>
 <body style="background:var(--c-bg);color:var(--c-text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;">
