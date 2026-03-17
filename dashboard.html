@@ -561,17 +561,34 @@
         }
 
         /* ============================================================
-           STAT TYPOGRAPHY
+           STAT CARD TYPOGRAPHY
            ============================================================ */
-        .stat-value { font-size: 1.75rem; font-weight: 700; font-family: var(--font-mono); line-height: 1.1; }
-        .stat-sub   { font-size: 0.75rem; color: var(--c-muted); margin-top: 2px; }
-        .stat-label { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-muted); font-weight: 600; }
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            line-height: 1.1;
+        }
+        .stat-sub {
+            font-size: 0.75rem;
+            color: var(--c-muted);
+            margin-top: 2px;
+        }
+        .stat-label {
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--c-muted);
+            font-weight: 600;
+        }
+
+        /* Dashboard tab grid gaps */
+        #tab-dashboard .grid { gap: 24px; }
 
         /* ============================================================
            TAB GRID GAPS
            ============================================================ */
         .tab-content { padding-top: 4px; }
-        #tab-dashboard .grid { gap: 24px; }
         #tab-analytics .grid { gap: 24px; }
         #tab-analytics canvas { border-radius: 8px; }
         #tab-learning .grid { gap: 24px; }
@@ -2449,7 +2466,7 @@
             
             <!-- GLOBAL SYSTEM STATUS BAR -->
             <div id="system-status-bar" class="px-5 py-2 flex items-center justify-between flex-shrink-0 flex-wrap gap-2"
-                 style="background:rgba(10,12,20,.6);border-bottom:1px solid var(--c-border)">
+                 style="background:var(--c-surface);border-bottom:1px solid var(--c-border);padding:6px 24px;">
                 <div class="flex items-center gap-2 flex-wrap">
                     <!-- Trading Status -->
                     <div class="status-pill">
