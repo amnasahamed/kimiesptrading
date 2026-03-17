@@ -7,8 +7,6 @@ In-flight state (TREND_CHECK, MONITORING, EXECUTING) is reset to QUEUED on
 startup — safe because the processor re-validates before executing.
 """
 import asyncio
-import sys
-import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
@@ -209,12 +207,9 @@ async def _process_single_signal(entry: Dict[str, Any]) -> None:
 
     logger.info(f"TURBO: processing {symbol} {direction}")
 
-    # Import TurboAnalyzer from root (wrap — don't absorb 850-line file)
+    # Import TurboAnalyzer from src/services (moved here in Phase 6)
     try:
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        if project_root not in sys.path:
-            sys.path.insert(0, project_root)
-        from turbo_analyzer import TurboAnalyzer
+        from src.services.turbo_analyzer import TurboAnalyzer
     except ImportError:
         logger.error("TURBO: turbo_analyzer.py not found — skipping turbo analysis, executing direct")
         await _execute_entry(entry, entry.get("alert_price"), config)
