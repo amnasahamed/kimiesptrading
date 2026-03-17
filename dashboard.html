@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,9 +14,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Mobile Web App Capabilities -->
-    <meta name="theme-color" content="#0f1117">
+    <meta name="theme-color" content="#f0f2f5">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="format-detection" content="telephone=no">
     
     <!-- No Tailwind — pure CSS design system below -->
@@ -29,30 +29,45 @@
            DESIGN SYSTEM — CSS custom properties
            ============================================================ */
         :root {
-            --c-bg:         #0d0d14;
-            --c-surface:    #13131d;
-            --c-surface-2:  #1a1a27;
-            --c-surface-3:  #222233;
-            --c-border:     rgba(255,255,255,0.07);
-            --c-border-2:   rgba(255,255,255,0.11);
-            --c-text:       #e2e8f0;
+            /* Backgrounds */
+            --c-bg:         #f0f2f5;
+            --c-surface:    #ffffff;
+            --c-surface-2:  #f8f9fa;
+            --c-surface-3:  #f1f3f5;
+
+            /* Borders */
+            --c-border:     rgba(0,0,0,0.08);
+            --c-border-2:   rgba(0,0,0,0.12);
+
+            /* Text */
+            --c-text:       #111827;
             --c-muted:      #6b7280;
-            --c-green:      #22c55e;
-            --c-green-dim:  rgba(34,197,94,0.12);
-            --c-red:        #ef4444;
-            --c-red-dim:    rgba(239,68,68,0.12);
-            --c-amber:      #f59e0b;
-            --c-amber-dim:  rgba(245,158,11,0.12);
-            --c-blue:       #3b82f6;
-            --c-blue-dim:   rgba(59,130,246,0.12);
-            --c-purple:     #a855f7;
-            --c-purple-dim: rgba(168,85,247,0.12);
+
+            /* Semantic colors — darkened for light bg readability */
+            --c-green:      #16a34a;
+            --c-green-dim:  rgba(22,163,74,0.10);
+            --c-red:        #dc2626;
+            --c-red-dim:    rgba(220,38,38,0.10);
+            --c-amber:      #d97706;
+            --c-amber-dim:  rgba(217,119,6,0.10);
+            --c-blue:       #2563eb;
+            --c-blue-dim:   rgba(37,99,235,0.10);
+            --c-purple:     #7c3aed;
+            --c-purple-dim: rgba(124,58,237,0.10);
+
+            /* Typography */
             --font-mono: 'JetBrains Mono', monospace;
+
+            /* Transitions */
             --t-fast: 120ms ease;
             --t-med:  220ms ease;
             --t-slow: 380ms ease;
-            --shadow-green: 0 4px 24px rgba(34,197,94,.15);
-            --shadow-card:  0 2px 16px rgba(0,0,0,.4);
+
+            /* Shadows */
+            --shadow-card:  0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+            --shadow-green: 0 4px 24px rgba(22,163,74,0.15);
+
+            /* Safe area insets */
             --sat: env(safe-area-inset-top);
             --sar: env(safe-area-inset-right);
             --sab: env(safe-area-inset-bottom);
@@ -68,6 +83,7 @@
         }
         body {
             background: var(--c-bg);
+            color: var(--c-text);
             overscroll-behavior-y: none;
         }
         button, a, select, input, .nav-item {
@@ -78,28 +94,25 @@
            SCROLLBAR
            ============================================================ */
         ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: var(--c-surface); }
-        ::-webkit-scrollbar-thumb {
-            background: var(--c-surface-3);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover { background: #2e3450; }
+        ::-webkit-scrollbar-track { background: var(--c-surface-2); }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
         /* ============================================================
            GLASS SURFACES
            ============================================================ */
         .glass {
-            background: rgba(16,18,28,.85);
-            backdrop-filter: blur(14px);
+            background: var(--c-surface);
             border: 1px solid var(--c-border);
+            box-shadow: var(--shadow-card);
         }
         .glass-hover {
             transition: background var(--t-med), border-color var(--t-med), box-shadow var(--t-med);
         }
         .glass-hover:hover {
-            background: rgba(22,25,39,.95);
-            border-color: rgba(34,197,94,.25);
-            box-shadow: 0 0 0 1px rgba(34,197,94,.08), var(--shadow-card);
+            background: var(--c-surface-2);
+            border-color: var(--c-border-2);
+            box-shadow: var(--shadow-card);
         }
 
         /* ============================================================
@@ -112,7 +125,7 @@
             transition: border-color var(--t-med), box-shadow var(--t-med), transform var(--t-med);
         }
         .card:hover {
-            border-color: rgba(34,197,94,.2);
+            border-color: var(--c-border-2);
             box-shadow: var(--shadow-card);
         }
         .card-inner {
@@ -1263,8 +1276,8 @@
             transition: border-color var(--t-med), box-shadow var(--t-med), transform var(--t-med);
         }
         .stat-card:hover {
-            border-color: rgba(34,197,94,.18);
-            box-shadow: 0 4px 20px rgba(0,0,0,.3);
+            border-color: var(--c-border-2);
+            box-shadow: var(--shadow-card);
             transform: translateY(-1px);
         }
         .stat-bar {
@@ -1341,9 +1354,9 @@
             transition: border-color var(--t-med), box-shadow var(--t-med), transform var(--t-med);
         }
         .pos-card:hover {
-            border-color: rgba(34,197,94,.2);
-            box-shadow: 0 6px 28px rgba(0,0,0,.35);
-            transform: translateY(-2px);
+            border-color: var(--c-border-2);
+            box-shadow: var(--shadow-card);
+            transform: translateY(-1px);
         }
         .pos-card.paper { border-top: 2px solid rgba(245,158,11,.4); }
         .pos-card.live  { border-top: 2px solid rgba(34,197,94,.4); }
