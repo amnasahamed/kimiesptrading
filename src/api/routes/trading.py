@@ -404,3 +404,139 @@ async def analyze_paper_uptrend():
         }
     finally:
         db.close()
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 routes — Position management
+# ---------------------------------------------------------------------------
+from src.services.position_service import (
+    sync_positions_with_kite,
+    sync_kite_positions,
+    force_close_position as svc_force_close,
+    modify_sl,
+    get_kite_debug,
+    get_gtt_orders,
+    cleanup_orphan_gtt,
+    get_esp_stats,
+    get_esp_positions,
+    get_esp_alert,
+)
+
+
+class ModifySLRequest(BaseModel):
+    new_sl_price: float
+
+
+class ForceCloseRequest(BaseModel):
+    exit_price: Optional[float] = None
+
+
+@router.post("/positions/sync")
+async def sync_positions_api():
+    """Sync local positions against Kite — marks closed if gone from Kite."""
+    kite = get_kite_service()
+    db = get_db_session()
+    try:
+        result = await sync_positions_with_kite(db, kite)
+        return {
+            "status": "success" if result.get("errors", 0) == 0 else "partial",
+            "message": f"Synced {result.get('synced', 0)} positions, closed {result.get('closed', 0)}",
+            "details": result,
+        }
+    finally:
+        db.close()
+
+
+@router.post("/positions/{position_id}/force-close")
+async def force_close_position_api(position_id: str, request: ForceCloseRequest = ForceCloseRequest()):
+    """Force-close a position without placing an order (already closed externally)."""
+    kite = get_kite_service()
+    db = get_db_session()
+    try:
+        return await svc_force_close(db, kite, position_id, request.exit_price)
+    finally:
+        db.close()
+
+
+@router.post("/positions/{position_id}/modify-sl")
+async def modify_sl_api(position_id: str, request: ModifySLRequest):
+    """Update the stop-loss price; re-places GTT for live positions."""
+    kite = get_kite_service()
+    db = get_db_session()
+    try:
+        return await modify_sl(db, kite, position_id, request.new_sl_price)
+    finally:
+        db.close()
+
+
+@router.get("/positions/kite-debug")
+async def kite_positions_debug():
+    """Debug: compare raw Kite positions vs local DB."""
+    kite = get_kite_service()
+    db = get_db_session()
+    try:
+        return await get_kite_debug(db, kite)
+    finally:
+        db.close()
+
+
+@router.get("/gtt-orders")
+async def get_gtt_orders_api():
+    """List all GTT orders from Kite, enriched with position info."""
+    kite = get_kite_service()
+    db = get_db_session()
+    try:
+        return await get_gtt_orders(db, kite)
+    finally:
+        db.close()
+
+
+@router.post("/gtt/cleanup")
+async def cleanup_gtt_api():
+    """Cancel orphan GTT orders (no matching open position)."""
+    kite = get_kite_service()
+    db = get_db_session()
+    try:
+        return await cleanup_orphan_gtt(db, kite)
+    finally:
+        db.close()
+
+
+@router.post("/sync-kite")
+async def sync_kite_api():
+    """Import external positions from Kite (placed via Kite app, not bot)."""
+    kite = get_kite_service()
+    db = get_db_session()
+    try:
+        return await sync_kite_positions(db, kite)
+    finally:
+        db.close()
+
+
+@router.get("/esp/stats")
+async def esp_stats():
+    """Compact stats for ESP8266 display."""
+    from src.api.routes.config import load_config
+    db = get_db_session()
+    try:
+        config = load_config()
+        return await get_esp_stats(db, config)
+    finally:
+        db.close()
+
+
+@router.get("/esp/positions")
+async def esp_positions():
+    """Simplified position list for ESP display."""
+    kite = get_kite_service()
+    db = get_db_session()
+    try:
+        return await get_esp_positions(db, kite)
+    finally:
+        db.close()
+
+
+@router.get("/esp/alert")
+async def esp_alert():
+    """Latest webhook alert for ESP polling (mark-as-shown on read)."""
+    return get_esp_alert()

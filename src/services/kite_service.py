@@ -243,6 +243,70 @@ class KiteService:
             "message": "Max retries exceeded"
         }
 
+    async def list_gtt_orders(self) -> list:
+        """List all GTT orders from Kite."""
+        url = f"{self.base_url}/gtt/triggers"
+        try:
+            client = await self._get_client()
+            resp = await client.get(url, headers=self.headers, timeout=10.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("status") == "success":
+                    return data.get("data", [])
+        except Exception as e:
+            logger.error(f"Error fetching GTT orders: {e}")
+        return []
+
+    async def delete_gtt(self, gtt_id: str) -> bool:
+        """Delete/cancel a GTT order."""
+        url = f"{self.base_url}/gtt/triggers/{gtt_id}"
+        try:
+            client = await self._get_client()
+            resp = await client.delete(url, headers=self.headers, timeout=10.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("status") == "success"
+        except Exception as e:
+            logger.error(f"Error deleting GTT {gtt_id}: {e}")
+        return False
+
+    async def place_sl_gtt(
+        self, symbol: str, quantity: int, trigger_price: float, limit_price: float
+    ) -> Optional[Dict]:
+        """Place a Stop-Loss GTT order."""
+        url = f"{self.base_url}/gtt/triggers"
+        payload = {
+            "type": "single",
+            "condition": {
+                "exchange": "NSE",
+                "tradingsymbol": symbol,
+                "trigger_values": [trigger_price],
+                "last_price": trigger_price,
+            },
+            "orders": [{
+                "exchange": "NSE",
+                "tradingsymbol": symbol,
+                "transaction_type": "SELL",
+                "quantity": quantity,
+                "order_type": "LIMIT",
+                "product": "CNC",
+                "price": limit_price,
+            }],
+        }
+        try:
+            import json as _json
+            client = await self._get_client()
+            resp = await client.post(
+                url, headers=self.headers, content=_json.dumps(payload), timeout=10.0
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("status") == "success":
+                    return {"gtt_id": str(data["data"]["trigger_id"])}
+        except Exception as e:
+            logger.error(f"Error placing SL GTT for {symbol}: {e}")
+        return None
+
     async def exchange_request_token(
         self,
         request_token: str,
