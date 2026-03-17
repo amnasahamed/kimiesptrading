@@ -2995,6 +2995,15 @@
 
                 <!-- Positions Tab -->
                 <div id="tab-positions" class="tab-content hidden space-y-4">
+                    <!-- Positions / GTT pill switcher -->
+                    <div class="gtt-pill-bar">
+                        <button class="gtt-pill active" onclick="switchTab('positions')">
+                            <i class="fas fa-briefcase" style="font-size:0.75rem;margin-right:6px"></i>Open Positions
+                        </button>
+                        <button class="gtt-pill" onclick="switchTab('gtt')">
+                            <i class="fas fa-shield-alt" style="font-size:0.75rem;margin-right:6px"></i>GTT Orders
+                        </button>
+                    </div>
                     <!-- Header Bar -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
@@ -3111,6 +3120,21 @@
 
                 <!-- GTT Orders Tab -->
                 <div id="tab-gtt" class="tab-content hidden space-y-4">
+                    <!-- Back to Positions + GTT pill switcher -->
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+                        <button onclick="switchTab('positions')"
+                                style="display:flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:500;color:#6b7280;background:none;border:none;cursor:pointer">
+                            <i class="fas fa-arrow-left" style="font-size:0.75rem"></i> Back to Positions
+                        </button>
+                    </div>
+                    <div class="gtt-pill-bar">
+                        <button class="gtt-pill" onclick="switchTab('positions')">
+                            <i class="fas fa-briefcase" style="font-size:0.75rem;margin-right:6px"></i>Open Positions
+                        </button>
+                        <button class="gtt-pill active" onclick="switchTab('gtt')">
+                            <i class="fas fa-shield-alt" style="font-size:0.75rem;margin-right:6px"></i>GTT Orders
+                        </button>
+                    </div>
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 class="font-bold text-lg flex items-center gap-2.5">
