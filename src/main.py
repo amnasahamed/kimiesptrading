@@ -20,6 +20,8 @@ from src.api.routes import trading
 from src.api.routes import config as config_routes
 from src.api.routes import ui as ui_routes
 from src.api.routes import webhook as webhook_routes
+from src.api.routes import analytics as analytics_routes
+from src.api.routes import alerts as alerts_routes
 
 logger = setup_logging()
 
@@ -70,6 +72,8 @@ def create_app() -> FastAPI:
     app.include_router(trading.router)
     app.include_router(config_routes.router)
     app.include_router(webhook_routes.router)
+    app.include_router(analytics_routes.router)
+    app.include_router(alerts_routes.router)
 
     # UI routes (includes / and /dashboard — must be included last to avoid
     # shadowing API routes registered above)
