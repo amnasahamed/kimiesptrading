@@ -29,13 +29,12 @@
            DESIGN SYSTEM — CSS custom properties
            ============================================================ */
         :root {
-            /* Unified Design System Colors */
-            --c-bg:         #0a0a0f;
-            --c-surface:    #12121a;
-            --c-surface-2:  #1a1a25;
-            --c-surface-3:  #222230;
+            --c-bg:         #0d0d14;
+            --c-surface:    #13131d;
+            --c-surface-2:  #1a1a27;
+            --c-surface-3:  #222233;
             --c-border:     rgba(255,255,255,0.07);
-            --c-border-2:   rgba(255,255,255,0.10);
+            --c-border-2:   rgba(255,255,255,0.11);
             --c-text:       #e2e8f0;
             --c-muted:      #6b7280;
             --c-green:      #22c55e;
@@ -48,16 +47,12 @@
             --c-blue-dim:   rgba(59,130,246,0.12);
             --c-purple:     #a855f7;
             --c-purple-dim: rgba(168,85,247,0.12);
-            /* Typography */
             --font-mono: 'JetBrains Mono', monospace;
-            /* Transitions */
             --t-fast: 120ms ease;
             --t-med:  220ms ease;
             --t-slow: 380ms ease;
-            /* Shadows */
             --shadow-green: 0 4px 24px rgba(34,197,94,.15);
             --shadow-card:  0 2px 16px rgba(0,0,0,.4);
-            /* Safe area */
             --sat: env(safe-area-inset-top);
             --sar: env(safe-area-inset-right);
             --sab: env(safe-area-inset-bottom);
@@ -302,6 +297,313 @@
             transition: transform var(--t-med);
         }
         .nav-item-active::before { transform: translateY(-50%) scaleY(1); }
+
+        /* ============================================================
+           TOP NAVBAR (desktop ≥1024px)
+           ============================================================ */
+        #top-navbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            background: rgba(13,13,20,.95);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--c-border);
+            z-index: 40;
+        }
+        #top-navbar .tnav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            min-width: 160px;
+        }
+        #top-navbar .tnav-center {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            flex: 1;
+            justify-content: center;
+        }
+        #top-navbar .tnav-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            min-width: 160px;
+            justify-content: flex-end;
+        }
+        .tnav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #9ca3af;
+            background: transparent;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+            white-space: nowrap;
+        }
+        .tnav-btn:hover {
+            background: var(--c-surface-2);
+            color: #e5e7eb;
+        }
+        .tnav-btn.nav-item-active {
+            background: var(--c-green-dim);
+            color: #4ade80;
+            border-color: rgba(34,197,94,.2);
+        }
+
+        /* ============================================================
+           SYSTEM STATUS STRIP
+           ============================================================ */
+        #system-status-bar {
+            position: fixed;
+            top: 56px; left: 0; right: 0;
+            z-index: 39;
+        }
+
+        /* ============================================================
+           MOBILE TOP BAR (<1024px)
+           ============================================================ */
+        #mobile-top-bar {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 52px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            background: rgba(13,13,20,.95);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--c-border);
+            z-index: 40;
+        }
+
+        /* ============================================================
+           BOTTOM TAB BAR (<1024px)
+           ============================================================ */
+        #bottom-tab-bar {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            padding-bottom: env(safe-area-inset-bottom);
+            background: rgba(13,13,20,.97);
+            border-top: 1px solid var(--c-border);
+            z-index: 40;
+        }
+        #bottom-tab-bar .btb-inner {
+            display: flex;
+            align-items: stretch;
+            height: 56px;
+        }
+        .btb-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 6px 4px;
+            font-size: 10px;
+            font-weight: 500;
+            color: #6b7280;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: color var(--t-fast);
+            position: relative;
+        }
+        .btb-btn i { font-size: 16px; }
+        .btb-btn.nav-item-active { color: #4ade80; }
+        .btb-btn.nav-item-active i { color: #22c55e; }
+
+        /* ============================================================
+           MAIN LAYOUT BODY OFFSET
+           ============================================================ */
+        @media (min-width: 1024px) {
+            #top-navbar { display: flex; }
+            #mobile-top-bar { display: none !important; }
+            #bottom-tab-bar { display: none !important; }
+            #app-body {
+                padding-top: calc(56px + 38px);
+                padding-bottom: 0;
+                max-width: 1440px;
+                margin: 0 auto;
+                padding-left: 24px;
+                padding-right: 24px;
+            }
+            #system-status-bar { display: flex; }
+            #current-time { display: block !important; }
+            #page-title-mobile { display: none !important; }
+        }
+        @media (max-width: 1023px) {
+            #top-navbar { display: none !important; }
+            #system-status-bar { position: fixed; top: 52px; z-index: 39; display: flex; }
+            #mobile-top-bar { display: flex; }
+            #bottom-tab-bar { display: block; }
+            #app-body {
+                padding-top: calc(52px + 38px);
+                padding-bottom: 64px;
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+            #current-time { display: none !important; }
+            #page-title-mobile { display: block !important; }
+        }
+
+        /* ============================================================
+           HIDE LEGACY SIDEBAR
+           ============================================================ */
+        #sidebar,
+        #sidebar-overlay,
+        #mobile-menu-btn {
+            display: none !important;
+        }
+
+        /* ============================================================
+           TOAST CONTAINER — clear fixed navbar
+           ============================================================ */
+        #toast-container {
+            top: calc(56px + 8px) !important;
+        }
+
+        /* ============================================================
+           CONTENT WRAPPER
+           ============================================================ */
+        #app-wrapper {
+            min-height: 100vh;
+            background: var(--c-bg);
+        }
+        #app-body {
+            width: 100%;
+        }
+
+        /* ============================================================
+           NAV ITEM LEFT BAR — suppress on top/bottom navs
+           ============================================================ */
+        .tnav-btn::before,
+        .btb-btn::before {
+            display: none;
+        }
+
+        /* ============================================================
+           GTT PILL SWITCHER
+           ============================================================ */
+        .gtt-pill-bar {
+            display: flex;
+            gap: 6px;
+            padding: 4px;
+            border-radius: 12px;
+            background: var(--c-surface-2);
+            border: 1px solid var(--c-border);
+            width: fit-content;
+            margin-bottom: 16px;
+        }
+        .gtt-pill {
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #9ca3af;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: background var(--t-fast), color var(--t-fast);
+        }
+        .gtt-pill.active {
+            background: var(--c-surface-3);
+            color: #e5e7eb;
+        }
+
+        /* ============================================================
+           IMPROVED CARD SPACING
+           ============================================================ */
+        .card { padding: 0; overflow: hidden; }
+        .space-y-6 > * + * { margin-top: 24px; }
+
+        /* ============================================================
+           SECTION HEADER IMPROVED TYPOGRAPHY
+           ============================================================ */
+        .section-header {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--c-muted);
+        }
+
+        /* ============================================================
+           STAT TYPOGRAPHY
+           ============================================================ */
+        .stat-value { font-size: 1.75rem; font-weight: 700; font-family: var(--font-mono); line-height: 1.1; }
+        .stat-sub   { font-size: 0.75rem; color: var(--c-muted); margin-top: 2px; }
+        .stat-label { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-muted); font-weight: 600; }
+
+        /* ============================================================
+           TAB GRID GAPS
+           ============================================================ */
+        .tab-content { padding-top: 4px; }
+        #tab-dashboard .grid { gap: 24px; }
+        #tab-analytics .grid { gap: 24px; }
+        #tab-analytics canvas { border-radius: 8px; }
+        #tab-learning .grid { gap: 24px; }
+        #tab-turbo .grid { gap: 24px; }
+        #tab-config .grid { gap: 24px; }
+
+        /* ============================================================
+           TRADES TAB INPUTS
+           ============================================================ */
+        #tab-trades input, #tab-trades select {
+            height: 36px;
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--c-surface-2);
+            border: 1px solid var(--c-border);
+            color: var(--c-text);
+            padding: 0 10px;
+        }
+
+        /* ============================================================
+           ALERTS TAB
+           ============================================================ */
+        #tab-alerts .alert-item {
+            border-radius: 12px;
+            padding: 12px 16px;
+            background: var(--c-surface-2);
+            border: 1px solid var(--c-border);
+            transition: border-color var(--t-fast);
+        }
+        #tab-alerts .alert-item:hover { border-color: var(--c-border-2); }
+
+        /* ============================================================
+           CONFIG TAB INPUTS
+           ============================================================ */
+        #tab-config input[type="text"],
+        #tab-config input[type="number"],
+        #tab-config input[type="password"],
+        #tab-config select {
+            height: 38px;
+            border-radius: 8px;
+            background: var(--c-surface-2);
+            border: 1px solid var(--c-border);
+            color: var(--c-text);
+            padding: 0 12px;
+            font-size: 13px;
+            transition: border-color var(--t-fast);
+        }
+        #tab-config input:focus,
+        #tab-config select:focus {
+            border-color: rgba(34,197,94,.4);
+            outline: none;
+        }
 
         /* ============================================================
            BADGE PILL
@@ -1495,6 +1797,338 @@
         /* border-l-yellow-500\/50, border-l-primary-500\/50 used in mobile table JS */
         .border-l-yellow-500\/50 { border-left-color: rgba(234, 179, 8, 0.5); }
         .border-l-primary-500\/50 { border-left-color: rgba(34, 197, 94, 0.5); }
+
+        /* ============================================================
+           ADDITIONAL CLASSES — covering all JS-generated & static HTML
+           ============================================================ */
+
+        /* py-2.5 / px-1.5 / gap-1.5 */
+        .py-2\.5 { padding-top: 0.625rem; padding-bottom: 0.625rem; }
+        .px-1\.5 { padding-left: 0.375rem; padding-right: 0.375rem; }
+        .gap-1\.5 { gap: 0.375rem; }
+        .w-9 { width: 2.25rem; }
+        .h-9 { height: 2.25rem; }
+        .h-8 { height: 2rem; }
+        .w-8 { width: 2rem; }
+        .h-12 { height: 3rem; }
+        .w-12 { width: 3rem; }
+        .h-14 { height: 3.5rem; }
+        .w-14 { width: 3.5rem; }
+        .h-full { height: 100%; }
+        .w-4 { width: 1rem; }
+        .h-4 { height: 1rem; }
+        .w-3 { width: 0.75rem; }
+        .h-3 { height: 0.75rem; }
+        .w-2 { width: 0.5rem; }
+        .w-0\.5 { width: 0.125rem; }
+        .h-6 { height: 1.5rem; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0,1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+        .col-span-1 { grid-column: span 1; }
+        .top-4 { top: 1rem; }
+        .right-4 { right: 1rem; }
+        .top-1\/2 { top: 50%; }
+        .h-screen { height: 100vh; }
+        .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+        .space-x-2 > * + * { margin-left: 0.5rem; }
+        .space-x-3 > * + * { margin-left: 0.75rem; }
+        .overflow-y-auto { overflow-y: auto; }
+        .flex-shrink { flex-shrink: 1; }
+        .gap-8  { gap: 2rem; }
+        .mt-6   { margin-top: 1.5rem; }
+        .mt-8   { margin-top: 2rem; }
+        .mb-6   { margin-bottom: 1.5rem; }
+        .mb-8   { margin-bottom: 2rem; }
+        .mr-2   { margin-right: 0.5rem; }
+        .mr-3   { margin-right: 0.75rem; }
+        .ml-auto { margin-left: auto; }
+        .py-6   { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+        .px-6   { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .py-5   { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+        .py-4   { padding-top: 1rem; padding-bottom: 1rem; }
+        .col-span-2 { grid-column: span 2 / span 2; }
+        .col-span-3 { grid-column: span 3 / span 3; }
+        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+
+        /* Hover states for nav items */
+        .nav-item:hover { color: #e5e7eb; }
+        .nav-item:hover .nav-icon { color: #e5e7eb; }
+        button.hover\:text-primary-400:hover,
+        .hover\:text-primary-400:hover { color: var(--c-green); }
+
+        /* Progress/bar sizing */
+        .h-1\.5 { height: 0.375rem; }
+        .w-0\.5 { width: 0.125rem; }
+        .h-6    { height: 1.5rem; }
+        .w-5    { width: 1.25rem; }
+        .h-5    { height: 1.25rem; }
+        .border-l-4 { border-left-width: 4px; border-left-style: solid; }
+        .border-l-2 { border-left-width: 2px; border-left-style: solid; }
+        .-translate-y-1\/2 { transform: translateY(-50%); }
+
+        /* Dot sizes for loading/status indicators */
+        .w-1\.5 { width:  0.375rem; }
+        .h-1\.5 { height: 0.375rem; }
+        .w-7  { width: 1.75rem; }
+        .h-7  { height: 1.75rem; }
+        .w-10 { width: 2.5rem; }
+        .h-10 { height: 2.5rem; }
+        .h-2  { height: 0.5rem; }
+        .h-4  { height: 1rem; }
+
+        /* Solid accent backgrounds (non-opacity variants) */
+        .bg-primary-500  { background-color: var(--c-green); }
+        .bg-danger-500   { background-color: var(--c-red); }
+        .bg-warning-500  { background-color: var(--c-amber); }
+        .bg-danger-600   { background-color: #dc2626; }
+        .bg-warning-500\/20 { background-color: rgba(245,158,11,0.12); }
+        .bg-warning-500\/30 { background-color: rgba(245,158,11,0.2); }
+        .bg-blue-500\/20 { background-color: rgba(59,130,246,0.12); }
+        .bg-gray-500\/20 { background-color: rgba(107,114,128,0.12); }
+        .bg-gray-700     { background-color: #374151; }
+        .bg-green-500\/20 { background-color: rgba(34,197,94,0.12); }
+        .bg-red-500\/10  { background-color: rgba(239,68,68,0.08); }
+        .bg-red-500\/20  { background-color: rgba(239,68,68,0.12); }
+        .bg-yellow-500\/5  { background-color: rgba(234,179,8,0.04); }
+        .bg-yellow-500\/10 { background-color: rgba(234,179,8,0.08); }
+        .bg-dark-700\/30  { background-color: rgba(26,26,37,0.3); }
+        .bg-dark-900\/50  { background-color: rgba(15,17,23,0.5); }
+        .bg-danger-500\/10 { background-color: rgba(239,68,68,0.08); }
+        .bg-success-500\/10 { background-color: rgba(34,197,94,0.08); }
+        .bg-primary-500\/30 { background-color: rgba(34,197,94,0.2); }
+
+        /* Border color helpers */
+        .border-yellow-500\/30 { border-color: rgba(234,179,8,0.3); }
+        .border-yellow-500\/50 { border-color: rgba(234,179,8,0.5); }
+        .border-yellow-500\/20 { border-color: rgba(234,179,8,0.2); }
+        .border-danger-500\/30 { border-color: rgba(239,68,68,0.3); }
+        .border-danger-500\/50 { border-color: rgba(239,68,68,0.5); }
+        .border-danger-500\/20 { border-color: rgba(239,68,68,0.2); }
+        .border-primary-500\/20 { border-color: rgba(34,197,94,0.2); }
+        .border-primary-500\/50 { border-color: rgba(34,197,94,0.5); }
+        .border-gray-500\/20  { border-color: rgba(107,114,128,0.2); }
+        .border-gray-600      { border-color: #4b5563; }
+        .border-dark-700      { border-color: var(--c-surface-2); }
+        .border-red-500\/30   { border-color: rgba(239,68,68,0.3); }
+
+        /* Text color helpers */
+        .text-warning-500 { color: var(--c-amber); }
+        .text-text-400    { color: var(--c-muted); }
+        .text-accent-400  { color: var(--c-blue); }
+        .text-accent-300  { color: #93c5fd; }
+        .text-success-500 { color: var(--c-green); }
+        .text-blue-400    { color: #60a5fa; }
+        .text-green-400   { color: #4ade80; }
+        .text-red-400     { color: #f87171; }
+        .text-gray-600    { color: #4b5563; }
+        .text-gray-300    { color: #d1d5db; }
+
+        /* Hover bg helpers (used in JS-generated rows) */
+        .hover\:bg-yellow-500\/5:hover  { background-color: rgba(234,179,8,0.04); }
+        .hover\:bg-dark-700\/30:hover   { background-color: rgba(26,26,37,0.3); }
+        .hover\:bg-dark-700:hover       { background-color: var(--c-surface-2); }
+        .hover\:bg-dark-600:hover       { background-color: var(--c-surface-3); }
+        .hover\:bg-danger-500:hover     { background-color: var(--c-red); }
+        .hover\:bg-danger-600:hover     { background-color: #dc2626; }
+        .hover\:bg-primary-500\/30:hover { background-color: rgba(34,197,94,0.2); }
+        .hover\:bg-warning-500\/30:hover { background-color: rgba(245,158,11,0.2); }
+        .hover\:border-yellow-500\/50:hover { border-color: rgba(234,179,8,0.5); }
+        .hover\:border-primary-500\/50:hover { border-color: rgba(34,197,94,0.5); }
+        .hover\:border-primary-500\/30:hover { border-color: rgba(34,197,94,0.3); }
+        .hover\:text-white:hover  { color: #ffffff; }
+        .hover\:text-gray-200:hover { color: #e5e7eb; }
+        .hover\:text-accent-300:hover { color: #93c5fd; }
+
+        /* Loader ring — uses inline style; keep the .loader-ring spin */
+        /* (already defined above as .loader-ring) */
+
+        /* py-0.5 / px-0.5 */
+        .py-0\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
+        .px-0\.5 { padding-left: 0.125rem; padding-right: 0.125rem; }
+
+        /* Missing spacing */
+        .gap-1\.5 { gap: 0.375rem; }
+        .mt-1     { margin-top: 0.25rem; }
+        .mb-1     { margin-bottom: 0.25rem; }
+        .mr-1     { margin-right: 0.25rem; }
+        .ml-2     { margin-left: 0.5rem; }
+        .space-y-0\.5 > * + * { margin-top: 0.125rem; }
+
+        /* col-span helpers */
+        .col-span-2 { grid-column: span 2 / span 2; }
+        .col-span-3 { grid-column: span 3 / span 3; }
+
+        /* shadow helpers */
+        .shadow-lg.shadow-yellow-500\/30 { box-shadow: 0 10px 15px -3px rgba(234,179,8,0.3); }
+        .shadow-lg.shadow-danger-500\/30 { box-shadow: 0 10px 15px -3px rgba(239,68,68,0.3); }
+
+        /* overflow-visible */
+        .overflow-visible { overflow: visible; }
+
+        /* z-index */
+        .z-10 { z-index: 10; }
+        .z-20 { z-index: 20; }
+
+        /* max-h */
+        .max-h-64 { max-height: 16rem; }
+
+        /* System mode badge semantic classes */
+        .mode-badge-paper {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: var(--c-amber-dim);
+            color: #facc15;
+            border: 1px solid rgba(234,179,8,0.3);
+        }
+        .mode-badge-live {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: var(--c-green-dim);
+            color: var(--c-green);
+            border: 1px solid rgba(34,197,94,0.3);
+        }
+        .mode-badge-paused {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: rgba(107,114,128,0.12);
+            color: #9ca3af;
+            border: 1px solid rgba(107,114,128,0.2);
+        }
+
+        /* Risk bar semantic classes */
+        .risk-bar-danger  { background-color: var(--c-red); }
+        .risk-bar-warning { background-color: var(--c-amber); }
+        .risk-bar-safe    { background-color: var(--c-green); }
+
+        /* Position card dynamic border helpers */
+        .border-l-primary-500  { border-left-color: var(--c-green); }
+        .border-l-danger-500   { border-left-color: var(--c-red); }
+        .border-l-yellow-500   { border-left-color: var(--c-amber); }
+
+        /* border-3 for position progress indicator */
+        .border-3 { border-width: 3px; border-style: solid; }
+        .border-primary-500 { border-color: var(--c-green); }
+        .border-danger-500  { border-color: var(--c-red); }
+
+        /* Inline-flex helpers */
+        .inline-flex { display: inline-flex; }
+
+        /* text-[6px] / text-[8px] workarounds */
+        .text-\[6px\]  { font-size: 6px; }
+        .text-\[8px\]  { font-size: 8px; }
+
+        /* w-16 h-16 for loader ring */
+        .w-16 { width: 4rem; }
+        .h-16 { height: 4rem; }
+
+        /* animate-pulse for danger toggle */
+        .animate-pulse { animation: pulseTailwind 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+
+        /* position absolute inset-0 */
+        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+        .absolute { position: absolute; }
+
+        /* flex-shrink-0 */
+        .flex-shrink-0 { flex-shrink: 0; }
+
+        /* break-all */
+        .break-all { word-break: break-all; }
+
+        /* grid-cols-3 */
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+
+        /* px-5 py-3 for table cells (already likely covered but ensure) */
+        .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+        .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+        .p-2  { padding: 0.5rem; }
+        .p-3  { padding: 0.75rem; }
+        .p-4  { padding: 1rem; }
+        .p-5  { padding: 1.25rem; }
+        .p-6  { padding: 1.5rem; }
+        .pt-3 { padding-top: 0.75rem; }
+        .pt-4 { padding-top: 1rem; }
+        .pt-6 { padding-top: 1.5rem; }
+        .pb-2 { padding-bottom: 0.5rem; }
+        .pb-4 { padding-bottom: 1rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-5 { margin-bottom: 1.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 0.75rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-5 { margin-top: 1.25rem; }
+        .gap-1 { gap: 0.25rem; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-4 { gap: 1rem; }
+        .gap-6 { gap: 1.5rem; }
+        .space-y-3 > * + * { margin-top: 0.75rem; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .flex-1  { flex: 1 1 0%; }
+        .flex-shrink-0 { flex-shrink: 0; }
+        .w-full  { width: 100%; }
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-base { font-size: 1rem; line-height: 1.5rem; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .font-semibold { font-weight: 600; }
+        .font-medium   { font-weight: 500; }
+        .font-bold     { font-weight: 700; }
+        .items-center  { align-items: center; }
+        .items-start   { align-items: flex-start; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-end    { justify-content: flex-end; }
+        .flex           { display: flex; }
+        .grid           { display: grid; }
+        .hidden         { display: none; }
+        .block          { display: block; }
+        .rounded        { border-radius: 0.25rem; }
+        .rounded-full   { border-radius: 9999px; }
+        .rounded-lg     { border-radius: 0.5rem; }
+        .rounded-xl     { border-radius: 0.75rem; }
+        .rounded-2xl    { border-radius: 1rem; }
+        .overflow-hidden { overflow: hidden; }
+        .overflow-auto   { overflow: auto; }
+        .relative        { position: relative; }
+        .fixed           { position: fixed; }
+        .transition-all  { transition: all 0.2s ease; }
+        .transition-colors { transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease; }
+        .cursor-pointer  { cursor: pointer; }
+        .w-full { width: 100%; }
+        .max-w-md { max-width: 28rem; }
+        .flex-col { flex-direction: column; }
+        .flex-row { flex-direction: row; }
+        .flex-wrap { flex-wrap: wrap; }
+        .text-center { text-align: center; }
+        .text-right  { text-align: right; }
+        .text-left   { text-align: left; }
+        .uppercase   { text-transform: uppercase; }
+        .select-none { user-select: none; }
+        .border     { border-width: 1px; border-style: solid; }
+        .border-t   { border-top-width: 1px; border-top-style: solid; }
+        .border-b   { border-bottom-width: 1px; border-bottom-style: solid; }
+        .border-2   { border-width: 2px; border-style: solid; }
+        .border-l   { border-left-width: 1px; border-left-style: solid; }
+        .shadow-lg  { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3), 0 4px 6px -4px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body style="background:var(--c-bg);color:var(--c-text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;">
@@ -1503,17 +2137,17 @@
     <div id="loading-screen" class="fixed inset-0 z-50 flex items-center justify-center" style="background:var(--c-bg)">
         <div class="text-center">
             <div class="relative w-16 h-16 mx-auto mb-5">
-                <div class="loader-ring w-16 h-16 border-[3px] border-primary-500/20 border-t-primary-500 rounded-full"></div>
+                <div class="loader-ring" style="width:4rem;height:4rem;border-width:3px;border-style:solid;border-color:rgba(34,197,94,0.2);border-top-color:var(--c-green);border-radius:9999px"></div>
                 <div class="absolute inset-0 flex items-center justify-center">
-                    <i class="fas fa-robot text-primary-400 text-lg"></i>
+                    <i class="fas fa-robot text-lg" style="color:var(--c-green)"></i>
                 </div>
             </div>
             <div class="text-xl font-bold gradient-text tracking-tight">Melon Trading Bot</div>
             <div class="text-xs text-gray-500 mt-2 font-mono">Initializing dashboard…</div>
             <div class="mt-4 flex items-center justify-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-primary-500 animate-bounce" style="animation-delay:0s"></span>
-                <span class="w-1.5 h-1.5 rounded-full bg-primary-500 animate-bounce" style="animation-delay:.15s"></span>
-                <span class="w-1.5 h-1.5 rounded-full bg-primary-500 animate-bounce" style="animation-delay:.3s"></span>
+                <span class="animate-bounce rounded-full" style="width:0.375rem;height:0.375rem;background:var(--c-green);display:inline-block;animation-delay:0s"></span>
+                <span class="animate-bounce rounded-full" style="width:0.375rem;height:0.375rem;background:var(--c-green);display:inline-block;animation-delay:.15s"></span>
+                <span class="animate-bounce rounded-full" style="width:0.375rem;height:0.375rem;background:var(--c-green);display:inline-block;animation-delay:.3s"></span>
             </div>
         </div>
     </div>
@@ -3753,14 +4387,15 @@
             // P&L
             const pnlEl = document.getElementById('stat-pnl');
             pnlEl.textContent = '₹' + pnl.toFixed(2);
-            pnlEl.className = 'text-2xl font-bold font-mono mt-1 ' + (pnl >= 0 ? 'text-primary-400' : 'text-danger-500');
-            
+            pnlEl.className = 'text-2xl font-bold font-mono mt-1';
+            pnlEl.style.color = pnl >= 0 ? 'var(--c-green)' : 'var(--c-red)';
+
             const pnlIcon = document.getElementById('pnl-icon');
-            pnlIcon.className = 'w-10 h-10 rounded-xl flex items-center justify-center ' + 
-                (pnl >= 0 ? 'bg-primary-500/20' : 'bg-danger-500/20');
-            pnlIcon.innerHTML = pnl >= 0 ? 
-                '<i class="fas fa-arrow-trend-up text-primary-400"></i>' : 
-                '<i class="fas fa-arrow-trend-down text-danger-500"></i>';
+            pnlIcon.className = 'w-10 h-10 rounded-xl flex items-center justify-center';
+            pnlIcon.style.background = pnl >= 0 ? 'var(--c-green-dim)' : 'var(--c-red-dim)';
+            pnlIcon.innerHTML = pnl >= 0 ?
+                '<i class="fas fa-arrow-trend-up" style="color:var(--c-green)"></i>' :
+                '<i class="fas fa-arrow-trend-down" style="color:var(--c-red)"></i>';
             
             document.getElementById('pnl-change').textContent = trades + ' trades today';
             
@@ -3772,7 +4407,8 @@
             document.getElementById('stat-positions').textContent = openPos;
             const posPnlEl = document.getElementById('position-pnl');
             posPnlEl.textContent = '₹' + unrealized.toFixed(2) + ' unrealized';
-            posPnlEl.className = 'text-sm ' + (unrealized >= 0 ? 'text-primary-400' : 'text-danger-500');
+            posPnlEl.className = 'text-sm';
+            posPnlEl.style.color = unrealized >= 0 ? 'var(--c-green)' : 'var(--c-red)';
             
             // Update position badge
             const posBadge = document.getElementById('position-count');
@@ -3787,7 +4423,8 @@
             const paperPnlEl = document.getElementById('paper-pnl');
             if (paperPnlEl) {
                 paperPnlEl.textContent = (paperPnl >= 0 ? '+' : '') + '₹' + paperPnl.toFixed(2);
-                paperPnlEl.className = 'text-xl font-bold font-mono ' + (paperPnl >= 0 ? 'text-yellow-400' : 'text-danger-400');
+                paperPnlEl.className = 'text-xl font-bold font-mono';
+                paperPnlEl.style.color = paperPnl >= 0 ? '#facc15' : '#f87171';
             }
             const paperTradesEl = document.getElementById('paper-trades');
             if (paperTradesEl) paperTradesEl.textContent = paperTrades.length;
@@ -3800,7 +4437,8 @@
             const livePnlEl = document.getElementById('live-pnl');
             if (livePnlEl) {
                 livePnlEl.textContent = (livePnl >= 0 ? '+' : '') + '₹' + livePnl.toFixed(2);
-                livePnlEl.className = 'text-xl font-bold font-mono ' + (livePnl >= 0 ? 'text-primary-400' : 'text-danger-400');
+                livePnlEl.className = 'text-xl font-bold font-mono';
+                livePnlEl.style.color = livePnl >= 0 ? 'var(--c-green)' : '#f87171';
             }
             const liveTradesEl = document.getElementById('live-trades');
             if (liveTradesEl) liveTradesEl.textContent = liveTrades.length;
@@ -3813,10 +4451,12 @@
             const marketStatus = document.getElementById('market-status');
             if (appData.stats.within_trading_hours) {
                 marketStatus.textContent = 'Open';
-                marketStatus.className = 'text-2xl font-bold mt-1 text-primary-400';
+                marketStatus.className = 'text-2xl font-bold mt-1';
+                marketStatus.style.color = 'var(--c-green)';
             } else {
                 marketStatus.textContent = 'Closed';
-                marketStatus.className = 'text-2xl font-bold mt-1 text-gray-500';
+                marketStatus.className = 'text-2xl font-bold mt-1';
+                marketStatus.style.color = 'var(--c-muted)';
             }
             
             // Daily limit bar (only applies to live trading)
@@ -3868,24 +4508,27 @@
             // Update System Mode Badge
             const modeBadge = document.getElementById('system-mode-badge');
             if (isPaper) {
-                modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+                modeBadge.className = 'mode-badge-paper';
                 modeBadge.innerHTML = '<i class="fas fa-flask text-xs mr-1"></i> PAPER TRADING';
             } else if (appData.config.system_enabled) {
-                modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-primary-500/20 text-primary-400 border border-primary-500/30';
+                modeBadge.className = 'mode-badge-live';
                 modeBadge.innerHTML = '<i class="fas fa-circle text-xs mr-1"></i> LIVE TRADING';
             } else {
-                modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-400';
+                modeBadge.className = 'mode-badge-paused';
                 modeBadge.innerHTML = '<i class="fas fa-pause text-xs mr-1"></i> SYSTEM PAUSED';
             }
             
             // P&L
             const pnlEl = document.getElementById('risk-pnl');
             pnlEl.textContent = (pnl >= 0 ? '+' : '') + '₹' + Math.abs(pnl).toLocaleString('en-IN');
-            pnlEl.className = 'text-2xl font-bold font-mono ' + (pnl >= 0 ? 'text-primary-400' : 'text-danger-500');
-            
+            pnlEl.className = 'text-2xl font-bold font-mono';
+            pnlEl.style.color = pnl >= 0 ? 'var(--c-green)' : 'var(--c-red)';
+
             const pnlPct = ((pnl / capital) * 100).toFixed(2);
-            document.getElementById('risk-pnl-pct').textContent = (pnl >= 0 ? '+' : '') + pnlPct + '%';
-            document.getElementById('risk-pnl-pct').className = 'text-xs mt-1 ' + (pnl >= 0 ? 'text-primary-400' : 'text-danger-500');
+            const pnlPctEl = document.getElementById('risk-pnl-pct');
+            pnlPctEl.textContent = (pnl >= 0 ? '+' : '') + pnlPct + '%';
+            pnlPctEl.className = 'text-xs mt-1';
+            pnlPctEl.style.color = pnl >= 0 ? 'var(--c-green)' : 'var(--c-red)';
             
             // Capital Used
             document.getElementById('risk-capital-used').textContent = '₹' + capitalUsed.toLocaleString('en-IN');
@@ -3902,11 +4545,11 @@
             riskBar.style.width = riskPctBar + '%';
             // Color code risk bar
             if (riskPercent > maxRiskPercent * 0.8) {
-                riskBar.className = 'h-1.5 rounded-full transition-all bg-danger-500';
+                riskBar.className = 'h-1.5 rounded-full transition-all risk-bar-danger';
             } else if (riskPercent > maxRiskPercent * 0.5) {
-                riskBar.className = 'h-1.5 rounded-full transition-all bg-warning-500';
+                riskBar.className = 'h-1.5 rounded-full transition-all risk-bar-warning';
             } else {
-                riskBar.className = 'h-1.5 rounded-full transition-all bg-primary-500';
+                riskBar.className = 'h-1.5 rounded-full transition-all risk-bar-safe';
             }
             
             // Open Positions
@@ -3915,13 +4558,16 @@
             const posStatus = document.getElementById('risk-position-status');
             if (openPos >= maxPositions) {
                 posStatus.textContent = 'Max Reached';
-                posStatus.className = 'text-xs mt-1 text-danger-500';
+                posStatus.className = 'text-xs mt-1';
+                posStatus.style.color = 'var(--c-red)';
             } else if (openPos >= maxPositions * 0.8) {
                 posStatus.textContent = 'Near Limit';
-                posStatus.className = 'text-xs mt-1 text-warning-500';
+                posStatus.className = 'text-xs mt-1';
+                posStatus.style.color = 'var(--c-amber)';
             } else {
                 posStatus.textContent = 'Safe';
-                posStatus.className = 'text-xs mt-1 text-primary-400';
+                posStatus.className = 'text-xs mt-1';
+                posStatus.style.color = 'var(--c-green)';
             }
             
             // Win Rate
@@ -3965,7 +4611,9 @@
                 document.getElementById('equity-current').textContent = 'Now: ₹' + currentEquity.toLocaleString('en-IN');
                 const totalReturn = ((currentEquity - capital) / capital * 100).toFixed(2);
                 document.getElementById('equity-return').textContent = 'Return: ' + (totalReturn >= 0 ? '+' : '') + totalReturn + '%';
-                document.getElementById('equity-return').className = totalReturn >= 0 ? 'text-primary-400' : 'text-danger-500';
+                const erEl = document.getElementById('equity-return');
+                erEl.className = '';
+                erEl.style.color = totalReturn >= 0 ? 'var(--c-green)' : 'var(--c-red)';
                 
                 // Only show chart if we have data points or trades
                 if (data.length > 1 || trades.length > 0) {
@@ -4106,48 +4754,47 @@
                 `STT: ₹${costs.stt.toFixed(2)}\n` +
                 `GST: ₹${costs.gst.toFixed(2)}` : '';
             
-            let statusClass = 'bg-gray-500/20 text-gray-400';
-            if (status === 'OPEN') statusClass = 'bg-blue-500/20 text-blue-400';
-            if (status === 'CLOSED' && pnl > 0) statusClass = 'bg-primary-500/20 text-primary-400';
-            if (status === 'CLOSED' && pnl < 0) statusClass = 'bg-danger-500/20 text-danger-400';
-            
-            // Mode badge for the dedicated column
+            let statusStyle = 'background:rgba(107,114,128,0.12);color:#9ca3af';
+            if (status === 'OPEN') statusStyle = 'background:rgba(59,130,246,0.12);color:#60a5fa';
+            if (status === 'CLOSED' && pnl > 0) statusStyle = 'background:var(--c-green-dim);color:var(--c-green)';
+            if (status === 'CLOSED' && pnl < 0) statusStyle = 'background:var(--c-red-dim);color:#f87171';
+
             const modeBadge = isPaper
-                ? '<span class="px-2 py-1 rounded text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"><i class="fas fa-flask mr-1"></i>Paper</span>'
-                : '<span class="px-2 py-1 rounded text-xs bg-primary-500/20 text-primary-400 border border-primary-500/30"><i class="fas fa-circle mr-1 text-[6px]"></i>Live</span>';
-            
-            // Row styling - paper trades get a subtle yellow left border
-            const rowClass = isPaper
-                ? 'border-b border-dark-600 hover:bg-yellow-500/5 border-l-4 border-l-yellow-500/50'
-                : 'border-b border-dark-600 hover:bg-dark-700/30 border-l-4 border-l-primary-500/50';
-            
+                ? '<span style="display:inline-block;padding:0.125rem 0.5rem;border-radius:0.25rem;font-size:0.75rem;background:var(--c-amber-dim);color:#facc15;border:1px solid rgba(234,179,8,0.3)"><i class="fas fa-flask" style="margin-right:0.25rem"></i>Paper</span>'
+                : '<span style="display:inline-block;padding:0.125rem 0.5rem;border-radius:0.25rem;font-size:0.75rem;background:var(--c-green-dim);color:var(--c-green);border:1px solid rgba(34,197,94,0.3)"><i class="fas fa-circle" style="font-size:6px;margin-right:0.25rem"></i>Live</span>';
+
+            const rowStyle = isPaper
+                ? 'border-bottom:1px solid var(--c-border);border-left:4px solid rgba(234,179,8,0.5)'
+                : 'border-bottom:1px solid var(--c-border);border-left:4px solid rgba(34,197,94,0.5)';
+            const rowHoverClass = isPaper ? 'hover\\:bg-yellow-500\\/5' : 'hover\\:bg-dark-700\\/30';
+
             return `
-                <tr class="${rowClass}">
-                    <td class="px-5 py-3 text-gray-400" data-label="Time">${time}</td>
+                <tr style="${rowStyle}" class="${rowHoverClass}">
+                    <td class="px-5 py-3" style="color:var(--c-muted)" data-label="Time">${time}</td>
                     <td class="px-5 py-3 font-semibold" data-label="Symbol">${trade.symbol}</td>
                     <td class="px-5 py-3" data-label="Strategy">
-                        <span class="text-xs text-gray-400" title="${scanName}">${scanDisplay}</span>
+                        <span style="font-size:0.75rem;color:var(--c-muted)" title="${scanName}">${scanDisplay}</span>
                     </td>
                     <td class="px-5 py-3" data-label="Mode">${modeBadge}</td>
                     <td class="px-5 py-3" data-label="Side">
-                        <span class="px-2 py-1 rounded text-xs ${side === 'BUY' ? 'bg-primary-500/20 text-primary-400' : 'bg-danger-500/20 text-danger-400'}">
+                        <span style="display:inline-block;padding:0.125rem 0.5rem;border-radius:0.25rem;font-size:0.75rem;${side === 'BUY' ? 'background:var(--c-green-dim);color:var(--c-green)' : 'background:var(--c-red-dim);color:#f87171'}">
                             ${side}
                         </span>
                     </td>
                     <td class="px-5 py-3 font-mono" data-label="Entry">
                         ₹${(trade.entry_price || 0).toFixed(2)}
-                        ${breakEven ? `<span class="text-xs text-gray-500 block" title="Break-even: ₹${breakEven.toFixed(2)}">BE: ₹${breakEven.toFixed(2)}</span>` : ''}
+                        ${breakEven ? `<span style="font-size:0.75rem;color:var(--c-muted);display:block" title="Break-even: ₹${breakEven.toFixed(2)}">BE: ₹${breakEven.toFixed(2)}</span>` : ''}
                     </td>
-                    <td class="px-5 py-3 text-xs text-gray-400" data-label="SL/TP">
+                    <td class="px-5 py-3" style="font-size:0.75rem;color:var(--c-muted)" data-label="SL/TP">
                         SL: ₹${(trade.stop_loss || 0).toFixed(2)}<br>
                         TP: ₹${(trade.target || 0).toFixed(2)}
                     </td>
                     <td class="px-5 py-3" data-label="Qty">${trade.quantity || 0}</td>
                     <td class="px-5 py-3" data-label="Status">
-                        <span class="px-2 py-1 rounded text-xs ${statusClass}">${status}</span>
-                        ${costs ? `<span class="text-xs text-gray-500 block mt-1" title="${costTooltip}">💰 ₹${costs.total.toFixed(0)}</span>` : ''}
+                        <span style="display:inline-block;padding:0.125rem 0.5rem;border-radius:0.25rem;font-size:0.75rem;${statusStyle}">${status}</span>
+                        ${costs ? `<span style="font-size:0.75rem;color:var(--c-muted);display:block;margin-top:0.25rem" title="${costTooltip}">💰 ₹${costs.total.toFixed(0)}</span>` : ''}
                     </td>
-                    <td class="px-5 py-3 text-right font-mono ${pnl >= 0 ? 'text-primary-400' : 'text-danger-500'}" data-label="P&L">
+                    <td class="px-5 py-3 text-right font-mono" style="color:${pnl >= 0 ? 'var(--c-green)' : 'var(--c-red)'}" data-label="P&L">
                         ${pnl !== 0 ? (pnl >= 0 ? '+' : '') + '₹' + pnl.toFixed(2) : '-'}
                     </td>
                 </tr>
