@@ -22,6 +22,7 @@ from src.api.routes import ui as ui_routes
 from src.api.routes import webhook as webhook_routes
 from src.api.routes import analytics as analytics_routes
 from src.api.routes import alerts as alerts_routes
+from src.api.routes import turbo as turbo_routes
 
 logger = setup_logging()
 
@@ -36,8 +37,13 @@ async def lifespan(app: FastAPI):
     init_db()
     logger.info("Database initialized")
 
+    from src.services.turbo_service import start_turbo_processor, stop_turbo_processor
+    await start_turbo_processor()
+    logger.info("Turbo processor started")
+
     yield
 
+    await stop_turbo_processor()
     logger.info("=" * 50)
     logger.info("Trading Bot Shutting Down")
     logger.info("=" * 50)
@@ -74,6 +80,7 @@ def create_app() -> FastAPI:
     app.include_router(webhook_routes.router)
     app.include_router(analytics_routes.router)
     app.include_router(alerts_routes.router)
+    app.include_router(turbo_routes.router)
 
     # UI routes (includes / and /dashboard — must be included last to avoid
     # shadowing API routes registered above)
