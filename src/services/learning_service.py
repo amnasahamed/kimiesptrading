@@ -49,7 +49,7 @@ def _load_signals_from_db(db: Session) -> List[Dict]:
             "symbol": s.symbol,
             "status": s.status,
             "timestamp": s.timestamp.isoformat() if s.timestamp else None,
-            "scan_name": s.scan_name,
+            "scan_name": (s.signal_metadata or {}).get("scan_name") if s.signal_metadata else None,
         }
         for s in rows
     ]

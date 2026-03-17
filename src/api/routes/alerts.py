@@ -27,13 +27,13 @@ router = APIRouter(prefix="/api", tags=["alerts"])
 def _alert_dict(alert) -> dict:
     return {
         "id": alert.id,
-        "timestamp": alert.timestamp.isoformat() if alert.timestamp else None,
+        "timestamp": alert.received_at.isoformat() if alert.received_at else None,
         "alert_type": alert.alert_type,
         "source_ip": alert.source_ip,
         "symbols": alert.symbols,
-        "scan_name": alert.scan_name,
+        "scan_name": (alert.raw_payload or {}).get("scan_name") if alert.raw_payload else None,
         "processing_status": alert.processing_status,
-        "result_summary": alert.result_summary,
+        "result_summary": alert.processing_result,
         "latency_ms": alert.latency_ms,
     }
 
@@ -96,7 +96,7 @@ async def incoming_alerts_today():
         alerts = await get_today(db)
         stats = await get_stats(db)
         recent = [_alert_dict(a) for a in alerts[-10:]]
-        unique_scans = len({a.scan_name for a in alerts if a.scan_name})
+        unique_scans = len({(a.raw_payload or {}).get("scan_name") for a in alerts if a.raw_payload and a.raw_payload.get("scan_name")})
         unique_symbols = len({s for a in alerts for s in (a.symbols or [])})
         return {
             "summary": {
