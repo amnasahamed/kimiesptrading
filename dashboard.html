@@ -4359,21 +4359,19 @@
             setInterval(updateTime, 1000);
             
             await loadData();
-            
+
+            // Hide loading screen immediately once data is ready
+            const ls = document.getElementById('loading-screen');
+            if (ls) {
+                ls.style.opacity = '0';
+                setTimeout(() => ls.style.display = 'none', 200);
+            }
+
             // Check if we're on the turbo tab and load data
             if (document.getElementById('tab-turbo') && !document.getElementById('tab-turbo').classList.contains('hidden')) {
-                console.log('Turbo tab is active on load, fetching data...');
                 loadTurboStatus();
                 startTurboRefresh();
             }
-            
-            // Hide loading screen
-            setTimeout(() => {
-                document.getElementById('loading-screen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('loading-screen').style.display = 'none';
-                }, 300);
-            }, 500);
             
             // Auto refresh every 10 seconds
             setInterval(refreshData, 10000);
@@ -4420,31 +4418,29 @@
         // Load all data
         async function loadData() {
             try {
-                const [configRes, statsRes, tradesRes, positionsRes, alertsStatsRes] = await Promise.all([
-                    fetch('/api/config?_=' + Date.now()),
-                    fetch('/api/stats?_=' + Date.now()),
-                    fetch('/api/trades?_=' + Date.now()),
-                    fetch('/api/positions?_=' + Date.now()),
-                    fetch('/api/incoming-alerts/stats?_=' + Date.now())
+                // Single combined call for config+stats+trades+alert-stats,
+                // and positions in parallel (positions needs Kite quotes)
+                const ts = Date.now();
+                const [dashRes, positionsRes] = await Promise.all([
+                    fetch('/api/dashboard?_=' + ts),
+                    fetch('/api/positions?_=' + ts),
                 ]);
 
-                if (!configRes.ok || !statsRes.ok) throw new Error('API Error');
+                if (!dashRes.ok) throw new Error('API Error');
 
-                appData.config = await configRes.json();
-                appData.stats = await statsRes.json();
-                appData.trades = await tradesRes.json();
-                const positionsData = await positionsRes.json();
-                appData.positions = positionsData.positions || [];
-                
-                // Update incoming alerts stats if available
-                try {
-                    if (alertsStatsRes.ok) {
-                        const alertsStats = await alertsStatsRes.json();
-                        updateIncomingAlertsStats(alertsStats.stats || {});
-                    }
-                } catch (e) {
-                    console.error('Failed to parse alerts stats:', e);
+                const dash = await dashRes.json();
+                appData.config = dash.config;
+                appData.stats  = dash.stats;
+                appData.trades = dash.trades;
+
+                if (positionsRes.ok) {
+                    const positionsData = await positionsRes.json();
+                    appData.positions = positionsData.positions || [];
                 }
+
+                try {
+                    updateIncomingAlertsStats(dash.alerts_stats || {});
+                } catch (e) {}
 
                 updateUI();
             } catch (err) {

@@ -1,6 +1,7 @@
 """
 Trading API routes.
 """
+import asyncio
 from datetime import datetime
 from typing import Optional
 
@@ -148,10 +149,12 @@ async def get_positions():
             return {"positions": [], "count": 0, "total_unrealized_pnl": 0}
 
         kite = get_kite_service()
-        positions_with_pnl = []
 
-        for pos in open_positions:
-            quote = await kite.get_quote(pos.symbol)
+        # Fetch all quotes in parallel instead of one-by-one
+        quotes = await asyncio.gather(*[kite.get_quote(pos.symbol) for pos in open_positions])
+
+        positions_with_pnl = []
+        for pos, quote in zip(open_positions, quotes):
             pos_dict = {
                 "id": pos.id,
                 "symbol": pos.symbol,
@@ -225,6 +228,74 @@ async def clear_signals():
         deleted = db.query(Signal).filter(Signal.timestamp >= today).delete()
         db.commit()
         return {"status": "cleared", "message": f"{deleted} signals cleared"}
+    finally:
+        db.close()
+
+
+@router.get("/dashboard")
+async def get_dashboard():
+    """Single endpoint that returns everything the dashboard needs on load.
+
+    Replaces the 3 separate calls to /api/config, /api/stats, and /api/trades
+    with one round trip, cutting initial load time significantly.
+    """
+    from src.api.routes.config import load_config
+    from src.repositories.alert_repository import get_stats as alert_stats
+    db = get_db_session()
+    try:
+        trade_repo = TradeRepository(db)
+        today_trades = trade_repo.get_today_trades()
+        stats = trade_repo.get_trade_stats(days=30)
+        config = load_config()
+
+        rs = __import__('src.services.risk_service', fromlist=['get_risk_service']).get_risk_service()
+        within_hours, _ = rs._is_in_trading_window(config)
+
+        paper_trades = [t for t in today_trades if t.paper_trading]
+        live_trades  = [t for t in today_trades if not t.paper_trading]
+
+        trades_list = [
+            {
+                "id": t.id,
+                "date": t.date.isoformat() if t.date else None,
+                "symbol": t.symbol,
+                "action": t.action,
+                "entry_price": t.entry_price,
+                "exit_price": t.exit_price,
+                "stop_loss": t.stop_loss,
+                "target": t.target,
+                "quantity": t.quantity,
+                "pnl": t.pnl,
+                "status": t.status,
+                "paper_trading": t.paper_trading,
+                "alert_name": t.alert_name,
+                "scan_name": t.scan_name,
+                "order_id": t.order_id,
+            }
+            for t in today_trades
+        ]
+
+        alert_s = await alert_stats(db)
+
+        return {
+            "config": config,
+            "stats": {
+                "system_enabled": config.get("system_enabled", False),
+                "within_trading_hours": within_hours,
+                "today_trades": len(today_trades),
+                "today_pnl": sum(t.pnl or 0 for t in today_trades if t.status == "CLOSED"),
+                "max_trades": config.get("max_trades_per_day", 10),
+                "winning_trades": stats.get("winners", 0),
+                "losing_trades": stats.get("losers", 0),
+                "capital": config.get("capital", 0),
+                "risk_percent": config.get("risk_percent", 0),
+                "total_trades": len(today_trades),
+                "paper_trades_today": len(paper_trades),
+                "live_trades_today": len(live_trades),
+            },
+            "trades": trades_list,
+            "alerts_stats": alert_s,
+        }
     finally:
         db.close()
 
