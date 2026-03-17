@@ -2356,7 +2356,7 @@
                           style="background:var(--c-green-dim);color:#4ade80">0</span>
                 </button>
 
-                <button onclick="switchTab('gtt')" id="nav-gtt"
+                <button onclick="switchTab('gtt')" id="sidebar-nav-gtt"
                     class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 hover:text-gray-200 transition-all"
                     style="border:1px solid transparent">
                     <i class="fas fa-shield-alt nav-icon text-sm"></i>
@@ -2409,7 +2409,7 @@
                 <div class="pt-3 mt-3 border-t" style="border-color:var(--c-border)">
                     <p class="px-3 text-xs font-semibold uppercase tracking-wider mb-1" style="color:#374151">Settings</p>
 
-                    <button onclick="switchTab('config')" id="nav-config"
+                    <button onclick="switchTab('config')" id="sidebar-nav-config"
                         class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 hover:text-gray-200 transition-all"
                         style="border:1px solid transparent">
                         <i class="fas fa-cog nav-icon text-sm"></i>
@@ -2431,7 +2431,7 @@
                 <div class="flex items-center justify-between px-2 py-2 rounded-xl" style="background:var(--c-surface-2)">
                     <div class="flex items-center gap-2">
                         <div id="connection-status" class="status-dot active"></div>
-                        <span id="connection-text" class="text-xs" style="color:#6b7280">Connected</span>
+                        <span class="text-xs" style="color:#6b7280">Connected</span>
                     </div>
                     <button onclick="refreshData()" title="Refresh data"
                             class="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:text-primary-400"
