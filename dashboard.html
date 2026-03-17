@@ -2196,31 +2196,31 @@
         </div>
     </div>
     <div class="tnav-center">
-        <button onclick="switchTab('dashboard')" id="nav-dashboard"
+        <button onclick="switchTab('dashboard')" id="sidebar-nav-dashboard"
                 class="tnav-btn nav-item nav-item-active">
             <i class="fas fa-chart-line" style="font-size:0.75rem"></i> Dashboard
         </button>
-        <button onclick="switchTab('positions')" id="nav-positions"
+        <button onclick="switchTab('positions')" id="sidebar-nav-positions"
                 class="tnav-btn nav-item">
             <i class="fas fa-briefcase" style="font-size:0.75rem"></i> Positions
         </button>
-        <button onclick="switchTab('trades')" id="nav-trades"
+        <button onclick="switchTab('trades')" id="sidebar-nav-trades"
                 class="tnav-btn nav-item">
             <i class="fas fa-history" style="font-size:0.75rem"></i> Trades
         </button>
-        <button onclick="switchTab('analytics')" id="nav-analytics"
+        <button onclick="switchTab('analytics')" id="sidebar-nav-analytics"
                 class="tnav-btn nav-item">
             <i class="fas fa-chart-bar" style="font-size:0.75rem"></i> Analytics
         </button>
-        <button onclick="switchTab('learning')" id="nav-learning"
+        <button onclick="switchTab('learning')" id="sidebar-nav-learning"
                 class="tnav-btn nav-item">
             <i class="fas fa-graduation-cap" style="font-size:0.75rem"></i> Learning
         </button>
-        <button onclick="switchTab('alerts')" id="nav-alerts"
+        <button onclick="switchTab('alerts')" id="sidebar-nav-alerts"
                 class="tnav-btn nav-item">
             <i class="fas fa-satellite-dish" style="font-size:0.75rem"></i> Alerts
         </button>
-        <button onclick="switchTab('turbo')" id="nav-turbo"
+        <button onclick="switchTab('turbo')" id="sidebar-nav-turbo"
                 class="tnav-btn nav-item">
             <i class="fas fa-rocket" style="font-size:0.75rem"></i> Turbo
         </button>
@@ -6024,6 +6024,7 @@
 
             // Show selected tab with animation
             const tabEl = document.getElementById('tab-' + tab);
+            if (!tabEl) return;
             tabEl.classList.remove('hidden');
             tabEl.classList.add('active');
 
@@ -6090,12 +6091,12 @@
             } catch (err) {
                 showToast('Failed to toggle', 'error');
             }
-            // Sync mobile toggle UI
-            document.getElementById('trading-toggle-dot-mobile')?.style &&
-                (document.getElementById('trading-toggle-dot-mobile').style.transform =
-                    document.getElementById('trading-toggle-dot').style.transform);
-            document.getElementById('trading-toggle-mobile')?.classList.toggle('on',
-                document.getElementById('trading-toggle').classList.contains('on'));
+            // Sync mobile toggle UI using app state directly
+            const mobileEnabled = appData?.config?.system_enabled;
+            const dotMobile = document.getElementById('trading-toggle-dot-mobile');
+            const trackMobile = document.getElementById('trading-toggle-mobile');
+            if (dotMobile) dotMobile.style.transform = mobileEnabled ? 'translateX(22px)' : 'translateX(0)';
+            if (trackMobile) trackMobile.classList.toggle('on', !!mobileEnabled);
         }
 
         // Toggle Turbo Mode
