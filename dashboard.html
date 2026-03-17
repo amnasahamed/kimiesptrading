@@ -230,21 +230,29 @@
         .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 
         .btn-primary {
-            background: var(--c-green);
-            color: #000;
+            background: var(--c-blue);
+            color: #fff;
             box-shadow: 0 2px 12px rgba(34,197,94,.25);
         }
         .btn-primary:hover:not(:disabled) {
-            background: #1da34a;
+            background: #1d4ed8;
             box-shadow: 0 4px 20px rgba(34,197,94,.4);
         }
+        .btn-secondary {
+            background: var(--c-surface-2);
+            color: var(--c-text);
+            border: 1px solid var(--c-border);
+        }
+        .btn-secondary:hover:not(:disabled) { background: var(--c-surface-3); }
         .btn-danger {
-            background: var(--c-red);
-            color: #fff;
+            background: var(--c-red-dim);
+            color: var(--c-red);
+            border: 1px solid rgba(220,38,38,0.2);
             box-shadow: 0 2px 12px rgba(239,68,68,.2);
         }
         .btn-danger:hover:not(:disabled) {
-            background: #dc2626;
+            background: var(--c-red);
+            color: #fff;
             box-shadow: 0 4px 20px rgba(239,68,68,.35);
         }
         .btn-ghost {
@@ -649,19 +657,19 @@
         }
         #tab-config input:focus,
         #tab-config select:focus {
-            border-color: rgba(34,197,94,.4);
+            border-color: var(--c-blue);
             outline: none;
         }
 
         /* ============================================================
            BADGE PILL
            ============================================================ */
-        .badge-green  { background: var(--c-green-dim);  color: #4ade80; }
-        .badge-red    { background: var(--c-red-dim);    color: #f87171; }
-        .badge-amber  { background: var(--c-amber-dim);  color: #fbbf24; }
-        .badge-blue   { background: var(--c-blue-dim);   color: #60a5fa; }
-        .badge-purple { background: var(--c-purple-dim); color: #c084fc; }
-        .badge-gray   { background: rgba(255,255,255,.08); color: #9ca3af; }
+        .badge-green  { background: var(--c-green-dim);  color: var(--c-green);  }
+        .badge-red    { background: var(--c-red-dim);    color: var(--c-red);    }
+        .badge-amber  { background: var(--c-amber-dim);  color: var(--c-amber);  }
+        .badge-blue   { background: var(--c-blue-dim);   color: var(--c-blue);   }
+        .badge-purple { background: var(--c-purple-dim); color: var(--c-purple); }
+        .badge-gray   { background: var(--c-surface-3);  color: var(--c-muted);  }
 
         /* ============================================================
            TOGGLE SWITCH
@@ -1245,9 +1253,9 @@
            INPUT FOCUS RING
            ============================================================ */
         input:focus, select:focus, textarea:focus {
+            border-color: var(--c-blue);
             outline: none;
-            border-color: rgba(34,197,94,.5) !important;
-            box-shadow: 0 0 0 3px rgba(34,197,94,.1);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
         }
 
         /* ============================================================
