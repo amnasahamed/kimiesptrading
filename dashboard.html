@@ -232,11 +232,11 @@
         .btn-primary {
             background: var(--c-blue);
             color: #fff;
-            box-shadow: 0 2px 12px rgba(34,197,94,.25);
+            box-shadow: 0 2px 12px rgba(37,99,235,.25);
         }
         .btn-primary:hover:not(:disabled) {
             background: #1d4ed8;
-            box-shadow: 0 4px 20px rgba(34,197,94,.4);
+            box-shadow: 0 4px 20px rgba(37,99,235,.4);
         }
         .btn-secondary {
             background: var(--c-surface-2);
@@ -685,9 +685,9 @@
             transition: background var(--t-med), border-color var(--t-med), box-shadow var(--t-med);
         }
         .toggle-track.on {
-            background: #166534;
-            border-color: rgba(34,197,94,.4);
-            box-shadow: 0 0 12px rgba(34,197,94,.2);
+            background: var(--c-green);
+            border-color: rgba(22,163,74,0.4);
+            box-shadow: 0 0 12px rgba(22,163,74,0.2);
         }
         .toggle-thumb {
             position: absolute;
@@ -882,7 +882,7 @@
                 justify-content: flex-end;
                 padding-top: 0.5rem !important;
                 margin-top: 0.5rem;
-                border-top: 1px solid rgba(255,255,255,0.05) !important;
+                border-top: 1px solid var(--c-border) !important;
             }
         }
         
@@ -1077,7 +1077,7 @@
             transition: background var(--t-fast);
             animation: feedIn .25s ease-out;
         }
-        .trade-feed-item:hover { background: rgba(255,255,255,.025); }
+        .trade-feed-item:hover { background: var(--c-surface-2); }
         @keyframes feedIn {
             from { opacity: 0; transform: translateX(-6px); }
             to   { opacity: 1; transform: translateX(0); }
@@ -1320,7 +1320,7 @@
         .chip.active {
             background: var(--c-green-dim);
             border-color: rgba(34,197,94,.3);
-            color: #4ade80;
+            color: var(--c-green);
         }
 
         /* ============================================================
@@ -2725,7 +2725,7 @@
                                 </div>
                             </div>
                             <span id="system-mode-badge" class="text-xs px-2.5 py-1 rounded-lg font-semibold"
-                                  style="background:rgba(255,255,255,.06);color:#9ca3af">
+                                  style="background:var(--c-surface-3);color:var(--c-muted)">
                                 Loading…
                             </span>
                         </div>
@@ -2867,7 +2867,7 @@
                             <div class="flex items-start justify-between">
                                 <div class="stat-label">Total P&L</div>
                                 <div id="pnl-icon" class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                     style="background:rgba(255,255,255,.06)">
+                                     style="background:var(--c-surface-2)">
                                     <i class="fas fa-wallet text-xs" style="color:#6b7280"></i>
                                 </div>
                             </div>
@@ -3054,7 +3054,7 @@
                             <button onclick="switchTab('trades')"
                                     class="text-xs font-medium flex items-center gap-1 transition-colors"
                                     style="color:#6b7280"
-                                    onmouseover="this.style.color='#4ade80'" onmouseout="this.style.color='#6b7280'">
+                                    onmouseover="this.style.color='#16a34a'" onmouseout="this.style.color='#6b7280'">
                                 View all <i class="fas fa-arrow-right"></i>
                             </button>
                         </div>
@@ -3847,7 +3847,7 @@
                                     <h3 class="font-semibold text-sm">Symbol Performance</h3>
                                 </div>
                                 <button onclick="loadInsights()" class="text-xs transition-colors" style="color:#6b7280"
-                                        onmouseover="this.style.color='#4ade80'" onmouseout="this.style.color='#6b7280'">
+                                        onmouseover="this.style.color='#16a34a'" onmouseout="this.style.color='#6b7280'">
                                     <i class="fas fa-sync-alt"></i>
                                 </button>
                             </div>
@@ -4533,7 +4533,7 @@
             if (isEnabled) {
                 tradingIcon.innerHTML = '<i class="fas fa-circle text-xs" style="color:#22c55e"></i>';
                 tradingText.textContent = 'Trading ON';
-                tradingText.style.color = '#4ade80';
+                tradingText.style.color = '#16a34a';
             } else {
                 tradingIcon.innerHTML = '<i class="fas fa-circle text-xs" style="color:#ef4444"></i>';
                 tradingText.textContent = 'Trading OFF';
@@ -4545,14 +4545,14 @@
                 modeBadge.style.background = 'var(--c-amber-dim)';
                 modeBadge.style.borderColor = 'rgba(245,158,11,.25)';
                 modeBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full" style="background:#f59e0b;flex-shrink:0"></span><span class="font-semibold text-xs" style="color:#fbbf24">PAPER</span>';
-                statusBar.style.background = 'rgba(10,12,20,.6)';
+                statusBar.style.background = 'var(--c-surface)';
                 if (liveWarning) liveWarning.classList.add('hidden'), liveWarning.classList.remove('flex');
                 if (kiteContainer) kiteContainer.classList.add('hidden');
             } else {
                 modeBadge.style.background = 'var(--c-red-dim)';
                 modeBadge.style.borderColor = 'rgba(239,68,68,.25)';
                 modeBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full" style="background:#ef4444;flex-shrink:0"></span><span class="font-semibold text-xs" style="color:#f87171">LIVE</span>';
-                statusBar.style.background = 'rgba(20,8,8,.7)';
+                statusBar.style.background = 'rgba(220,38,38,0.06)';
                 if (liveWarning) liveWarning.classList.remove('hidden'), liveWarning.classList.add('flex');
                 if (kiteContainer) kiteContainer.classList.remove('hidden');
                 fetchKiteBalance();
@@ -4569,13 +4569,13 @@
                 }, 0);
                 const riskPercent = capital > 0 ? (totalRisk / capital) * 100 : 0;
                 riskEl.textContent = riskPercent.toFixed(1) + '%';
-                riskEl.style.color = riskPercent > 3 ? '#f87171' : riskPercent > 2 ? '#fbbf24' : '#4ade80';
+                riskEl.style.color = riskPercent > 3 ? '#f87171' : riskPercent > 2 ? '#fbbf24' : '#16a34a';
             }
 
             // Market status
             if (marketEl) {
                 marketEl.textContent = withinHours ? 'OPEN' : 'CLOSED';
-                marketEl.style.color = withinHours ? '#4ade80' : '#6b7280';
+                marketEl.style.color = withinHours ? '#16a34a' : '#6b7280';
             }
         }
         
@@ -6157,7 +6157,7 @@
                 nav.classList.remove('text-gray-400');
                 nav.classList.add('nav-item-active', 'text-primary-400');
                 nav.style.background = 'var(--c-green-dim)';
-                nav.style.border = '1px solid rgba(34,197,94,.15)';
+                nav.style.border = '1px solid rgba(37,99,235,.2)';
             }
             // Activate matching data-tab bottom-bar button (mobile) — unconditional
             const mobileBtn = document.querySelector('[data-tab="' + tab + '"]');
