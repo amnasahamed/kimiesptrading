@@ -2161,44 +2161,77 @@
         @media (max-width: 1023px) { #page-title-mobile { display: block !important; } }
 
         /* ============================================================
-           COMPACT MODE — space-saving overrides
+           COMPACT MODE — mobile space-saving overrides
            ============================================================ */
-
-        /* Scrollable content area: tighter padding */
-        .flex-1.overflow-y-auto.p-6 { padding: 12px !important; }
-
-        /* Tab section gaps */
-        .space-y-6 > * + * { margin-top: 12px !important; }
-        .space-y-4 > * + * { margin-top: 10px !important; }
-
-        /* Card padding */
-        .p-6 { padding: 12px !important; }
-        .p-5 { padding: 10px !important; }
-        .p-4 { padding: 8px !important; }
-        .px-5 { padding-left: 12px !important; padding-right: 12px !important; }
-        .py-4 { padding-top: 8px !important; padding-bottom: 8px !important; }
-        .py-5 { padding-top: 10px !important; padding-bottom: 10px !important; }
-
-        /* Grid gaps */
-        .gap-6 { gap: 10px !important; }
-        .gap-4 { gap: 8px !important; }
-        .gap-3 { gap: 6px !important; }
-        #tab-dashboard .grid { gap: 10px !important; }
-        #tab-analytics .grid { gap: 10px !important; }
-        #tab-learning .grid { gap: 10px !important; }
-        #tab-turbo .grid { gap: 10px !important; }
-        #tab-config .grid { gap: 10px !important; }
-
-        /* Stat values — slightly smaller to fit more on screen */
-        .stat-value { font-size: 1.375rem !important; }
-
-        /* Section headers tighter */
-        .section-header { margin-bottom: 6px !important; }
-
-        /* Card border radius tighter on mobile */
         @media (max-width: 1023px) {
+
+            /* Content area */
+            .flex-1.overflow-y-auto.p-6 { padding: 8px !important; }
+
+            /* Section gaps */
+            .space-y-6 > * + * { margin-top: 8px !important; }
+            .space-y-4 > * + * { margin-top: 8px !important; }
+
+            /* Card & container padding */
+            .p-6 { padding: 10px !important; }
+            .p-5 { padding: 10px !important; }
+            .p-4 { padding: 8px !important; }
+            .p-3 { padding: 6px !important; }
+            .px-5 { padding-left: 10px !important; padding-right: 10px !important; }
+            .px-4 { padding-left: 8px !important; padding-right: 8px !important; }
+            .py-4 { padding-top: 6px !important; padding-bottom: 6px !important; }
+            .py-5 { padding-top: 8px !important; padding-bottom: 8px !important; }
+            .pt-3 { padding-top: 6px !important; }
+            .pb-4 { padding-bottom: 8px !important; }
+
+            /* Grid gaps */
+            .gap-6 { gap: 8px !important; }
+            .gap-5 { gap: 8px !important; }
+            .gap-4 { gap: 6px !important; }
+            .gap-3 { gap: 6px !important; }
+            #tab-dashboard .grid,
+            #tab-analytics .grid,
+            #tab-learning .grid,
+            #tab-turbo .grid,
+            #tab-config .grid { gap: 8px !important; }
+
+            /* Card radius */
             .card { border-radius: 10px !important; }
             .card-inner { border-radius: 8px !important; }
+            .rounded-xl { border-radius: 10px !important; }
+            .rounded-2xl { border-radius: 10px !important; }
+
+            /* Stat typography — compact */
+            .stat-value { font-size: 1.2rem !important; }
+            .stat-label { font-size: 0.625rem !important; }
+
+            /* Oversized numbers in position/summary cards */
+            .text-4xl { font-size: 1.375rem !important; }
+            .text-3xl { font-size: 1.25rem !important; }
+            .text-2xl { font-size: 1.1rem !important; }
+            .text-xl  { font-size: 1rem !important; }
+
+            /* Position card specific */
+            .position-card-mobile { padding: 8px !important; }
+            .position-card-mobile .text-2xl { font-size: 1.1rem !important; }
+            .position-card-mobile .text-4xl { font-size: 1.375rem !important; }
+            .position-card-mobile button { min-height: 36px !important; }
+
+            /* Glass cards on mobile */
+            .glass.rounded-2xl.p-5,
+            .glass.rounded-2xl.p-6,
+            .glass.rounded-xl.p-5,
+            .glass.rounded-xl.p-4 { padding: 8px !important; }
+
+            /* Section icon smaller */
+            .section-icon { width: 28px !important; height: 28px !important; }
+
+            /* Reduce font sizes for labels */
+            .text-xs { font-size: 0.6875rem !important; }
+            .text-sm { font-size: 0.75rem !important; }
+
+            /* Tighter toggle area */
+            .toggle-track { width: 2.5rem !important; height: 1.375rem !important; }
         }
 
     </style>
