@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,34 +14,438 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Mobile Web App Capabilities -->
-    <meta name="theme-color" content="#f0f2f5">
+    <meta name="theme-color" content="#0a0a0f">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
+<style>
+/* ============================================
+   ULTRA COMPACT CONFIG TAB - BENTO GRID 2.0
+   ============================================ */
+
+#tab-config {
+    padding-top: 4px !important;
+}
+
+#tab-config .space-y-4 > * + * {
+    margin-top: 6px !important;
+}
+
+/* Header - minimal */
+#tab-config > div:first-child {
+    margin-bottom: 8px !important;
+}
+
+#tab-config > div:first-child h3 {
+    font-size: 0.8125rem !important;
+    margin-bottom: 0 !important;
+}
+
+#tab-config > div:first-child p {
+    display: none !important;
+}
+
+/* Main bento grid - tighter */
+#tab-config > .grid.grid-cols-1.lg\\:grid-cols-2 {
+    gap: 8px !important;
+}
+
+/* ALL cards ultra-compact */
+#tab-config .card {
+    padding: 10px !important;
+    border-radius: 10px !important;
+}
+
+#tab-config .card-inner {
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+}
+
+/* Section headers - minimal */
+#tab-config .card > .flex.items-center {
+    margin-bottom: 8px !important;
+    padding-bottom: 6px !important;
+    border-bottom: 1px solid var(--c-border) !important;
+}
+
+#tab-config .section-icon {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 11px !important;
+}
+
+#tab-config .card > .flex.items-center h3 {
+    font-size: 0.75rem !important;
+}
+
+/* Kite Auth - Collapsible Steps */
+#tab-config .card:first-child .card-inner {
+    padding: 8px 10px !important;
+    margin-bottom: 6px !important;
+}
+
+#tab-config .card:first-child .card-inner:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Step indicators smaller */
+#tab-config .w-7.h-7.rounded-full,
+#tab-config .card-inner .flex.items-center .w-7 {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 9px !important;
+}
+
+#tab-config .card-inner h4 {
+    font-size: 0.6875rem !important;
+}
+
+#tab-config .card-inner p {
+    font-size: 0.625rem !important;
+    margin: 3px 0 !important;
+}
+
+#tab-config .pl-10 {
+    padding-left: 28px !important;
+}
+
+/* Input fields - ultra compact */
+#tab-config input[type="text"],
+#tab-config input[type="number"],
+#tab-config input[type="password"],
+#tab-config select {
+    padding: 5px 8px !important;
+    font-size: 0.6875rem !important;
+    min-height: 28px !important;
+    border-radius: 6px !important;
+}
+
+#tab-config label.stat-label {
+    font-size: 0.5625rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+    margin-bottom: 2px !important;
+}
+
+/* 4-column grid for inputs */
+#tab-config .grid.grid-cols-2.gap-3 {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 6px !important;
+}
+
+@media (max-width: 1200px) {
+    #tab-config .grid.grid-cols-2.gap-3 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 640px) {
+    #tab-config .grid.grid-cols-2.gap-3 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Info text below inputs */
+#tab-config .grid.grid-cols-2.gap-3 p.text-xs {
+    font-size: 0.5625rem !important;
+    margin-top: 1px !important;
+}
+
+/* Trading Windows - compact banner */
+#tab-config .card-inner .font-medium.flex.items-center {
+    font-size: 0.6875rem !important;
+    margin-bottom: 4px !important;
+}
+
+#tab-config .card-inner p.text-sm {
+    font-size: 0.6875rem !important;
+    margin-bottom: 4px !important;
+}
+
+/* Paper Trading - ultra compact */
+#paper-trading-container {
+    padding: 8px 10px !important;
+}
+
+#paper-trading-container .section-icon {
+    width: 24px !important;
+    height: 24px !important;
+}
+
+#paper-mode-title {
+    font-size: 0.6875rem !important;
+}
+
+#paper-mode-desc {
+    font-size: 0.5625rem !important;
+}
+
+#paper-trading-container .p-3 {
+    padding: 6px 8px !important;
+}
+
+/* Toggle switches - smaller */
+#tab-config .toggle-track {
+    width: 36px !important;
+    height: 20px !important;
+}
+
+#tab-config .toggle-thumb {
+    width: 16px !important;
+    height: 16px !important;
+    top: 2px !important;
+    left: 2px !important;
+}
+
+#tab-config .toggle-track.on .toggle-thumb {
+    transform: translateX(16px) !important;
+}
+
+/* Notification section - horizontal layout */
+#tab-config .card-inner .space-y-4 > .space-y-3,
+#tab-config .card-inner .space-y-4 > div[class*="space-y"] {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+#tab-config .card-inner .space-y-4 > .space-y-3:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+@media (max-width: 768px) {
+    #tab-config .card-inner .space-y-4 > .space-y-3 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Notification items */
+#tab-config .card-inner .flex.items-center.justify-between {
+    margin-bottom: 4px !important;
+}
+
+#tab-config .card-inner .flex.items-center.justify-between .text-sm {
+    font-size: 0.6875rem !important;
+}
+
+#tab-config .pl-6 {
+    padding-left: 16px !important;
+}
+
+#tab-config .pl-6 input {
+    margin-bottom: 4px !important;
+}
+
+/* Badges - micro */
+#tab-config .badge-gray,
+#tab-config .badge-green,
+#tab-config .badge-amber {
+    padding: 1px 6px !important;
+    font-size: 0.5625rem !important;
+}
+
+/* Buttons - micro */
+#tab-config button {
+    padding: 4px 8px !important;
+    font-size: 0.625rem !important;
+}
+
+#tab-config button i {
+    font-size: 0.5625rem !important;
+    margin-right: 3px !important;
+}
+
+/* Analysis Engine - compact */
+#analysis-config .space-y-4 > * + * {
+    margin-top: 6px !important;
+}
+
+#analysis-config select {
+    padding: 5px 8px !important;
+}
+
+#analysis-config p.text-xs {
+    font-size: 0.5625rem !important;
+}
+
+/* Info/Help boxes */
+#tab-config .p-3.rounded-xl,
+#tab-config .card-inner.p-4,
+#tab-config .info-box {
+    padding: 6px 8px !important;
+}
+
+#tab-config .p-3.rounded-xl .font-semibold {
+    font-size: 0.6875rem !important;
+    margin-bottom: 4px !important;
+}
+
+#tab-config .p-3.rounded-xl ol,
+#tab-config .p-3.rounded-xl ul {
+    font-size: 0.625rem !important;
+    padding-left: 14px !important;
+}
+
+#tab-config .p-3.rounded-xl li {
+    margin-bottom: 1px !important;
+}
+
+/* Kite login button - compact */
+#tab-config a[href*="kite"] {
+    padding: 6px 10px !important;
+    font-size: 0.6875rem !important;
+}
+
+/* Live warning / Paper info boxes */
+#live-warning-config,
+#paper-info-config {
+    padding: 6px 8px !important;
+}
+
+#live-warning-config .font-bold,
+#paper-info-config .font-semibold {
+    font-size: 0.6875rem !important;
+}
+
+#live-warning-config .text-xs,
+#paper-info-config .text-xs {
+    font-size: 0.625rem !important;
+}
+
+/* Code elements */
+#tab-config code {
+    padding: 1px 3px !important;
+    font-size: 0.625rem !important;
+}
+
+/* Spacing utilities - minimal */
+#tab-config .space-y-1 > * + * { margin-top: 2px !important; }
+#tab-config .space-y-2 > * + * { margin-top: 3px !important; }
+#tab-config .space-y-3 > * + * { margin-top: 4px !important; }
+#tab-config .space-y-4 > * + * { margin-top: 6px !important; }
+#tab-config .space-y-5 > * + * { margin-top: 8px !important; }
+
+#tab-config .mb-1 { margin-bottom: 2px !important; }
+#tab-config .mb-2 { margin-bottom: 4px !important; }
+#tab-config .mb-3 { margin-bottom: 6px !important; }
+#tab-config .mb-4 { margin-bottom: 8px !important; }
+#tab-config .mb-5 { margin-bottom: 10px !important; }
+
+#tab-config .mt-1 { margin-top: 2px !important; }
+#tab-config .mt-2 { margin-top: 3px !important; }
+#tab-config .mt-3 { margin-top: 4px !important; }
+#tab-config .mt-4 { margin-top: 6px !important; }
+
+#tab-config .pb-4 { padding-bottom: 8px !important; }
+#tab-config .pb-3 { padding-bottom: 6px !important; }
+
+/* Desktop: 3-column bento for Trading Settings */
+@media (min-width: 1024px) {
+    #tab-config > .grid.grid-cols-1.lg\\:grid-cols-2 {
+        grid-template-columns: 40% 60% !important;
+    }
     
+    /* Right column - Trading Settings as 3-col bento */
+    #tab-config > .grid > .card:nth-child(2) > .space-y-5 {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        grid-template-rows: auto auto auto !important;
+        gap: 8px !important;
+    }
+    
+    /* Capital/Risk/Max/Webhook - 4 col */
+    #tab-config > .grid > .card:nth-child(2) > .space-y-5 > .grid {
+        grid-column: 1 / -1;
+    }
+    
+    /* Trading Windows - full width banner */
+    #tab-config > .grid > .card:nth-child(2) > .space-y-5 > .card-inner:nth-child(2) {
+        grid-column: 1 / -1;
+    }
+    
+    /* Paper Trading - left */
+    #paper-trading-container {
+        grid-column: 1 / 2;
+    }
+    
+    /* Notifications - middle */
+    #tab-config > .grid > .card:nth-child(2) > .space-y-5 > .card-inner:nth-child(4) {
+        grid-column: 2 / 3;
+    }
+    
+    /* Analysis - right */
+    #tab-config > .grid > .card:nth-child(2) > .space-y-5 > .card-inner:nth-child(5) {
+        grid-column: 3 / 4;
+    }
+}
+
+/* Mobile - stack everything */
+@media (max-width: 640px) {
+    #tab-config .card {
+        padding: 8px !important;
+    }
+    
+    #tab-config .card-inner {
+        padding: 6px 8px !important;
+    }
+    
+    #tab-config .grid.grid-cols-2.gap-3 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    #tab-config .pl-10,
+    #tab-config .pl-6 {
+        padding-left: 0 !important;
+    }
+    
+    #tab-config .card-inner .flex.items-center.justify-between {
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+    }
+    
+    /* Make toggles full width on mobile */
+    #paper-trading-container .flex.items-center.justify-between,
+    #tab-config .card-inner .space-y-4 > .flex {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    
+    #tab-config .card-inner .space-y-4 > .space-y-3 {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+
     <!-- No Tailwind — pure CSS design system below -->
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Design System -->
+    <link rel="stylesheet" href="/static/css/design-system.css">
     
     <style>
         /* ============================================================
            DESIGN SYSTEM — CSS custom properties
            ============================================================ */
         :root {
-            /* Backgrounds */
-            --c-bg:         #f0f2f5;
-            --c-surface:    #ffffff;
-            --c-surface-2:  #f8f9fa;
-            --c-surface-3:  #f1f3f5;
+            /* Backgrounds - DARK THEME */
+            --c-bg:         #0a0a0f;
+            --c-surface:    #12121a;
+            --c-surface-2:  #1a1a25;
+            --c-surface-3:  #222230;
 
             /* Borders */
-            --c-border:     rgba(0,0,0,0.08);
-            --c-border-2:   rgba(0,0,0,0.12);
+            --c-border:     rgba(255,255,255,0.07);
+            --c-border-2:   rgba(255,255,255,0.12);
 
             /* Text */
-            --c-text:       #111827;
-            --c-muted:      #6b7280;
+            --c-text:       #f1f5f9;
+            --c-muted:      #64748b;
 
             /* Semantic colors — darkened for light bg readability */
             --c-green:      #16a34a;
@@ -2247,6 +2651,1064 @@
             .toggle-track { width: 2.5rem !important; height: 1.375rem !important; }
         }
 
+/* Compact Bento-Style Dashboard Styles */
+
+/* Reduce padding on all cards in dashboard */
+#tab-dashboard .card {
+    padding: 12px 16px;
+}
+
+#tab-dashboard .card-inner {
+    padding: 8px 12px;
+}
+
+/* Compact bento grid layout */
+.bento-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.bento-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.bento-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.bento-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* Responsive bento */
+@media (max-width: 1200px) {
+    .bento-grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .bento-grid-4,
+    .bento-grid-3,
+    .bento-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* Compact stat cards */
+.compact-stat {
+    padding: 12px;
+    min-height: 0;
+}
+
+.compact-stat .stat-value {
+    font-size: 1.25rem;
+}
+
+.compact-stat .stat-label {
+    font-size: 0.625rem;
+    margin-bottom: 4px;
+}
+
+.compact-stat .stat-sub {
+    font-size: 0.6875rem;
+    margin-top: 2px;
+}
+
+/* Compact section headers */
+.compact-header {
+    margin-bottom: 8px;
+}
+
+.compact-header .section-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+}
+
+/* Inline form elements */
+.inline-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--c-surface-2);
+    border-radius: 8px;
+    border: 1px solid var(--c-border);
+}
+
+/* Compact toggle row */
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.toggle-row:last-child {
+    border-bottom: none;
+}
+
+/* Mini info box */
+.info-mini {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+}
+
+/* Compact trade feed */
+.trade-feed-compact {
+    max-height: 200px;
+}
+
+.trade-feed-compact .trade-feed-item {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+}
+
+/* Dense grid for stats */
+.stats-dense {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+}
+
+/* Horizontal layout for time windows */
+.time-window-h {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.time-window-h .time-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.time-window-h input[type="time"] {
+    padding: 4px 8px;
+    font-size: 0.8125rem;
+}
+
+/* Collapsible sections */
+.collapsible-trigger {
+    cursor: pointer;
+    user-select: none;
+}
+
+.collapsible-content {
+    transition: max-height 0.3s ease;
+}
+
+/* Combined card for related items */
+.combined-card {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--c-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.combined-card > * {
+    background: var(--c-surface);
+    padding: 12px;
+}
+
+/* Pill buttons */
+.btn-pill {
+    padding: 4px 12px;
+    font-size: 0.6875rem;
+    border-radius: 999px;
+}
+
+/* Mini badges */
+.badge-mini {
+    padding: 2px 8px;
+    font-size: 0.625rem;
+}
+
+/* Compact Positions & Trades Tab Styles */
+
+/* Positions Tab - Compact */
+#tab-positions .space-y-4 > * + * {
+    margin-top: 8px !important;
+}
+
+#tab-positions .card {
+    padding: 12px !important;
+}
+
+#tab-positions h3 {
+    font-size: 0.875rem !important;
+    margin-bottom: 4px !important;
+}
+
+#tab-positions h3 + p {
+    display: none; /* Hide subtitle to save space */
+}
+
+#tab-positions .gtt-pill-bar {
+    margin-bottom: 8px !important;
+}
+
+#tab-positions .gtt-pill {
+    padding: 6px 12px !important;
+    font-size: 0.6875rem !important;
+}
+
+/* Compact summary cards */
+#positions-summary {
+    gap: 6px !important;
+}
+
+#positions-summary .stat-card {
+    padding: 8px 10px !important;
+    min-height: 0 !important;
+}
+
+#positions-summary .stat-label {
+    font-size: 0.625rem !important;
+    margin-bottom: 2px !important;
+}
+
+#positions-summary .stat-value {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+}
+
+#positions-summary .stat-sub {
+    font-size: 0.6875rem !important;
+    margin-top: 0 !important;
+}
+
+/* View toggle compact */
+#tab-positions .flex.items-center.gap-1.p-1 {
+    padding: 2px !important;
+}
+
+#tab-positions .flex.items-center.gap-1.p-1 button {
+    padding: 4px 10px !important;
+    font-size: 0.6875rem !important;
+}
+
+/* Position cards compact */
+#positions-list .pos-card {
+    margin-bottom: 8px !important;
+}
+
+#positions-list .pos-card-header {
+    padding: 10px 12px !important;
+}
+
+#positions-list .pos-card-body {
+    padding: 10px 12px !important;
+}
+
+#positions-list .pos-card-actions {
+    padding: 6px 10px !important;
+}
+
+/* Compact position card grid */
+#positions-list .grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+}
+
+@media (max-width: 768px) {
+    #positions-list .grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* Position card text sizes */
+#positions-list .text-4xl {
+    font-size: 1.5rem !important;
+}
+
+#positions-list .text-lg {
+    font-size: 0.875rem !important;
+}
+
+#positions-list .text-sm {
+    font-size: 0.75rem !important;
+}
+
+/* ============================================
+   Trades Tab - Compact
+   ============================================ */
+
+#tab-trades .space-y-4 > * + * {
+    margin-top: 8px !important;
+}
+
+#tab-trades h3 + p {
+    display: none; /* Hide subtitle */
+}
+
+#tab-trades h3 {
+    font-size: 0.875rem !important;
+    margin-bottom: 0 !important;
+}
+
+/* Filters bar compact */
+#tab-trades .card.p-4 {
+    padding: 10px 12px !important;
+}
+
+#tab-trades .card.p-4 .flex.flex-wrap {
+    gap: 8px !important;
+}
+
+#tab-trades .card.p-4 label {
+    font-size: 0.625rem !important;
+    margin-bottom: 2px !important;
+}
+
+#tab-trades .card.p-4 input,
+#tab-trades .card.p-4 select {
+    padding: 4px 8px !important;
+    font-size: 0.75rem !important;
+    min-height: 28px !important;
+}
+
+#tab-trades .card.p-4 .w-28 {
+    width: 80px !important;
+}
+
+/* Compact table */
+#tab-trades .card.overflow-hidden {
+    padding: 0 !important;
+}
+
+#tab-trades .trades-table th {
+    padding: 8px 10px !important;
+    font-size: 0.625rem !important;
+}
+
+#tab-trades .trades-table td {
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+}
+
+/* Reduce button sizes */
+#tab-trades button,
+#tab-positions button {
+    padding: 4px 10px !important;
+    font-size: 0.6875rem !important;
+}
+
+#tab-trades button i,
+#tab-positions button i {
+    font-size: 0.625rem !important;
+    margin-right: 4px !important;
+}
+
+/* Stats row below filters */
+#tab-trades .mt-3.pt-3 {
+    margin-top: 6px !important;
+    padding-top: 6px !important;
+}
+
+/* Empty state compact */
+#tab-trades .empty-state,
+#tab-positions .empty-state {
+    padding: 32px 16px !important;
+}
+
+#tab-trades .empty-state-icon,
+#tab-positions .empty-state-icon {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+    margin-bottom: 8px !important;
+}
+
+#tab-trades .empty-state h4,
+#tab-positions .empty-state h4 {
+    font-size: 0.875rem !important;
+    margin-bottom: 4px !important;
+}
+
+#tab-trades .empty-state p,
+#tab-positions .empty-state p {
+    font-size: 0.75rem !important;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+    #tab-positions .sm\\:flex-row {
+        flex-direction: column !important;
+        gap: 6px !important;
+    }
+    
+    #tab-trades .flex.flex-wrap.items-end {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 6px !important;
+    }
+    
+    #tab-trades .flex.flex-wrap.items-end .flex-1 {
+        display: none !important;
+    }
+    
+    #tab-trades .flex.flex-wrap.items-end button {
+        grid-column: 1 / -1 !important;
+    }
+    
+    /* Mobile table as cards */
+    #tab-trades .trades-table thead {
+        display: none !important;
+    }
+    
+    #tab-trades .trades-table tbody tr {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px 12px !important;
+        padding: 10px !important;
+        margin-bottom: 6px !important;
+        background: var(--c-surface-2) !important;
+        border-radius: 8px !important;
+        border: 1px solid var(--c-border) !important;
+    }
+    
+    #tab-trades .trades-table td {
+        display: flex !important;
+        justify-content: space-between !important;
+        padding: 2px 0 !important;
+        border: none !important;
+    }
+    
+    #tab-trades .trades-table td::before {
+        content: attr(data-label) !important;
+        font-weight: 600 !important;
+        color: var(--c-text-muted) !important;
+        font-size: 0.625rem !important;
+        text-transform: uppercase !important;
+    }
+}
+/* Compact Learning & Alerts Tab Styles */
+
+/* ============================================
+   Learning Tab - Compact
+   ============================================ */
+
+#tab-learning .space-y-4 > * + * {
+    margin-top: 8px !important;
+}
+
+#tab-learning h3 + p {
+    display: none !important; /* Hide subtitle */
+}
+
+#tab-learning h3 {
+    font-size: 0.875rem !important;
+    margin-bottom: 0 !important;
+}
+
+/* Compact stat cards */
+#learning-summary {
+    gap: 6px !important;
+}
+
+#learning-summary .stat-card {
+    padding: 10px 8px !important;
+    min-height: 0 !important;
+}
+
+#learning-summary .stat-label {
+    font-size: 0.625rem !important;
+    margin-bottom: 2px !important;
+}
+
+#learning-summary .stat-value {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+}
+
+/* Priority Actions compact */
+#tab-learning .card:has(#learning-action-items) {
+    padding: 12px !important;
+}
+
+#tab-learning .card:has(#learning-action-items) .section-icon {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+#tab-learning .card:has(#learning-action-items) h3 {
+    font-size: 0.8125rem !important;
+}
+
+/* 2-column grid compact */
+#tab-learning .grid.grid-cols-1.lg\\:grid-cols-2 {
+    gap: 8px !important;
+}
+
+#tab-learning .grid.grid-cols-1.lg\\:grid-cols-2 > .card {
+    padding: 12px !important;
+}
+
+#tab-learning .grid.grid-cols-1.lg\\:grid-cols-2 .section-icon {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+#tab-learning .grid.grid-cols-1.lg\\:grid-cols-2 h3 {
+    font-size: 0.8125rem !important;
+}
+
+#tab-learning .grid.grid-cols-1.lg\\:grid-cols-2 .space-y-3,
+#tab-learning .grid.grid-cols-1.lg\\:grid-cols-2 .space-y-4 {
+    gap: 6px !important;
+}
+
+/* Empty states compact */
+#tab-learning .empty-state {
+    padding: 20px 12px !important;
+}
+
+#tab-learning .empty-state-icon {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 14px !important;
+    margin-bottom: 6px !important;
+}
+
+#tab-learning .empty-state h4,
+#tab-learning .empty-state p {
+    font-size: 0.75rem !important;
+}
+
+/* Learning action items compact */
+#learning-action-items .card-inner {
+    padding: 8px 10px !important;
+}
+
+#learning-action-items .flex.items-start.gap-3 {
+    gap: 8px !important;
+}
+
+#learning-action-items .w-8.h-8 {
+    width: 24px !important;
+    height: 24px !important;
+}
+
+#learning-action-items .text-sm {
+    font-size: 0.75rem !important;
+}
+
+#learning-action-items .text-xs {
+    font-size: 0.6875rem !important;
+}
+
+/* Progress bars compact */
+#learning-signal-quality .h-2 {
+    height: 4px !important;
+}
+
+#learning-signal-quality .flex.items-center.justify-between.text-xs {
+    margin-bottom: 2px !important;
+}
+
+#learning-signal-quality .space-y-4 > * + * {
+    margin-top: 8px !important;
+}
+
+/* Time patterns & Symbol performance lists */
+#learning-time-patterns .flex.items-center.justify-between,
+#learning-symbol-performance .flex.items-center.justify-between {
+    padding: 6px 0 !important;
+}
+
+#learning-time-patterns .font-mono.text-sm,
+#learning-symbol-performance .font-mono.text-sm {
+    font-size: 0.75rem !important;
+}
+
+/* Badge compact */
+#tab-learning .badge-amber {
+    padding: 2px 8px !important;
+    font-size: 0.625rem !important;
+}
+
+/* ============================================
+   Alerts Tab - Compact
+   ============================================ */
+
+#tab-alerts .space-y-4 > * + * {
+    margin-top: 8px !important;
+}
+
+#tab-alerts h3 + p {
+    display: none !important; /* Hide subtitle */
+}
+
+#tab-alerts h3 {
+    font-size: 0.875rem !important;
+    margin-bottom: 0 !important;
+}
+
+/* Header controls compact */
+#tab-alerts .flex.items-center.gap-2 {
+    gap: 6px !important;
+}
+
+#tab-alerts select {
+    padding: 4px 8px !important;
+    font-size: 0.6875rem !important;
+    min-height: 26px !important;
+}
+
+/* Alert stat cards */
+#tab-alerts .grid.grid-cols-2.md\\:grid-cols-4 {
+    gap: 6px !important;
+}
+
+#tab-alerts .grid.grid-cols-2.md\\:grid-cols-4 .stat-card {
+    padding: 10px 8px !important;
+    min-height: 0 !important;
+}
+
+#tab-alerts .grid.grid-cols-2.md\\:grid-cols-4 .stat-label {
+    font-size: 0.625rem !important;
+    margin-bottom: 2px !important;
+}
+
+#tab-alerts .grid.grid-cols-2.md\\:grid-cols-4 .stat-value {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+}
+
+/* Alerts table compact */
+#tab-alerts .card.overflow-hidden {
+    padding: 0 !important;
+}
+
+#tab-alerts .trades-table th {
+    padding: 8px 10px !important;
+    font-size: 0.625rem !important;
+}
+
+#tab-alerts .trades-table td {
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+}
+
+/* Status badges in table */
+#tab-alerts .trades-table .badge {
+    padding: 2px 6px !important;
+    font-size: 0.625rem !important;
+}
+
+/* Empty state compact */
+#tab-alerts .empty-state {
+    padding: 32px 16px !important;
+}
+
+#tab-alerts .empty-state-icon {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+    margin-bottom: 8px !important;
+}
+
+#tab-alerts .empty-state h4 {
+    font-size: 0.875rem !important;
+    margin-bottom: 4px !important;
+}
+
+#tab-alerts .empty-state p {
+    font-size: 0.75rem !important;
+}
+
+/* Alert details modal compact */
+#alert-details-modal .modal-box {
+    padding: 16px !important;
+}
+
+#alert-details-modal h3 {
+    font-size: 0.875rem !important;
+}
+
+#alert-details-modal button.w-8.h-8 {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+#alert-details-content .space-y-4 > * + * {
+    margin-top: 8px !important;
+}
+
+#alert-details-content .card-inner {
+    padding: 10px !important;
+}
+
+#alert-details-content h4 {
+    font-size: 0.8125rem !important;
+    margin-bottom: 6px !important;
+}
+
+#alert-details-content .font-mono.text-xs {
+    font-size: 0.6875rem !important;
+}
+
+/* ============================================
+   Mobile Responsive for Learning & Alerts
+   ============================================ */
+
+@media (max-width: 640px) {
+    /* Learning tab mobile */
+    #tab-learning .grid.grid-cols-2.md\\:grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    #tab-learning .grid.grid-cols-1.lg\\:grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    #tab-learning .stat-card {
+        padding: 8px !important;
+    }
+    
+    #learning-summary .stat-value {
+        font-size: 0.875rem !important;
+    }
+    
+    /* Alerts tab mobile - table to cards */
+    #tab-alerts .grid.grid-cols-2.md\\:grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    #tab-alerts .trades-table thead {
+        display: none !important;
+    }
+    
+    #tab-alerts .trades-table tbody tr {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px 12px !important;
+        padding: 10px !important;
+        margin-bottom: 6px !important;
+        background: var(--c-surface-2) !important;
+        border-radius: 8px !important;
+        border: 1px solid var(--c-border) !important;
+    }
+    
+    #tab-alerts .trades-table td {
+        display: flex !important;
+        justify-content: space-between !important;
+        padding: 2px 0 !important;
+        border: none !important;
+    }
+    
+    #tab-alerts .trades-table td::before {
+        content: attr(data-label) !important;
+        font-weight: 600 !important;
+        color: var(--c-text-muted) !important;
+        font-size: 0.625rem !important;
+        text-transform: uppercase !important;
+    }
+    
+    /* Hide less important columns on mobile */
+    #tab-alerts .trades-table td:nth-child(7), /* Source IP */
+    #tab-alerts .trades-table td:nth-child(8)  /* Latency */ {
+        display: none !important;
+    }
+}
+/* Compact Config Tab - Bento Grid Style */
+
+#tab-config .space-y-4 > * + * {
+    margin-top: 8px !important;
+}
+
+/* Hide subtitle */
+#tab-config > div:first-child p {
+    display: none !important;
+}
+
+#tab-config h3 {
+    font-size: 0.875rem !important;
+    margin-bottom: 0 !important;
+}
+
+/* Bento Grid Layout */
+#tab-config > .grid.grid-cols-1.lg\\:grid-cols-2 {
+    gap: 10px !important;
+}
+
+#tab-config .card {
+    padding: 12px !important;
+}
+
+#tab-config .card-inner {
+    padding: 10px !important;
+}
+
+/* Section headers compact */
+#tab-config .section-icon {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+#tab-config .card > .flex.items-center {
+    margin-bottom: 10px !important;
+}
+
+#tab-config .card > .flex.items-center h3 {
+    font-size: 0.8125rem !important;
+}
+
+/* Kite Auth - Compact Steps */
+#tab-config .card:first-child .card-inner {
+    padding: 10px !important;
+}
+
+#tab-config .w-7.h-7.rounded-full {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 10px !important;
+}
+
+#tab-config .card-inner h4 {
+    font-size: 0.75rem !important;
+}
+
+#tab-config .card-inner p.pl-10 {
+    font-size: 0.6875rem !important;
+    margin-bottom: 6px !important;
+}
+
+#tab-config .card-inner .pl-10 {
+    padding-left: 32px !important;
+}
+
+/* Inputs compact */
+#tab-config input,
+#tab-config select {
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+    min-height: 32px !important;
+}
+
+#tab-config label.stat-label {
+    font-size: 0.625rem !important;
+    margin-bottom: 3px !important;
+}
+
+/* Grid inputs (Capital, Risk, etc) */
+#tab-config .grid.grid-cols-2.gap-3 {
+    gap: 8px !important;
+}
+
+#tab-config .grid.grid-cols-2.gap-3 p.text-xs {
+    font-size: 0.625rem !important;
+    margin-top: 2px !important;
+}
+
+/* Trading Windows Info */
+#tab-config .card-inner p.text-sm {
+    font-size: 0.75rem !important;
+    margin-bottom: 6px !important;
+}
+
+/* Paper Trading Section */
+#paper-trading-container {
+    padding: 10px !important;
+}
+
+#paper-trading-container .section-icon {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+#paper-mode-title {
+    font-size: 0.75rem !important;
+}
+
+#paper-mode-desc {
+    font-size: 0.625rem !important;
+}
+
+#paper-trading-container .p-3 {
+    padding: 8px !important;
+}
+
+/* Toggle compact */
+#tab-config .toggle-track {
+    width: 40px !important;
+    height: 22px !important;
+}
+
+#tab-config .toggle-thumb {
+    width: 18px !important;
+    height: 18px !important;
+}
+
+/* Notification Settings */
+#tab-config .card-inner .space-y-4 > .space-y-3 {
+    padding-bottom: 10px !important;
+    margin-bottom: 10px !important;
+}
+
+#tab-config .card-inner .space-y-4 > .space-y-3:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+}
+
+#tab-config .card-inner .flex.items-center.justify-between {
+    margin-bottom: 6px !important;
+}
+
+#tab-config .card-inner .flex.items-center.justify-between .text-sm {
+    font-size: 0.75rem !important;
+}
+
+#tab-config .pl-6 {
+    padding-left: 20px !important;
+}
+
+/* Badges compact */
+#tab-config .badge-gray,
+#tab-config .badge-green,
+#tab-config .badge-amber {
+    padding: 2px 8px !important;
+    font-size: 0.625rem !important;
+}
+
+/* Buttons compact */
+#tab-config button {
+    padding: 5px 10px !important;
+    font-size: 0.6875rem !important;
+}
+
+#tab-config button i {
+    font-size: 0.625rem !important;
+    margin-right: 4px !important;
+}
+
+/* Info boxes */
+#tab-config .p-3.rounded-xl.text-xs {
+    padding: 8px 10px !important;
+}
+
+#tab-config .p-3.rounded-xl ol {
+    font-size: 0.6875rem !important;
+}
+
+#tab-config .p-3.rounded-xl li {
+    margin-bottom: 2px !important;
+}
+
+/* Analysis Engine */
+#analysis-config .space-y-4 > * + * {
+    margin-top: 8px !important;
+}
+
+#analysis-config p.text-xs {
+    font-size: 0.625rem !important;
+    margin-top: 2px !important;
+}
+
+/* Space utilities */
+#tab-config .space-y-2 > * + * {
+    margin-top: 4px !important;
+}
+
+#tab-config .space-y-3 > * + * {
+    margin-top: 6px !important;
+}
+
+#tab-config .space-y-4 > * + * {
+    margin-top: 8px !important;
+}
+
+#tab-config .space-y-5 > * + * {
+    margin-top: 10px !important;
+}
+
+#tab-config .mb-4 {
+    margin-bottom: 10px !important;
+}
+
+#tab-config .mb-3 {
+    margin-bottom: 8px !important;
+}
+
+#tab-config .mb-2 {
+    margin-bottom: 6px !important;
+}
+
+#tab-config .mb-1 {
+    margin-bottom: 3px !important;
+}
+
+/* Bento-style reorganization for desktop */
+@media (min-width: 1024px) {
+    #tab-config > .grid.grid-cols-1.lg\\:grid-cols-2 {
+        grid-template-columns: 45% 55% !important;
+    }
+    
+    /* Left column - Kite Auth stays as is */
+    
+    /* Right column - reorganize into bento */
+    #tab-config > .grid > .card:nth-child(2) {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+    
+    #tab-config > .grid > .card:nth-child(2) > .flex.items-center {
+        grid-column: 1 / -1;
+    }
+    
+    #tab-config > .grid > .card:nth-child(2) > .space-y-5 {
+        grid-column: 1 / -1;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+    
+    /* Make inputs grid 4-col on desktop */
+    #tab-config .grid.grid-cols-2.gap-3 {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+    #tab-config .card {
+        padding: 10px !important;
+    }
+    
+    #tab-config .grid.grid-cols-2.gap-3 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    #tab-config .card-inner .pl-10,
+    #tab-config .pl-6 {
+        padding-left: 0 !important;
+    }
+    
+    #tab-config .card-inner h4 {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+    
+    #tab-config .w-7.h-7.rounded-full {
+        position: static !important;
+    }
+    
+    #paper-trading-container .flex.items-center.justify-between {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+    
+    #tab-config .card-inner .flex.items-center.justify-between {
+        flex-wrap: wrap !important;
+    }
+}
+/* End Compact Styles */
     </style>
 </head>
 <body style="background:var(--c-bg);color:var(--c-text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;">
@@ -2596,498 +4058,239 @@
             <div class="flex-1 overflow-y-auto p-6">
                 
                 <!-- Dashboard Tab -->
-                <div id="tab-dashboard" class="tab-content active space-y-6">
-                    
-                    <!-- 🔥 SMART WARNING CARDS - Dynamic alerts -->
-                    <div id="smart-warning-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <!-- Cards will be dynamically inserted here -->
+<!-- COMPACT BENTO-STYLE DASHBOARD -->
+<div id="tab-dashboard" class="tab-content active" style="padding-top: 4px;">
+    
+    <!-- ROW 1: Smart Warnings (Dynamic) -->
+    <div id="smart-warning-cards" class="bento-grid bento-grid-3 mb-3">
+        <!-- Dynamically populated -->
+    </div>
+    
+    <!-- ROW 2: Quick Stats Row -->
+    <div class="combined-card mb-3">
+        <div class="compact-stat">
+            <div class="flex items-center justify-between mb-1">
+                <span class="stat-label">P&L Today</span>
+                <i class="fas fa-wallet text-xs" style="color: var(--c-text-muted);"></i>
+            </div>
+            <div class="stat-value text-green" id="stat-pnl">₹0.00</div>
+            <div class="stat-sub" id="stat-pnl-sub">0 trades</div>
+        </div>
+        <div class="compact-stat">
+            <div class="flex items-center justify-between mb-1">
+                <span class="stat-label">Win Rate</span>
+                <i class="fas fa-trophy text-xs" style="color: var(--c-green);"></i>
+            </div>
+            <div class="stat-value" id="stat-winrate">0%</div>
+            <div class="stat-sub" id="stat-win-sub">0W / 0L</div>
+        </div>
+        <div class="compact-stat">
+            <div class="flex items-center justify-between mb-1">
+                <span class="stat-label">Positions</span>
+                <i class="fas fa-briefcase text-xs" style="color: var(--c-blue);"></i>
+            </div>
+            <div class="stat-value text-blue" id="stat-positions">0</div>
+            <div class="stat-sub" id="stat-pos-sub">₹0 unrealized</div>
+        </div>
+        <div class="compact-stat">
+            <div class="flex items-center justify-between mb-1">
+                <span class="stat-label">Market</span>
+                <i class="fas fa-clock text-xs" style="color: var(--c-purple);"></i>
+            </div>
+            <div class="stat-value" id="stat-market" style="font-size: 0.875rem;">Closed</div>
+            <div class="stat-sub">09:15-15:30</div>
+        </div>
+    </div>
+    
+    <!-- ROW 3: Risk & Trading Controls (2 columns) -->
+    <div class="bento-grid bento-grid-2 mb-3">
+        <!-- Risk Panel -->
+        <div class="card" style="border-left: 2px solid var(--c-green);">
+            <div class="compact-header flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="section-icon section-icon-green" style="width: 28px; height: 28px;">
+                        <i class="fas fa-shield-alt text-xs"></i>
                     </div>
-                    
-                    <!-- 🔥 PRIMARY: TRADING WINDOWS CONTROL (MOVED TO TOP) -->
-                    <div class="card p-5" style="border-left:3px solid var(--c-green)">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-2.5">
-                                <div class="section-icon" style="background:var(--c-green-dim)">
-                                    <i class="fas fa-clock text-primary-400"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-sm">Trading Windows</h3>
-                                    <p class="text-xs" style="color:#4b5563">Define when trades are allowed to execute</p>
-                                </div>
-                            </div>
-                            <button onclick="saveTradingWindows()" class="btn btn-primary btn-sm ripple-btn text-xs">
-                                <i class="fas fa-save"></i>Save
-                            </button>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="trading-windows-container">
-                            <!-- Window 1 -->
-                            <div class="card-inner p-4 flex items-center gap-3 glass-hover">
-                                <label class="toggle-track on" id="window-1-track" onclick="toggleWindowEnabled(1)" title="Toggle morning window">
-                                    <span class="toggle-thumb"></span>
-                                </label>
-                                <input type="hidden" id="window-1-enabled" value="true">
-                                <div class="flex-1">
-                                    <div class="text-xs font-medium mb-2" style="color:#9ca3af">Morning Window</div>
-                                    <div class="flex items-center gap-2">
-                                        <input type="time" id="window-1-start" value="09:15"
-                                               class="flex-1 px-2.5 py-1.5 rounded-lg text-sm font-mono"
-                                               style="background:var(--c-surface-3);border:1px solid var(--c-border-2);color:#e5e7eb">
-                                        <span style="color:#4b5563">—</span>
-                                        <input type="time" id="window-1-end" value="12:00"
-                                               class="flex-1 px-2.5 py-1.5 rounded-lg text-sm font-mono"
-                                               style="background:var(--c-surface-3);border:1px solid var(--c-border-2);color:#e5e7eb">
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Window 2 -->
-                            <div class="card-inner p-4 flex items-center gap-3 glass-hover">
-                                <label class="toggle-track on" id="window-2-track" onclick="toggleWindowEnabled(2)" title="Toggle afternoon window">
-                                    <span class="toggle-thumb"></span>
-                                </label>
-                                <input type="hidden" id="window-2-enabled" value="true">
-                                <div class="flex-1">
-                                    <div class="text-xs font-medium mb-2" style="color:#9ca3af">Afternoon Window</div>
-                                    <div class="flex items-center gap-2">
-                                        <input type="time" id="window-2-start" value="13:30"
-                                               class="flex-1 px-2.5 py-1.5 rounded-lg text-sm font-mono"
-                                               style="background:var(--c-surface-3);border:1px solid var(--c-border-2);color:#e5e7eb">
-                                        <span style="color:#4b5563">—</span>
-                                        <input type="time" id="window-2-end" value="15:30"
-                                               class="flex-1 px-2.5 py-1.5 rounded-lg text-sm font-mono"
-                                               style="background:var(--c-surface-3);border:1px solid var(--c-border-2);color:#e5e7eb">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-2 mt-3 p-3 rounded-xl" style="background:var(--c-green-dim);border:1px solid rgba(34,197,94,.2)">
-                            <i class="fas fa-info-circle text-xs mt-0.5" style="color:#16a34a"></i>
-                            <p class="text-xs" style="color:#86efac">
-                                Trades execute <strong>only</strong> within enabled windows. All time-based checks use these as source of truth.
-                            </p>
-                        </div>
+                    <div>
+                        <h3 class="text-sm font-semibold">Risk Overview</h3>
                     </div>
-                    
-                    <!-- 🔥 TURBO MODE TOGGLE -->
-                    <div class="card p-5" style="border-left:3px solid var(--c-purple)">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-2.5">
-                                <div class="section-icon" style="background:var(--c-purple-dim)">
-                                    <i class="fas fa-rocket" style="color:#7c3aed"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-sm">Turbo Mode</h3>
-                                    <p class="text-xs" style="color:#4b5563">Multi-timeframe confirmation for better entries</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span id="turbo-status-badge" class="badge-gray text-xs px-2.5 py-1 rounded-lg font-medium">
-                                    Loading…
-                                </span>
-                                <label class="toggle-track" id="turbo-toggle-btn" onclick="toggleTurboMode()" title="Toggle turbo mode">
-                                    <span id="turbo-toggle-dot" class="toggle-thumb"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-3 mb-4">
-                            <div class="card-inner p-3 text-center">
-                                <div class="stat-label">Trend Check</div>
-                                <div class="text-sm font-semibold font-mono mt-1" style="color:#7c3aed">4H + 1H</div>
-                            </div>
-                            <div class="card-inner p-3 text-center">
-                                <div class="stat-label">Entry Monitor</div>
-                                <div class="text-sm font-semibold font-mono mt-1" style="color:#7c3aed">1M Chart</div>
-                            </div>
-                            <div class="card-inner p-3 text-center">
-                                <div class="stat-label">Max Wait</div>
-                                <div class="text-sm font-semibold font-mono mt-1" style="color:#7c3aed">5 min</div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-start gap-2 p-3 rounded-xl" style="background:var(--c-purple-dim);border:1px solid rgba(168,85,247,.2)">
-                            <i class="fas fa-info-circle text-xs mt-0.5" style="color:#7c3aed"></i>
-                            <p class="text-xs" style="color:#d8b4fe">
-                                Signals are queued for trend alignment (4H/1H) then entry confirmation (1M EMA pullback + MACD + RSI). Falls back to market order on timeout.
-                            </p>
-                        </div>
+                </div>
+                <span class="badge badge-gray badge-mini" id="system-mode-badge">Loading</span>
+            </div>
+            
+            <div class="stats-dense">
+                <div class="text-center">
+                    <div class="text-xs text-muted mb-1">Today's P&L</div>
+                    <div class="font-mono font-semibold text-green" id="risk-pnl">₹0</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs text-muted mb-1">Capital Used</div>
+                    <div class="font-mono font-semibold text-blue" id="risk-capital-used">₹0</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs text-muted mb-1">Risk</div>
+                    <div class="font-mono font-semibold" id="risk-used">0%</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs text-muted mb-1">Win Rate</div>
+                    <div class="font-mono font-semibold" id="risk-winrate">0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trading Windows -->
+        <div class="card" style="border-left: 2px solid var(--c-green);">
+            <div class="compact-header flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="section-icon section-icon-green" style="width: 28px; height: 28px;">
+                        <i class="fas fa-clock text-xs"></i>
                     </div>
-                    
-                    <!-- RISK OVERVIEW PANEL -->
-                    <div class="rounded-2xl p-5" style="background:var(--c-surface);border:1px solid var(--c-border);border-left:3px solid var(--c-green)">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-2.5">
-                                <div class="section-icon" style="background:var(--c-green-dim)">
-                                    <i class="fas fa-shield-alt text-primary-400"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-sm">Risk Overview</h3>
-                                    <p class="text-xs" style="color:#4b5563">Live exposure at a glance</p>
-                                </div>
-                            </div>
-                            <span id="system-mode-badge" class="text-xs px-2.5 py-1 rounded-lg font-semibold"
-                                  style="background:var(--c-surface-3);color:var(--c-muted)">
-                                Loading…
-                            </span>
-                        </div>
-
-                        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-                            <!-- Today's P&L -->
-                            <div class="stat-card" data-tip="Realised P&L for today">
-                                <div class="stat-label">Today's P&L</div>
-                                <div id="risk-pnl" class="stat-value">₹0</div>
-                                <div id="risk-pnl-pct" class="stat-sub">0%</div>
-                            </div>
-
-                            <!-- Capital Used -->
-                            <div class="stat-card" data-tip="Capital deployed across open positions">
-                                <div class="stat-label">Capital Used</div>
-                                <div class="flex items-baseline gap-1">
-                                    <span id="risk-capital-used" class="stat-value text-blue-400">₹0</span>
-                                    <span class="text-xs" style="color:#4b5563">/ <span id="risk-capital-total">₹0</span></span>
-                                </div>
-                                <div class="stat-bar">
-                                    <div id="risk-capital-bar" class="stat-bar-fill" style="width:0%;background:#3b82f6"></div>
-                                </div>
-                            </div>
-
-                            <!-- Risk Used -->
-                            <div class="stat-card" data-tip="Risk as % of capital (daily limit)">
-                                <div class="stat-label">Risk Used</div>
-                                <div class="flex items-baseline gap-1">
-                                    <span id="risk-used" class="stat-value text-primary-400">0%</span>
-                                    <span class="text-xs" style="color:#4b5563">/ <span id="risk-max">3%</span></span>
-                                </div>
-                                <div class="stat-bar">
-                                    <div id="risk-bar" class="stat-bar-fill" style="width:0%;background:var(--c-green)"></div>
-                                </div>
-                            </div>
-
-                            <!-- Open Positions -->
-                            <div class="stat-card" data-tip="Open positions vs allowed maximum">
-                                <div class="stat-label">Open Positions</div>
-                                <div class="flex items-baseline gap-1">
-                                    <span id="risk-positions" class="stat-value">0</span>
-                                    <span class="text-xs" style="color:#4b5563">/ <span id="risk-max-positions">3</span></span>
-                                </div>
-                                <div id="risk-position-status" class="stat-sub text-primary-400">Safe</div>
-                            </div>
-
-                            <!-- Win Rate -->
-                            <div class="stat-card" data-tip="Win rate for today's closed trades">
-                                <div class="stat-label">Win Rate (Today)</div>
-                                <div id="risk-winrate" class="stat-value">0%</div>
-                                <div id="risk-win-stats" class="stat-sub">0W / 0L</div>
-                            </div>
-                        </div>
+                    <div>
+                        <h3 class="text-sm font-semibold">Trading Windows</h3>
                     </div>
-                    
-                    <!-- 🔥 LIVE TRADE FEED CONSOLE -->
-                    <div class="glass rounded-2xl overflow-hidden">
-                        <div class="flex items-center justify-between px-4 py-3 border-b" style="border-color:var(--c-border);background:var(--c-surface-2)">
-                            <div class="flex items-center gap-2.5">
-                                <div class="section-icon" style="background:var(--c-blue-dim);width:28px;height:28px;border-radius:8px">
-                                    <i class="fas fa-terminal text-xs" style="color:#2563eb"></i>
-                                </div>
-                                <span class="font-semibold text-sm">Live Trade Feed</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <!-- Pulsing live dot -->
-                                <div class="flex items-center gap-1.5">
-                                    <span class="relative flex h-2 w-2">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background:#22c55e"></span>
-                                        <span class="relative inline-flex rounded-full h-2 w-2" style="background:#22c55e"></span>
-                                    </span>
-                                    <span class="text-xs font-mono font-semibold" style="color:#16a34a">LIVE</span>
-                                </div>
-                                <button onclick="clearTradeFeed()"
-                                        class="text-xs px-2.5 py-1 rounded-lg transition-all"
-                                        style="color:#6b7280;background:var(--c-surface-3);border:1px solid var(--c-border)"
-                                        onmouseover="this.style.color='#e5e7eb'" onmouseout="this.style.color='#6b7280'">
-                                    <i class="fas fa-trash-alt mr-1"></i>Clear
-                                </button>
+                </div>
+                <button onclick="saveTradingWindows()" class="btn btn-primary btn-pill">
+                    <i class="fas fa-save"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-2">
+                <div class="toggle-row">
+                    <div class="flex items-center gap-2">
+                        <div class="toggle" onclick="toggleWindow(1)">
+                            <div class="toggle-track on" id="window-1-track" style="width: 36px; height: 20px;">
+                                <div class="toggle-thumb" style="width: 16px; height: 16px;"></div>
                             </div>
                         </div>
-                        <div id="trade-feed-container" class="trade-feed-console max-h-60 overflow-y-auto p-3 space-y-1 text-xs">
-                            <div class="empty-state py-8">
-                                <div class="empty-state-icon"><i class="fas fa-terminal"></i></div>
-                                <h4>No activity yet</h4>
-                                <p>Trade events will stream here in real-time</p>
-                            </div>
-                        </div>
+                        <span class="text-xs">Morning</span>
                     </div>
-                    
-                    <!-- BROKERAGE COST INFO -->
-                    <div class="rounded-2xl p-5" style="background:var(--c-surface);border:1px solid var(--c-border)">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-2.5">
-                                <div class="section-icon" style="background:var(--c-green-dim)">
-                                    <i class="fas fa-calculator text-primary-400 text-xs"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-sm">Brokerage &amp; Costs</h3>
-                                    <p class="text-xs" style="color:#4b5563">Zerodha — estimated ~0.05% per trade</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <div class="card-inner p-3">
-                                <div class="text-xs mb-1" style="color:#6b7280">Brokerage</div>
-                                <div class="font-mono text-sm font-semibold">0.03% or ₹20</div>
-                                <div class="text-xs mt-0.5" style="color:#4b5563">Per order (lower)</div>
-                            </div>
-                            <div class="card-inner p-3">
-                                <div class="text-xs mb-1" style="color:#6b7280">STT</div>
-                                <div class="font-mono text-sm font-semibold">0.025%</div>
-                                <div class="text-xs mt-0.5" style="color:#4b5563">Sell side only</div>
-                            </div>
-                            <div class="card-inner p-3">
-                                <div class="text-xs mb-1" style="color:#6b7280">Transaction</div>
-                                <div class="font-mono text-sm font-semibold">0.00297%</div>
-                                <div class="text-xs mt-0.5" style="color:#4b5563">Both sides</div>
-                            </div>
-                            <div class="card-inner p-3">
-                                <div class="text-xs mb-1" style="color:#6b7280">Stamp + GST</div>
-                                <div class="font-mono text-sm font-semibold">0.003% + 18%</div>
-                                <div class="text-xs mt-0.5" style="color:#4b5563">Buy + Tax</div>
-                            </div>
-                        </div>
-                        <div class="mt-3 p-3 rounded-lg" style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2)">
-                            <p class="text-sm" style="color:#d1d5db">
-                                <i class="fas fa-info-circle mr-2" style="color:var(--c-green)"></i>
-                                <strong>Break-even:</strong> Price shown in trade rows includes all costs.
-                                Net P&amp;L = Gross P&amp;L - Total Costs. Example: ₹1L turnover costs ~₹53.
-                            </p>
-                        </div>
+                    <div class="flex items-center gap-1">
+                        <input type="time" id="window-1-start" value="09:15" class="input" style="width: 70px; padding: 2px 6px; font-size: 0.75rem;">
+                        <span class="text-xs text-muted">-</span>
+                        <input type="time" id="window-1-end" value="12:00" class="input" style="width: 70px; padding: 2px 6px; font-size: 0.75rem;">
                     </div>
-                    
-                    <!-- Stats Cards -->
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                        <!-- Total P&L Card -->
-                        <div class="stat-card animated-border">
-                            <div class="flex items-start justify-between">
-                                <div class="stat-label">Total P&L</div>
-                                <div id="pnl-icon" class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                     style="background:var(--c-surface-2)">
-                                    <i class="fas fa-wallet text-xs" style="color:#6b7280"></i>
-                                </div>
+                </div>
+                <div class="toggle-row">
+                    <div class="flex items-center gap-2">
+                        <div class="toggle" onclick="toggleWindow(2)">
+                            <div class="toggle-track on" id="window-2-track" style="width: 36px; height: 20px;">
+                                <div class="toggle-thumb" style="width: 16px; height: 16px;"></div>
                             </div>
-                            <div id="stat-pnl" class="stat-value mt-1">₹0.00</div>
-                            <div id="pnl-change" class="stat-sub">0 trades</div>
                         </div>
-
-                        <!-- Win Rate Card -->
-                        <div class="stat-card animated-border">
-                            <div class="flex items-start justify-between">
-                                <div class="stat-label">Win Rate</div>
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                     style="background:var(--c-green-dim)">
-                                    <i class="fas fa-trophy text-xs text-primary-400"></i>
-                                </div>
-                            </div>
-                            <div id="stat-winrate" class="stat-value mt-1">0%</div>
-                            <div id="win-stats" class="stat-sub">0W / 0L</div>
-                        </div>
-
-                        <!-- Open Positions Card -->
-                        <div class="stat-card animated-border">
-                            <div class="flex items-start justify-between">
-                                <div class="stat-label">Open Positions</div>
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                     style="background:var(--c-blue-dim)">
-                                    <i class="fas fa-briefcase text-xs" style="color:#2563eb"></i>
-                                </div>
-                            </div>
-                            <div id="stat-positions" class="stat-value mt-1 text-blue-400">0</div>
-                            <div id="position-pnl" class="stat-sub">₹0 unrealized</div>
-                        </div>
-
-                        <!-- Market Status Card -->
-                        <div class="stat-card animated-border">
-                            <div class="flex items-start justify-between">
-                                <div class="stat-label">Market</div>
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                     style="background:var(--c-purple-dim)">
-                                    <i class="fas fa-clock text-xs" style="color:#7c3aed"></i>
-                                </div>
-                            </div>
-                            <div id="market-status" class="stat-value mt-1" style="color:#6b7280;font-size:1.1rem">Closed</div>
-                            <div class="stat-sub">09:15 – 15:30 IST</div>
-                        </div>
+                        <span class="text-xs">Afternoon</span>
                     </div>
-                    
-                    <!-- Paper vs Live Stats Breakdown -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <!-- Paper Trading Stats -->
-                        <div class="card p-5" style="border-top:2px solid rgba(245,158,11,.4)">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="section-icon" style="background:var(--c-amber-dim)">
-                                        <i class="fas fa-flask text-xs" style="color:#d97706"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-semibold text-sm" style="color:#d97706">Paper Trading</h4>
-                                        <p class="text-xs" style="color:#92400e">Simulated — no real money</p>
-                                    </div>
-                                </div>
-                                <span id="paper-pnl" class="text-lg font-bold font-mono" style="color:#d97706">₹0.00</span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2">
-                                <div class="card-inner-3 p-3 text-center">
-                                    <div id="paper-trades" class="text-xl font-bold font-mono" style="color:#d97706">0</div>
-                                    <div class="stat-label mt-0.5">Trades</div>
-                                </div>
-                                <div class="card-inner-3 p-3 text-center">
-                                    <div id="paper-winrate" class="text-xl font-bold font-mono" style="color:#d97706">0%</div>
-                                    <div class="stat-label mt-0.5">Win Rate</div>
-                                </div>
-                                <div class="card-inner-3 p-3 text-center">
-                                    <div id="paper-positions" class="text-xl font-bold font-mono" style="color:#d97706">0</div>
-                                    <div class="stat-label mt-0.5">Open Pos</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Live Trading Stats -->
-                        <div class="card p-5" style="border-top:2px solid rgba(34,197,94,.4)">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="section-icon" style="background:var(--c-green-dim)">
-                                        <span class="relative flex h-2.5 w-2.5">
-                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background:#22c55e"></span>
-                                            <span class="relative inline-flex rounded-full h-2.5 w-2.5" style="background:#22c55e"></span>
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-semibold text-sm text-primary-400">Live Trading</h4>
-                                        <p class="text-xs" style="color:#166534">Real money at risk</p>
-                                    </div>
-                                </div>
-                                <span id="live-pnl" class="text-lg font-bold font-mono text-primary-400">₹0.00</span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2">
-                                <div class="card-inner-3 p-3 text-center">
-                                    <div id="live-trades" class="text-xl font-bold font-mono text-primary-400">0</div>
-                                    <div class="stat-label mt-0.5">Trades</div>
-                                </div>
-                                <div class="card-inner-3 p-3 text-center">
-                                    <div id="live-winrate" class="text-xl font-bold font-mono text-primary-400">0%</div>
-                                    <div class="stat-label mt-0.5">Win Rate</div>
-                                </div>
-                                <div class="card-inner-3 p-3 text-center">
-                                    <div id="live-positions" class="text-xl font-bold font-mono text-primary-400">0</div>
-                                    <div class="stat-label mt-0.5">Open Pos</div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="flex items-center gap-1">
+                        <input type="time" id="window-2-start" value="13:30" class="input" style="width: 70px; padding: 2px 6px; font-size: 0.75rem;">
+                        <span class="text-xs text-muted">-</span>
+                        <input type="time" id="window-2-end" value="15:30" class="input" style="width: 70px; padding: 2px 6px; font-size: 0.75rem;">
                     </div>
-
-                    <!-- Charts Section -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                        <!-- Equity Curve Chart -->
-                        <div class="lg:col-span-2 card p-5">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="section-icon" style="background:var(--c-green-dim)">
-                                        <i class="fas fa-chart-area text-primary-400 text-xs"></i>
-                                    </div>
-                                    <h3 class="font-semibold text-sm">Equity Curve</h3>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span id="equity-start" class="text-xs font-mono" style="color:#6b7280">Start: ₹0</span>
-                                    <span style="color:#374151">|</span>
-                                    <span id="equity-current" class="text-xs font-mono text-primary-400 font-semibold">Now: ₹0</span>
-                                    <span id="equity-return" class="badge-green text-xs px-2 py-0.5 rounded-lg font-mono">+0%</span>
-                                </div>
-                            </div>
-                            <div class="h-56">
-                                <canvas id="equity-chart"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- Quick Stats -->
-                        <div class="card p-5">
-                            <div class="flex items-center gap-2 mb-4">
-                                <div class="section-icon" style="background:var(--c-blue-dim)">
-                                    <i class="fas fa-bolt text-xs" style="color:#2563eb"></i>
-                                </div>
-                                <h3 class="font-semibold text-sm">Quick Stats</h3>
-                            </div>
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center py-1.5 border-b" style="border-color:var(--c-border)">
-                                    <span class="text-xs" style="color:#6b7280">Total Trades</span>
-                                    <span id="quick-total-trades" class="font-mono font-semibold text-sm">0</span>
-                                </div>
-                                <div class="flex justify-between items-center py-1.5 border-b" style="border-color:var(--c-border)">
-                                    <span class="text-xs" style="color:#6b7280">Avg Profit</span>
-                                    <span id="quick-avg-profit" class="font-mono font-semibold text-sm text-primary-400">₹0</span>
-                                </div>
-                                <div class="flex justify-between items-center py-1.5 border-b" style="border-color:var(--c-border)">
-                                    <span class="text-xs" style="color:#6b7280">Avg Loss</span>
-                                    <span id="quick-avg-loss" class="font-mono font-semibold text-sm" style="color:#dc2626">₹0</span>
-                                </div>
-                                <div class="flex justify-between items-center py-1.5">
-                                    <span class="text-xs" style="color:#6b7280">Risk : Reward</span>
-                                    <span class="font-mono font-semibold text-sm">1 : 2</span>
-                                </div>
-                                <div class="pt-3 mt-1 border-t" style="border-color:var(--c-border)">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <span class="text-xs" style="color:#6b7280">Daily Limit</span>
-                                        <span id="daily-limit-used" class="text-xs font-mono font-semibold" style="color:#9ca3af">0 / 10 trades</span>
-                                    </div>
-                                    <div class="stat-bar">
-                                        <div id="daily-limit-bar" class="stat-bar-fill" style="width:0%;background:var(--c-green)"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ROW 4: Turbo Mode & Brokerage (2 columns) -->
+    <div class="bento-grid bento-grid-2 mb-3">
+        <!-- Turbo Mode -->
+        <div class="card" style="border-left: 2px solid var(--c-purple);">
+            <div class="compact-header flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="section-icon section-icon-purple" style="width: 28px; height: 28px;">
+                        <i class="fas fa-rocket text-xs"></i>
                     </div>
-
-                    <!-- Recent Trades -->
-                    <div class="card overflow-hidden">
-                        <div class="px-5 py-3.5 flex items-center justify-between" style="background:var(--c-surface-2);border-bottom:1px solid var(--c-border)">
-                            <div class="flex items-center gap-2.5">
-                                <div class="section-icon" style="background:var(--c-amber-dim);width:28px;height:28px;border-radius:8px">
-                                    <i class="fas fa-receipt text-xs" style="color:#d97706"></i>
-                                </div>
-                                <span class="font-semibold text-sm">Recent Trades</span>
-                            </div>
-                            <button onclick="switchTab('trades')"
-                                    class="text-xs font-medium flex items-center gap-1 transition-colors"
-                                    style="color:#6b7280"
-                                    onmouseover="this.style.color='#16a34a'" onmouseout="this.style.color='#6b7280'">
-                                View all <i class="fas fa-arrow-right"></i>
-                            </button>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full trades-table">
-                                <thead>
-                                    <tr>
-                                        <th class="px-4 py-3 text-left">Time</th>
-                                        <th class="px-4 py-3 text-left">Symbol</th>
-                                        <th class="px-4 py-3 text-left">Strategy</th>
-                                        <th class="px-4 py-3 text-left">Mode</th>
-                                        <th class="px-4 py-3 text-left">Side</th>
-                                        <th class="px-4 py-3 text-left">Entry</th>
-                                        <th class="px-4 py-3 text-left">SL / TP</th>
-                                        <th class="px-4 py-3 text-left">Qty</th>
-                                        <th class="px-4 py-3 text-left">Status</th>
-                                        <th class="px-4 py-3 text-right">P&amp;L</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recent-trades-body" class="text-sm">
-                                    <!-- Dynamic content -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="no-trades-message" class="empty-state hidden">
-                            <div class="empty-state-icon"><i class="fas fa-receipt"></i></div>
-                            <h4>No trades yet today</h4>
-                            <p>Completed trades will appear here in real-time</p>
+                    <div>
+                        <h3 class="text-sm font-semibold">Turbo Mode</h3>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="turbo-status-badge" class="badge badge-gray badge-mini">Off</span>
+                    <div class="toggle" onclick="toggleTurboMode()">
+                        <div class="toggle-track" id="turbo-toggle-btn" style="width: 36px; height: 20px;">
+                            <div class="toggle-thumb" style="width: 16px; height: 16px;"></div>
                         </div>
                     </div>
                 </div>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2">
+                <div class="card-inner text-center py-2">
+                    <div class="text-xs text-muted">Trend</div>
+                    <div class="font-mono font-semibold text-xs mt-1" style="color: var(--c-purple);">4H+1H</div>
+                </div>
+                <div class="card-inner text-center py-2">
+                    <div class="text-xs text-muted">Entry</div>
+                    <div class="font-mono font-semibold text-xs mt-1" style="color: var(--c-purple);">1M</div>
+                </div>
+                <div class="card-inner text-center py-2">
+                    <div class="text-xs text-muted">Wait</div>
+                    <div class="font-mono font-semibold text-xs mt-1" style="color: var(--c-purple);">5m</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Brokerage Info -->
+        <div class="card">
+            <div class="compact-header flex items-center gap-2">
+                <div class="section-icon section-icon-green" style="width: 28px; height: 28px;">
+                    <i class="fas fa-calculator text-xs"></i>
+                </div>
+                <h3 class="text-sm font-semibold">Brokerage (Zerodha)</h3>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="card-inner py-2 px-3">
+                    <span class="text-muted">Brokerage:</span>
+                    <span class="font-mono ml-1">0.03%</span>
+                </div>
+                <div class="card-inner py-2 px-3">
+                    <span class="text-muted">STT:</span>
+                    <span class="font-mono ml-1">0.025%</span>
+                </div>
+                <div class="card-inner py-2 px-3">
+                    <span class="text-muted">Txn:</span>
+                    <span class="font-mono ml-1">0.003%</span>
+                </div>
+                <div class="card-inner py-2 px-3">
+                    <span class="text-muted">GST:</span>
+                    <span class="font-mono ml-1">18%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ROW 5: Live Trade Feed (Full width, compact) -->
+    <div class="card">
+        <div class="compact-header flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="section-icon section-icon-blue" style="width: 28px; height: 28px;">
+                    <i class="fas fa-terminal text-xs"></i>
+                </div>
+                <h3 class="text-sm font-semibold">Live Trade Feed</h3>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background: var(--c-green);"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2" style="background: var(--c-green);"></span>
+                </span>
+                <span class="text-xs font-mono text-green">LIVE</span>
+                <button onclick="clearTradeFeed()" class="btn btn-ghost btn-pill">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div id="trade-feed-container" class="trade-feed-compact overflow-y-auto" style="background: #060810; border-radius: 8px; border: 1px solid var(--c-border);">
+            <div class="empty-state py-4">
+                <div class="empty-state-icon" style="width: 40px; height: 40px; font-size: 16px;">
+                    <i class="fas fa-terminal"></i>
+                </div>
+                <div class="text-xs text-muted">No activity yet</div>
+            </div>
+        </div>
+    </div>
+    
+</div>
 
-                <!-- Positions Tab -->
                 <div id="tab-positions" class="tab-content hidden space-y-4">
                     <!-- Positions / GTT pill switcher -->
                     <div class="gtt-pill-bar">
@@ -4861,7 +6064,7 @@
                             plugins: {
                                 legend: { display: false },
                                 tooltip: {
-                                    backgroundColor: '#ffffff',
+                                    backgroundColor: '#12121a',
                                     borderColor: 'rgba(0,0,0,0.1)',
                                     borderWidth: 1,
                                     titleColor: '#111827',
