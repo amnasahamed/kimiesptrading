@@ -7398,6 +7398,7 @@
 
         // Toggle trading
         async function toggleTrading() {
+            if (!appData.config) return;
             const newState = !appData.config.system_enabled;
             try {
                 const res = await fetch('/api/config', {
