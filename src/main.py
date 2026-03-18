@@ -1,3 +1,4 @@
+from src.utils.time_utils import ist_naive
 """
 Trading Bot Application — src/ entry point.
 """
@@ -122,7 +123,7 @@ def create_app() -> FastAPI:
             "status": overall,
             "version": "2.0.0",
             "mode": "paper" if settings.paper_trading else "live",
-            "timestamp": __import__("datetime").datetime.now().isoformat(),
+            "timestamp": ist_naive().isoformat(),
             "checks": checks,
         }
 

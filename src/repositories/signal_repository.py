@@ -3,6 +3,7 @@ Signal repository — absorbs signal_tracker.py.
 Tracks per-day signals for duplicate detection and analytics.
 """
 from datetime import datetime, timedelta
+from src.utils.time_utils import ist_naive
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -18,7 +19,7 @@ _RESET_HOUR = 8
 
 def _day_start() -> datetime:
     """Return the 8 AM boundary for today's signal window."""
-    now = datetime.now()
+    now = ist_naive()
     today_reset = now.replace(hour=_RESET_HOUR, minute=0, second=0, microsecond=0)
     if now < today_reset:
         # Before 8 AM — use yesterday's 8 AM as the start
@@ -62,7 +63,7 @@ async def is_duplicate(
     """
     cutoff = max(
         _day_start(),
-        datetime.utcnow() - timedelta(minutes=within_minutes),
+        ist_naive() - timedelta(minutes=within_minutes),
     )
     existing = (
         db.query(Signal)
@@ -90,7 +91,7 @@ async def get_stats(db: Session) -> dict:
     """Return statistics for today's signals."""
     signals = await get_today_signals(db)
     return {
-        "date": datetime.now().strftime("%Y-%m-%d"),
+        "date": ist_naive().strftime("%Y-%m-%d"),
         "total": len(signals),
         "executing": sum(1 for s in signals if s.status == "EXECUTING"),
         "executed": sum(1 for s in signals if s.status == "EXECUTED"),

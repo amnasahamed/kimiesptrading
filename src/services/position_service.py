@@ -5,6 +5,7 @@ Handles GTT monitoring, Kite sync, force-close, position clubbing,
 and ESP hardware display state.
 """
 from datetime import datetime
+from src.utils.time_utils import ist_naive
 from typing import Optional, Dict, Any
 
 from sqlalchemy.orm import Session
@@ -34,7 +35,7 @@ def store_alert_for_esp(symbol: str, price: float) -> None:
     _esp_last_alert = {
         "symbol": symbol,
         "price": price,
-        "time": datetime.now().strftime("%H:%M"),
+        "time": ist_naive().strftime("%H:%M"),
         "shown": False,
     }
 
@@ -156,7 +157,7 @@ async def sync_kite_positions(db: Session, kite: KiteService) -> Dict[str, Any]:
             continue
 
         entry_price = float(pos.get("average_price", 0))
-        position_id = f"EXTERNAL_{symbol}_{datetime.now().strftime('%H%M%S')}"
+        position_id = f"EXTERNAL_{symbol}_{ist_naive().strftime('%H%M%S')}"
 
         position_repo.create({
             "id": position_id,
@@ -168,7 +169,7 @@ async def sync_kite_positions(db: Session, kite: KiteService) -> Dict[str, Any]:
             "status": "OPEN",
             "paper_trading": False,
             "source": "KITE_APP",
-            "entry_time": datetime.now(),
+            "entry_time": ist_naive(),
         })
         local_symbols.add(symbol)
         synced_count += 1
@@ -403,7 +404,7 @@ async def get_esp_stats(db: Session, config: dict) -> Dict[str, Any]:
         "today_pnl": round(total_pnl, 2),
         "open_positions": len(open_positions),
         "today_trades": len(today_trades),
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": ist_naive().isoformat(),
     }
 
 

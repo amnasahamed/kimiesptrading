@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Melon API Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0b;
+  --bg2: #111113;
+  --bg3: #18181c;
+  --bg4: #1f1f25;
+  --border: #2a2a32;
+  --border2: #353540;
+  --amber: #f5a623;
+  --amber2: #ffbe4d;
+  --amber-dim: rgba(245,166,35,0.12);
+  --amber-glow: rgba(245,166,35,0.06);
+  --green: #3ddc84;
+  --green-dim: rgba(61,220,132,0.1);
+  --red: #ff4f4f;
+  --red-dim: rgba(255,79,79,0.1);
+  --blue: #4d9fff;
+  --blue-dim: rgba(77,159,255,0.1);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.1);
+  --cyan: #22d3ee;
+  --text: #e8e8f0;
+  --text2: #9898ac;
+  --text3: #5c5c70;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-ui: 'Syne', sans-serif;
+  --sidebar-w: 280px;
+  --header-h: 52px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+.header {
+  height: var(--header-h);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  flex-shrink: 0;
+  position: relative;
+}
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-logo-icon {
+  width: 28px; height: 28px;
+  background: var(--amber);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.header-logo-text {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text);
+}
+.header-logo-sub {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.header-sep { width: 1px; height: 24px; background: var(--border); }
+.header-base {
+  font-size: 11px;
+  color: var(--text3);
+  display: flex; align-items: center; gap: 6px;
+}
+.header-base span {
+  color: var(--amber);
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 1px dashed var(--amber);
+}
+.header-base span:hover { color: var(--amber2); }
+.header-badge {
+  margin-left: auto;
+  background: var(--green-dim);
+  border: 1px solid rgba(61,220,132,0.25);
+  color: var(--green);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  display: flex; align-items: center; gap: 5px;
+}
+.header-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+}
+
+/* ── LAYOUT ── */
+.layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.sidebar-search {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.search-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px 7px 30px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+  transition: border-color 0.2s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%235c5c70' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 9px center;
+}
+.search-input:focus { border-color: var(--amber); }
+.search-input::placeholder { color: var(--text3); }
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.sidebar-nav::-webkit-scrollbar { width: 3px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.nav-group { margin-bottom: 4px; }
+.nav-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.nav-group-header:hover { background: var(--bg3); }
+.nav-group-label {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  flex: 1;
+}
+.nav-group-count {
+  font-size: 9px;
+  color: var(--text3);
+  background: var(--bg4);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.nav-group-arrow {
+  font-size: 9px;
+  color: var(--text3);
+  transition: transform 0.15s;
+}
+.nav-group.open .nav-group-arrow { transform: rotate(90deg); }
+
+.nav-items { display: none; }
+.nav-group.open .nav-items { display: block; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 22px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-left: 2px solid transparent;
+}
+.nav-item:hover { background: var(--bg3); }
+.nav-item.active {
+  background: var(--amber-dim);
+  border-left-color: var(--amber);
+}
+.nav-item.active .nav-item-path { color: var(--amber); }
+
+.method-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 3px;
+  min-width: 34px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+.method-GET    { background: var(--blue-dim);   color: var(--blue);   border: 1px solid rgba(77,159,255,0.2); }
+.method-POST   { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(61,220,132,0.2); }
+.method-DELETE { background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(255,79,79,0.2); }
+.method-PUT    { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+.method-PATCH  { background: rgba(34,211,238,0.1); color: var(--cyan); border: 1px solid rgba(34,211,238,0.2); }
+
+.nav-item-path {
+  font-size: 11px;
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── MAIN PANEL ── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── REQUEST BAR ── */
+.request-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.req-method-select {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--green);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  min-width: 70px;
+}
+.req-url-input {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 12px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.req-url-input:focus { border-color: var(--amber); }
+.req-url-input::placeholder { color: var(--text3); }
+.send-btn {
+  background: var(--amber);
+  color: var(--bg);
+  border: none;
+  padding: 7px 18px;
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.send-btn:hover { background: var(--amber2); }
+.send-btn:active { transform: scale(0.97); }
+.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── BODY SPLIT ── */
+.body-split {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── REQUEST PANEL ── */
+.req-panel {
+  width: 42%;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  padding: 0 12px;
+}
+.tab {
+  padding: 9px 14px;
+  font-size: 11px;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  user-select: none;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+.tab-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.tab-pane { display: none; flex: 1; overflow-y: auto; }
+.tab-pane.active { display: flex; flex-direction: column; }
+.tab-pane::-webkit-scrollbar { width: 3px; }
+.tab-pane::-webkit-scrollbar-thumb { background: var(--border2); }
+
+/* ── ENDPOINT INFO ── */
+.ep-info {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ep-title {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.ep-desc {
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── PARAMS EDITOR ── */
+.params-table {
+  padding: 12px;
+  flex: 1;
+}
+.params-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 6px;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+}
+.params-header span {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text3);
+  font-weight: 600;
+}
+.param-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 6px;
+  margin-bottom: 5px;
+  align-items: center;
+}
+.param-row input {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.param-row input:focus { border-color: var(--amber); }
+.param-row input[readonly] { color: var(--text3); background: var(--bg2); }
+.param-row input.required-key { color: var(--amber2); }
+.del-btn {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  transition: color 0.1s;
+  line-height: 1;
+}
+.del-btn:hover { color: var(--red); }
+.add-param-btn {
+  margin: 8px 12px;
+  background: none;
+  border: 1px dashed var(--border2);
+  color: var(--text3);
+  padding: 5px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  width: calc(100% - 24px);
+  transition: border-color 0.15s, color 0.15s;
+}
+.add-param-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+/* ── BODY EDITOR ── */
+.body-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+.body-type-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+.body-type-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.body-type-btn.active {
+  background: var(--amber-dim);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.json-editor {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  resize: none;
+  outline: none;
+  line-height: 1.6;
+  tab-size: 2;
+  min-height: 180px;
+}
+.json-editor:focus { border-color: var(--amber); }
+
+/* ── RESPONSE PANEL ── */
+.res-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.res-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.res-status {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.res-status.s2xx { background: var(--green-dim); color: var(--green); border: 1px solid rgba(61,220,132,0.2); }
+.res-status.s4xx { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(255,79,79,0.2); }
+.res-status.s5xx { background: rgba(255,160,79,0.1); color: #ffa04f; border: 1px solid rgba(255,160,79,0.2); }
+.res-time { font-size: 10px; color: var(--text3); }
+.res-size { font-size: 10px; color: var(--text3); }
+
+.copy-btn {
+  margin-left: auto;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.copy-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+.res-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+.res-body::-webkit-scrollbar { width: 3px; }
+.res-body::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.json-view {
+  padding: 14px 16px;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.json-key     { color: #79b8ff; }
+.json-string  { color: #9ecbff; }
+.json-number  { color: var(--amber); }
+.json-boolean { color: var(--purple); }
+.json-null    { color: var(--red); }
+
+/* ── EMPTY STATES ── */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text3);
+  gap: 8px;
+  padding: 40px;
+  text-align: center;
+}
+.empty-state-icon { font-size: 32px; opacity: 0.4; margin-bottom: 8px; }
+.empty-state-title { font-family: var(--font-ui); font-size: 14px; font-weight: 600; color: var(--text2); }
+.empty-state-sub { font-size: 11px; color: var(--text3); line-height: 1.6; }
+
+/* ── LOADING SPINNER ── */
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── HISTORY SIDEBAR ── */
+.history-panel {
+  width: 200px;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.history-header {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.history-clear { cursor: pointer; color: var(--text3); transition: color 0.15s; }
+.history-clear:hover { color: var(--red); }
+.history-list { flex: 1; overflow-y: auto; }
+.history-list::-webkit-scrollbar { width: 2px; }
+.history-list::-webkit-scrollbar-thumb { background: var(--border2); }
+.history-item {
+  padding: 7px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.history-item:hover { background: var(--bg3); }
+.history-item-method { font-size: 9px; font-weight: 700; }
+.history-item-path { font-size: 10px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.history-item-status { font-size: 9px; color: var(--text3); margin-top: 1px; }
+
+/* ── INLINE TAG ── */
+.tag-required {
+  font-size: 9px;
+  background: rgba(255,79,79,0.12);
+  color: var(--red);
+  border: 1px solid rgba(255,79,79,0.2);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
+/* ── SCROLLBAR GLOBAL ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--text);
+  z-index: 999;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.2s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── BASE URL MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: none; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 24px;
+  width: 400px;
+}
+.modal h3 { font-family: var(--font-ui); font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.modal input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+  margin-bottom: 12px;
+}
+.modal input:focus { border-color: var(--amber); }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-btn {
+  padding: 7px 16px;
+  border-radius: 5px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+.modal-btn-cancel { background: var(--bg4); color: var(--text2); }
+.modal-btn-save { background: var(--amber); color: var(--bg); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <div class="header-logo-icon">🍈</div>
+    <div>
+      <div class="header-logo-text">Melon Bot</div>
+      <div class="header-logo-sub">API Explorer</div>
+    </div>
+  </div>
+  <div class="header-sep"></div>
+  <div class="header-base">
+    base url: <span id="base-url-display" onclick="openBaseUrlModal()">http://localhost:8000</span>
+  </div>
+  <div class="header-badge" id="conn-badge">CONNECTED</div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-search">
+      <input class="search-input" type="text" placeholder="Search endpoints..." id="search-input" oninput="filterEndpoints(this.value)">
+    </div>
+    <div class="sidebar-nav" id="sidebar-nav"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- REQUEST BAR -->
+    <div class="request-bar">
+      <select class="req-method-select" id="req-method">
+        <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option><option>PATCH</option>
+      </select>
+      <input class="req-url-input" type="text" id="req-url" placeholder="Select an endpoint or type a URL...">
+      <button class="send-btn" id="send-btn" onclick="sendRequest()">▶ Send</button>
+    </div>
+
+    <!-- BODY SPLIT -->
+    <div class="body-split">
+
+      <!-- REQUEST PANEL -->
+      <div class="req-panel">
+        <div class="tabs" id="req-tabs">
+          <div class="tab active" onclick="switchReqTab('info')">Info</div>
+          <div class="tab" onclick="switchReqTab('params')">Params</div>
+          <div class="tab" onclick="switchReqTab('body')">Body</div>
+          <div class="tab" onclick="switchReqTab('headers')">Headers</div>
+        </div>
+        <div class="tab-body">
+          <!-- INFO TAB -->
+          <div class="tab-pane active" id="tab-info">
+            <div id="ep-info-area" class="empty-state">
+              <div class="empty-state-icon">⚡</div>
+              <div class="empty-state-title">Pick an endpoint</div>
+              <div class="empty-state-sub">Select from the sidebar or type a URL above to get started</div>
+            </div>
+          </div>
+          <!-- PARAMS TAB -->
+          <div class="tab-pane" id="tab-params">
+            <div class="params-table">
+              <div class="params-header">
+                <span>Key</span><span>Value</span><span></span>
+              </div>
+              <div id="query-params-list"></div>
+            </div>
+            <button class="add-param-btn" onclick="addQueryParam()">+ Add Parameter</button>
+          </div>
+          <!-- BODY TAB -->
+          <div class="tab-pane" id="tab-body">
+            <div class="body-editor">
+              <div class="body-type-row">
+                <button class="body-type-btn active" onclick="setBodyType('json', this)">JSON</button>
+                <button class="body-type-btn" onclick="setBodyType('none', this)">None</button>
+              </div>
+              <textarea class="json-editor" id="req-body" placeholder='{
+  "key": "value"
+}'></textarea>
+            </div>
+          </div>
+          <!-- HEADERS TAB -->
+          <div class="tab-pane" id="tab-headers">
+            <div class="params-table">
+              <div class="params-header">
+                <span>Key</span><span>Value</span><span></span>
+              </div>
+              <div id="headers-list">
+                <div class="param-row">
+                  <input type="text" value="Content-Type" readonly class="required-key">
+                  <input type="text" value="application/json" id="header-content-type">
+                  <button class="del-btn">·</button>
+                </div>
+              </div>
+            </div>
+            <button class="add-param-btn" onclick="addHeader()">+ Add Header</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESPONSE PANEL -->
+      <div class="res-panel">
+        <div class="res-meta" id="res-meta" style="display:none">
+          <span class="res-status" id="res-status"></span>
+          <span class="res-time" id="res-time"></span>
+          <span class="res-size" id="res-size"></span>
+          <button class="copy-btn" onclick="copyResponse()">Copy</button>
+        </div>
+        <div class="res-body" id="res-body">
+          <div class="empty-state">
+            <div class="empty-state-icon">📡</div>
+            <div class="empty-state-title">No response yet</div>
+            <div class="empty-state-sub">Hit Send to execute the request</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="history-panel">
+        <div class="history-header">
+          History
+          <span class="history-clear" onclick="clearHistory()" title="Clear">✕</span>
+        </div>
+        <div class="history-list" id="history-list">
+          <div class="empty-state" style="padding:20px; font-size:10px;">No requests yet</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- BASE URL MODAL -->
+<div class="modal-overlay" id="base-url-modal">
+  <div class="modal">
+    <h3>Set Base URL</h3>
+    <input type="text" id="base-url-input" placeholder="http://localhost:8000">
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-cancel" onclick="closeBaseUrlModal()">Cancel</button>
+      <button class="modal-btn modal-btn-save" onclick="saveBaseUrl()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+let baseUrl = 'http://localhost:8000';
+let activeEndpoint = null;
+let history = [];
+let lastResponse = null;
+
+// ── ENDPOINTS DEFINITION ──
+const endpoints = [
+  // Health
+  { method:'GET',  path:'/health', tag:'Health', summary:'Health Check', desc:'System health check. Returns version, mode (paper/live), and database status.' },
+
+  // Dashboard
+  { method:'GET',  path:'/api/dashboard', tag:'Dashboard', summary:'Full Dashboard Data', desc:'Single combined call returning config + stats + trades + alert stats. Used by dashboard on load.' },
+  { method:'GET',  path:'/api/stats',     tag:'Dashboard', summary:'Trading Stats',       desc:'Today\'s trading stats: trades, P&L, win/loss count, within_trading_hours flag.' },
+  { method:'POST', path:'/api/reset-daily', tag:'Dashboard', summary:'Reset Daily', desc:'Reset dashboard counters for a new trading day.' },
+
+  // Trading
+  { method:'POST', path:'/api/trade', tag:'Trading', summary:'Execute Trade', desc:'Manually execute a trade. Omit quantity to auto-calculate from capital + risk %.',
+    body: '{\n  "symbol": "RELIANCE",\n  "action": "BUY",\n  "quantity": null,\n  "price": null\n}' },
+  { method:'GET',  path:'/api/trades',    tag:'Trading', summary:'Get Trades',    desc:'All trades executed today.' },
+  { method:'GET',  path:'/api/portfolio', tag:'Trading', summary:'Get Portfolio', desc:'Full portfolio summary: positions + trades + P&L.' },
+
+  // Positions
+  { method:'GET',  path:'/api/positions', tag:'Positions', summary:'Get Positions', desc:'Current open positions with live LTP and unrealized P&L from Kite.' },
+  { method:'POST', path:'/api/positions/{position_id}/close', tag:'Positions', summary:'Close Position',
+    desc:'Close a position (places sell order on Kite).',
+    params: [{key:'position_id', val:'', required:true, inPath:true}],
+    body: '{\n  "exit_price": null\n}' },
+  { method:'POST', path:'/api/positions/{position_id}/force-close', tag:'Positions', summary:'Force Close',
+    desc:'Force-close position record without placing an order (already closed externally).',
+    params: [{key:'position_id', val:'', required:true, inPath:true}],
+    body: '{\n  "exit_price": 1250.0\n}' },
+  { method:'POST', path:'/api/positions/{position_id}/modify-sl', tag:'Positions', summary:'Modify Stop-Loss',
+    desc:'Update stop-loss price. Re-places GTT order for live positions.',
+    params: [{key:'position_id', val:'', required:true, inPath:true}],
+    body: '{\n  "new_sl_price": 1220.0\n}' },
+  { method:'POST', path:'/api/positions/sync', tag:'Positions', summary:'Sync Positions', desc:'Sync local positions vs Kite — marks as closed if gone from Kite.' },
+  { method:'POST', path:'/api/sync-kite', tag:'Positions', summary:'Import Kite Positions', desc:'Import positions placed via Kite app (not through bot) into local DB.' },
+  { method:'GET',  path:'/api/positions/kite-debug', tag:'Positions', summary:'Kite Debug', desc:'Compare raw Kite positions vs local DB. Use to diagnose sync issues.' },
+  { method:'GET',  path:'/api/debug/paper-live-classification', tag:'Positions', summary:'Classification Debug', desc:'Debug how trades are classified as paper vs live.' },
+
+  // GTT Orders
+  { method:'GET',  path:'/api/gtt-orders', tag:'GTT Orders', summary:'List GTT Orders', desc:'All active GTT (Good-Till-Triggered) stop-loss orders from Kite, enriched with position info.' },
+  { method:'POST', path:'/api/gtt/cleanup', tag:'GTT Orders', summary:'Cleanup Orphan GTTs', desc:'Cancel GTT orders that have no matching open position.' },
+
+  // Quotes & Funds
+  { method:'GET',  path:'/api/quote/{symbol}', tag:'Quotes & Funds', summary:'Get Quote',
+    desc:'Real-time LTP and OHLCV for a symbol from Kite. Returns 404-detail if token invalid.',
+    params: [{key:'symbol', val:'RELIANCE', required:true, inPath:true}] },
+  { method:'GET',  path:'/api/kite/funds', tag:'Quotes & Funds', summary:'Get Kite Funds', desc:'Account funds, available margin, and utilization from Kite.' },
+  { method:'POST', path:'/api/test-kite', tag:'Quotes & Funds', summary:'Test Kite Connection', desc:'Fetches NIFTY 50 quote as connectivity smoke test.' },
+
+  // Config
+  { method:'GET',  path:'/api/config', tag:'Config', summary:'Get Config', desc:'Current config with sensitive fields (tokens, passwords) masked as ***.' },
+  { method:'POST', path:'/api/config', tag:'Config', summary:'Update Config', desc:'Partial update — only provided fields are changed.',
+    body: '{\n  "system_enabled": true,\n  "paper_trading": true,\n  "capital": 2000.0,\n  "risk_percent": 1.0,\n  "kite_access_token": ""\n}' },
+  { method:'POST', path:'/api/test-telegram',  tag:'Config', summary:'Test Telegram',  desc:'Send a test message to configured Telegram chat.' },
+  { method:'POST', path:'/api/test-whatsapp', tag:'Config', summary:'Test WhatsApp', desc:'Send a test WhatsApp message.' },
+
+  // Webhook
+  { method:'GET',  path:'/webhook/chartink', tag:'Webhook', summary:'Webhook Status', desc:'Connectivity check — returns status for ChartInk verification.' },
+  { method:'POST', path:'/webhook/chartink', tag:'Webhook', summary:'Chartink Alert (JSON)', desc:'Main webhook endpoint. Secret must match config.chartink.webhook_secret.',
+    body: '{\n  "stocks": "RELIANCE,INFY",\n  "trigger_prices": "1250.0,1800.0",\n  "scan_name": "my_scan",\n  "alert_name": "Breakout",\n  "triggered_at": "2026-03-18 09:30:00",\n  "secret": "MelonBot123"\n}' },
+  { method:'POST', path:'/webhook/chartink/form', tag:'Webhook', summary:'Chartink Alert (Form)', desc:'Same as JSON webhook but accepts application/x-www-form-urlencoded.' },
+
+  // Incoming Alerts
+  { method:'GET',  path:'/api/incoming-alerts', tag:'Incoming Alerts', summary:'List Alerts',
+    desc:'Recent webhook alerts. Filter by status: processed | rejected | error | pending.',
+    params: [{key:'limit', val:'50'}, {key:'status', val:''}] },
+  { method:'GET',  path:'/api/incoming-alerts/stats', tag:'Incoming Alerts', summary:'Alert Stats', desc:'Today\'s aggregate: total, by_status breakdown, avg latency.' },
+  { method:'GET',  path:'/api/incoming-alerts/today', tag:'Incoming Alerts', summary:'Today Summary', desc:'Summary of all alerts received today.' },
+  { method:'GET',  path:'/api/incoming-alerts/symbol/{symbol}', tag:'Incoming Alerts', summary:'By Symbol',
+    desc:'All today\'s alerts that included a specific symbol.',
+    params: [{key:'symbol', val:'RELIANCE', required:true, inPath:true}] },
+  { method:'GET',  path:'/api/incoming-alerts/scan/{scan_name}', tag:'Incoming Alerts', summary:'By Scan',
+    desc:'All today\'s alerts from a specific scan name.',
+    params: [{key:'scan_name', val:'cklaude2', required:true, inPath:true}] },
+  { method:'GET',  path:'/api/signals', tag:'Incoming Alerts', summary:'Signal Log', desc:'Today\'s internal signal processing log and stats.' },
+  { method:'POST', path:'/api/signals/clear', tag:'Incoming Alerts', summary:'Clear Signals', desc:'Clear today\'s signal log (testing only).' },
+
+  // Turbo
+  { method:'GET',  path:'/api/turbo/status',  tag:'Turbo', summary:'Turbo Queue Status', desc:'Signals awaiting multi-timeframe confirmation. Shows queue, processing, completed.' },
+  { method:'POST', path:'/api/turbo/cleanup', tag:'Turbo', summary:'Cleanup Turbo Queue', desc:'Remove completed/expired entries older than 24 hours.' },
+
+  // Analytics
+  { method:'GET',  path:'/api/insights',         tag:'Analytics', summary:'All Symbol Insights', desc:'Per-symbol trade insights from entire trade history.' },
+  { method:'GET',  path:'/api/insights/{symbol}', tag:'Analytics', summary:'Symbol Insights',
+    desc:'Insights for one symbol: win rate, avg P&L, best/worst trades.',
+    params: [{key:'symbol', val:'RELIANCE', required:true, inPath:true}] },
+  { method:'GET',  path:'/api/learning/summary',         tag:'Analytics', summary:'Learning Summary',         desc:'High-level paper vs live P&L summary with win rates.' },
+  { method:'GET',  path:'/api/learning/report',          tag:'Analytics', summary:'Full Learning Report',     desc:'Combined report: summary + symbols + signals + time patterns + recommendations.' },
+  { method:'GET',  path:'/api/learning/symbols',         tag:'Analytics', summary:'Symbol Performance',      desc:'Per-symbol stats with paper/live breakdown and letter grades (A–F).' },
+  { method:'GET',  path:'/api/learning/signals',         tag:'Analytics', summary:'Signal Conversion Rate',  desc:'How many webhook alerts actually became executed trades.' },
+  { method:'GET',  path:'/api/learning/time-patterns',   tag:'Analytics', summary:'Time Patterns',           desc:'Hourly win-rate and P&L — which hour of day performs best.' },
+  { method:'GET',  path:'/api/learning/recommendations', tag:'Analytics', summary:'Recommendations',         desc:'Actionable trading recommendations from historical analysis.' },
+  { method:'GET',  path:'/api/analysis/paper-uptrend',   tag:'Analytics', summary:'Paper Uptrend Analysis',  desc:'How far paper trades ran up after entry — missed profit potential.' },
+
+  // Strategy
+  { method:'GET',  path:'/api/strategy/analytics', tag:'Strategy', summary:'Strategy Analytics', desc:'Comprehensive analytics: best/worst scan names, time windows, risk-reward stats.' },
+  { method:'GET',  path:'/api/strategy/history',   tag:'Strategy', summary:'Strategy History',   desc:'Log of all strategy configuration changes.' },
+  { method:'POST', path:'/api/strategy/apply',  tag:'Strategy', summary:'Apply Recommendation',
+    desc:'Apply a strategy optimizer recommendation by its index number.',
+    body: '{\n  "recommendation_idx": 0\n}' },
+  { method:'POST', path:'/api/strategy/custom', tag:'Strategy', summary:'Apply Custom Strategy',
+    desc:'Apply custom strategy parameters and save to config.',
+    body: '{\n  "risk_percent": 1.5,\n  "min_risk_reward": 2.5,\n  "atr_multiplier_sl": 1.5,\n  "atr_multiplier_tp": 3.0\n}' },
+  { method:'POST', path:'/api/strategy/reset',  tag:'Strategy', summary:'Reset Strategy', desc:'Reset all strategy parameters to system defaults.' },
+
+  // ESP
+  { method:'GET', path:'/api/esp/stats',     tag:'ESP Display', summary:'ESP Stats',     desc:'Compact stats payload for ESP8266/ESP32 hardware displays.' },
+  { method:'GET', path:'/api/esp/positions', tag:'ESP Display', summary:'ESP Positions', desc:'Simplified position list for small display screens.' },
+  { method:'GET', path:'/api/esp/alert',     tag:'ESP Display', summary:'ESP Alert',     desc:'Latest webhook alert for polling (mark-as-shown on read).' },
+];
+
+// ── BUILD SIDEBAR ──
+function buildSidebar(filter = '') {
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = '';
+
+  const groups = {};
+  const fl = filter.toLowerCase();
+  endpoints.forEach((ep, idx) => {
+    if (fl && !ep.path.toLowerCase().includes(fl) && !ep.summary.toLowerCase().includes(fl) && !ep.tag.toLowerCase().includes(fl)) return;
+    if (!groups[ep.tag]) groups[ep.tag] = [];
+    groups[ep.tag].push({...ep, idx});
+  });
+
+  Object.entries(groups).forEach(([tag, eps]) => {
+    const grp = document.createElement('div');
+    grp.className = 'nav-group open';
+    grp.innerHTML = `
+      <div class="nav-group-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="nav-group-label">${tag}</span>
+        <span class="nav-group-count">${eps.length}</span>
+        <span class="nav-group-arrow">▶</span>
+      </div>
+      <div class="nav-items">${eps.map(ep => `
+        <div class="nav-item" id="nav-${ep.idx}" onclick="selectEndpoint(${ep.idx})">
+          <span class="method-badge method-${ep.method}">${ep.method}</span>
+          <span class="nav-item-path">${ep.path}</span>
+        </div>`).join('')}
+      </div>`;
+    nav.appendChild(grp);
+  });
+}
+
+function filterEndpoints(val) { buildSidebar(val); }
+
+// ── SELECT ENDPOINT ──
+function selectEndpoint(idx) {
+  activeEndpoint = endpoints[idx];
+
+  // Clear active
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + idx);
+  if (navEl) navEl.classList.add('active');
+
+  // Set method + URL
+  document.getElementById('req-method').value = activeEndpoint.method;
+  document.getElementById('req-url').value = buildUrl(activeEndpoint);
+
+  // Info tab
+  document.getElementById('ep-info-area').innerHTML = `
+    <div class="ep-info">
+      <div class="ep-title">${activeEndpoint.summary}</div>
+      <div class="ep-desc" style="margin-top:6px;">${activeEndpoint.desc}</div>
+    </div>
+    <div style="padding:12px 16px;">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Endpoint</div>
+      <div style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 12px;">
+        <span class="method-badge method-${activeEndpoint.method}">${activeEndpoint.method}</span>
+        <span style="font-size:12px;color:var(--amber);">${activeEndpoint.path}</span>
+      </div>
+    </div>
+    ${activeEndpoint.params ? `
+    <div style="padding:0 16px 12px;">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Parameters</div>
+      ${activeEndpoint.params.map(p => `
+        <div style="display:flex;gap:8px;margin-bottom:5px;align-items:center;">
+          <span style="font-size:11px;color:var(--amber2);min-width:100px;">${p.key}</span>
+          <span style="font-size:10px;color:var(--text3);">${p.inPath ? 'path' : 'query'}</span>
+          ${p.required ? '<span class="tag-required">required</span>' : ''}
+        </div>`).join('')}
+    </div>` : ''}
+  `;
+
+  // Query params
+  const qList = document.getElementById('query-params-list');
+  qList.innerHTML = '';
+  const qParams = (activeEndpoint.params || []).filter(p => !p.inPath);
+  qParams.forEach(p => addQueryParamRow(p.key, p.val || '', !p.required));
+  if (!qParams.length) addQueryParamRow('', '', true);
+
+  // Body
+  const body = document.getElementById('req-body');
+  body.value = activeEndpoint.body || '';
+
+  switchReqTab('info');
+}
+
+function buildUrl(ep) {
+  let url = baseUrl + ep.path;
+  const pathParams = (ep.params || []).filter(p => p.inPath);
+  pathParams.forEach(p => {
+    url = url.replace('{' + p.key + '}', p.val || ('{' + p.key + '}'));
+  });
+  return url;
+}
+
+// ── QUERY PARAMS ──
+function addQueryParamRow(key = '', val = '', deletable = true) {
+  const list = document.getElementById('query-params-list');
+  const row = document.createElement('div');
+  row.className = 'param-row';
+  row.innerHTML = `
+    <input type="text" placeholder="key" value="${key}" ${!deletable && key ? 'readonly class="required-key"' : ''}>
+    <input type="text" placeholder="value" value="${val}">
+    <button class="del-btn" onclick="this.parentElement.remove()">✕</button>`;
+  list.appendChild(row);
+}
+
+function addQueryParam() { addQueryParamRow(); }
+
+// ── HEADERS ──
+function addHeader() {
+  const list = document.getElementById('headers-list');
+  const row = document.createElement('div');
+  row.className = 'param-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Header-Name">
+    <input type="text" placeholder="value">
+    <button class="del-btn" onclick="this.parentElement.remove()">✕</button>`;
+  list.appendChild(row);
+}
+
+// ── SEND REQUEST ──
+async function sendRequest() {
+  const method = document.getElementById('req-method').value;
+  let url = document.getElementById('req-url').value.trim();
+  if (!url) { toast('Enter a URL first'); return; }
+
+  // Add query params
+  const qRows = document.querySelectorAll('#query-params-list .param-row');
+  const params = [];
+  qRows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const k = inputs[0].value.trim();
+    const v = inputs[1].value.trim();
+    if (k && v) params.push(k + '=' + encodeURIComponent(v));
+  });
+  if (params.length) url += (url.includes('?') ? '&' : '?') + params.join('&');
+
+  // Build headers
+  const headers = {};
+  document.querySelectorAll('#headers-list .param-row').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const k = inputs[0].value.trim();
+    const v = inputs[1].value.trim();
+    if (k) headers[k] = v;
+  });
+
+  // Body
+  let body = undefined;
+  const bodyText = document.getElementById('req-body').value.trim();
+  if (['POST','PUT','PATCH'].includes(method) && bodyText) body = bodyText;
+
+  // Send
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  setResEmpty('loading');
+  const t0 = Date.now();
+
+  try {
+    const opts = { method, headers };
+    if (body) opts.body = body;
+    const res = await fetch(url, opts);
+    const elapsed = Date.now() - t0;
+    const text = await res.text();
+    let parsed;
+    try { parsed = JSON.parse(text); } catch { parsed = text; }
+
+    lastResponse = text;
+    showResponse(res.status, elapsed, text, parsed);
+    addHistory(method, url, res.status, elapsed);
+  } catch (err) {
+    const elapsed = Date.now() - t0;
+    showError(err.message, elapsed);
+    addHistory(method, url, 'ERR', elapsed);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '▶ Send';
+  }
+}
+
+function showResponse(status, elapsed, raw, parsed) {
+  const meta = document.getElementById('res-meta');
+  meta.style.display = 'flex';
+
+  const statusEl = document.getElementById('res-status');
+  statusEl.textContent = status;
+  statusEl.className = 'res-status ' + (status < 300 ? 's2xx' : status < 500 ? 's4xx' : 's5xx');
+
+  document.getElementById('res-time').textContent = elapsed + 'ms';
+  document.getElementById('res-size').textContent = formatBytes(raw.length);
+
+  const body = document.getElementById('res-body');
+  if (typeof parsed === 'object' && parsed !== null) {
+    body.innerHTML = '<div class="json-view">' + syntaxHighlight(parsed) + '</div>';
+  } else {
+    body.innerHTML = '<div class="json-view" style="color:var(--text2)">' + escapeHtml(raw) + '</div>';
+  }
+}
+
+function showError(msg, elapsed) {
+  const meta = document.getElementById('res-meta');
+  meta.style.display = 'flex';
+  document.getElementById('res-status').className = 'res-status s4xx';
+  document.getElementById('res-status').textContent = 'ERR';
+  document.getElementById('res-time').textContent = elapsed + 'ms';
+  document.getElementById('res-size').textContent = '–';
+  document.getElementById('res-body').innerHTML =
+    `<div class="json-view" style="color:var(--red)">Error: ${escapeHtml(msg)}\n\nMake sure the server is running at ${baseUrl}</div>`;
+}
+
+function setResEmpty(mode) {
+  document.getElementById('res-meta').style.display = 'none';
+  document.getElementById('res-body').innerHTML = mode === 'loading'
+    ? '<div class="empty-state"><div class="spinner" style="width:24px;height:24px;border-width:3px"></div><div class="empty-state-sub" style="margin-top:8px;">Sending request...</div></div>'
+    : '<div class="empty-state"><div class="empty-state-icon">📡</div><div class="empty-state-title">No response yet</div><div class="empty-state-sub">Hit Send to execute the request</div></div>';
+}
+
+// ── SYNTAX HIGHLIGHT ──
+function syntaxHighlight(obj, indent = 0) {
+  const pad = '  '.repeat(indent);
+  const pad1 = '  '.repeat(indent + 1);
+
+  if (obj === null) return '<span class="json-null">null</span>';
+  if (typeof obj === 'boolean') return `<span class="json-boolean">${obj}</span>`;
+  if (typeof obj === 'number') return `<span class="json-number">${obj}</span>`;
+  if (typeof obj === 'string') return `<span class="json-string">"${escapeHtml(obj)}"</span>`;
+
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return '[]';
+    const items = obj.map(v => pad1 + syntaxHighlight(v, indent + 1)).join(',\n');
+    return `[\n${items}\n${pad}]`;
+  }
+
+  const keys = Object.keys(obj);
+  if (keys.length === 0) return '{}';
+  const items = keys.map(k =>
+    `${pad1}<span class="json-key">"${escapeHtml(k)}"</span>: ${syntaxHighlight(obj[k], indent + 1)}`
+  ).join(',\n');
+  return `{\n${items}\n${pad}}`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatBytes(n) {
+  if (n < 1024) return n + ' B';
+  return (n/1024).toFixed(1) + ' KB';
+}
+
+// ── HISTORY ──
+function addHistory(method, url, status, elapsed) {
+  history.unshift({ method, url, status, elapsed, time: new Date() });
+  if (history.length > 30) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (!history.length) { list.innerHTML = '<div class="empty-state" style="padding:20px;font-size:10px;">No requests yet</div>'; return; }
+  list.innerHTML = history.map((h, i) => `
+    <div class="history-item" onclick="loadHistory(${i})">
+      <div class="history-item-method method-badge method-${h.method}" style="display:inline-block;">${h.method}</div>
+      <div class="history-item-path">${new URL(h.url).pathname}</div>
+      <div class="history-item-status">${h.status} · ${h.elapsed}ms · ${h.time.toLocaleTimeString()}</div>
+    </div>`).join('');
+}
+
+function loadHistory(i) {
+  const h = history[i];
+  document.getElementById('req-method').value = h.method;
+  document.getElementById('req-url').value = h.url;
+}
+
+function clearHistory() { history = []; renderHistory(); }
+
+// ── TABS ──
+function switchReqTab(name) {
+  document.querySelectorAll('#req-tabs .tab').forEach((t, i) => {
+    const names = ['info','params','body','headers'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + name);
+  });
+}
+
+function setBodyType(type, btn) {
+  document.querySelectorAll('.body-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── COPY ──
+function copyResponse() {
+  if (!lastResponse) return;
+  navigator.clipboard.writeText(lastResponse).then(() => toast('Copied!'));
+}
+
+// ── BASE URL ──
+function openBaseUrlModal() {
+  document.getElementById('base-url-input').value = baseUrl;
+  document.getElementById('base-url-modal').classList.add('show');
+}
+function closeBaseUrlModal() { document.getElementById('base-url-modal').classList.remove('show'); }
+function saveBaseUrl() {
+  baseUrl = document.getElementById('base-url-input').value.trim().replace(/\/$/, '');
+  document.getElementById('base-url-display').textContent = baseUrl;
+  closeBaseUrlModal();
+  checkConnection();
+}
+
+// ── CONNECTION CHECK ──
+async function checkConnection() {
+  const badge = document.getElementById('conn-badge');
+  try {
+    const r = await fetch(baseUrl + '/health', { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      badge.style.background = 'var(--green-dim)';
+      badge.style.borderColor = 'rgba(61,220,132,0.25)';
+      badge.style.color = 'var(--green)';
+      badge.innerHTML = '<span style="width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;display:inline-block"></span> CONNECTED';
+    } else throw new Error();
+  } catch {
+    badge.style.background = 'var(--red-dim)';
+    badge.style.borderColor = 'rgba(255,79,79,0.25)';
+    badge.style.color = 'var(--red)';
+    badge.innerHTML = '<span style="width:6px;height:6px;background:var(--red);border-radius:50%;display:inline-block"></span> OFFLINE';
+  }
+}
+
+// ── TOAST ──
+function toast(msg, duration = 2000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ── URL INPUT ENTER ──
+document.getElementById('req-url').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendRequest();
+});
+
+// ── INIT ──
+buildSidebar();
+checkConnection();
+setInterval(checkConnection, 30000);
+</script>
+</body>
+</html>

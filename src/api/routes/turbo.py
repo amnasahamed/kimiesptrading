@@ -5,6 +5,7 @@ GET  /api/turbo/status
 POST /api/turbo/cleanup
 """
 from datetime import datetime
+from src.utils.time_utils import ist_naive
 
 from fastapi import APIRouter, HTTPException
 
@@ -22,13 +23,13 @@ async def turbo_status():
             "status": "ok",
             "turbo_enabled": True,
             **status,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": ist_naive().isoformat(),
         }
     except Exception as exc:
         return {
             "status": "error",
             "message": str(exc),
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": ist_naive().isoformat(),
         }
 
 

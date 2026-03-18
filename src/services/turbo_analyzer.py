@@ -24,6 +24,7 @@ import json
 import asyncio
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta, time as dt_time
+from src.utils.time_utils import ist_naive
 from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 import statistics
@@ -108,7 +109,7 @@ class TurboAnalyzer:
     
     def is_market_open(self) -> bool:
         """Check if market is currently open (IST)."""
-        now = datetime.now()
+        now = ist_naive()
         current_time = now.time()
         
         # Check if it's a weekday (Monday=0, Friday=4)
@@ -290,7 +291,7 @@ class TurboAnalyzer:
     
     def _get_seconds_until_market_close(self) -> int:
         """Calculate seconds until 2:30 PM market close for intraday."""
-        now = datetime.now()
+        now = ist_naive()
         market_close = now.replace(hour=14, minute=30, second=0, microsecond=0)
         
         # If already past 2:30 PM, return 0
@@ -325,7 +326,7 @@ class TurboAnalyzer:
             2. 2:30 PM market close (or max_duration if specified) is reached
             3. Market closes (returns triggered=False)
         """
-        start_time = datetime.now()
+        start_time = ist_naive()
         direction = direction.upper()
         
         # Calculate max duration - either until 2:30 PM or fixed duration
@@ -352,7 +353,7 @@ class TurboAnalyzer:
         checks_count = 0
         
         while True:
-            elapsed = (datetime.now() - start_time).total_seconds()
+            elapsed = (ist_naive() - start_time).total_seconds()
             
             # Check max duration (time until 2:30 PM or specified limit)
             if elapsed >= max_duration:
@@ -419,7 +420,7 @@ class TurboAnalyzer:
                 
                 # Check if entry triggered
                 if entry_triggered:
-                    duration = (datetime.now() - start_time).total_seconds()
+                    duration = (ist_naive() - start_time).total_seconds()
                     confidence = self._calculate_entry_confidence(ind, direction)
                     
                     print(f"✅ TURBO: ENTRY TRIGGERED for {symbol}!")
@@ -449,7 +450,7 @@ class TurboAnalyzer:
             trigger_reason="Monitor loop exited unexpectedly",
             confidence_score=0,
             indicators_at_entry={},
-            duration_seconds=(datetime.now() - start_time).total_seconds()
+            duration_seconds=(ist_naive() - start_time).total_seconds()
         )
     
     def _check_buy_entry(
@@ -587,7 +588,7 @@ class TurboAnalyzer:
             count: Number of candles to fetch
         """
         cache_key = f"{symbol}_{interval}"
-        now = datetime.now()
+        now = ist_naive()
         
         # Check cache
         if cache_key in self._candle_cache:

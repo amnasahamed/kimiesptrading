@@ -8,6 +8,7 @@ startup — safe because the processor re-validates before executing.
 """
 import asyncio
 from datetime import datetime, timedelta
+from src.utils.time_utils import ist_naive
 from typing import Any, Dict, List, Optional
 
 from src.core.logging_config import get_logger
@@ -61,7 +62,7 @@ def _save_entry_to_db(entry: Dict[str, Any]) -> None:
             item.timeframes_confirmed = entry.get("timeframes_confirmed", [])
             if entry.get("status") in ("EXECUTED", "FALLBACK_EXECUTED", "FAILED", "EXPIRED",
                                        "CANCELLED", "TREND_MISMATCH", "ERROR"):
-                item.processed_at = datetime.utcnow()
+                item.processed_at = ist_naive()
             extra = {k: v for k, v in entry.items()
                      if k not in ("id", "symbol", "scan_name", "alert_price", "status",
                                   "timestamp", "processed_at", "result", "timeframes_confirmed",
@@ -120,7 +121,7 @@ async def add_to_turbo_queue(
 ) -> str:
     """Add a signal to the turbo queue. Returns queue_id."""
     async with _queue_lock:
-        queue_id = f"TURBO_{datetime.now().strftime('%Y%m%d%H%M%S%f')}_{symbol}"
+        queue_id = f"TURBO_{ist_naive().strftime('%Y%m%d%H%M%S%f')}_{symbol}"
         entry = {
             "id": queue_id,
             "symbol": symbol,
@@ -129,7 +130,7 @@ async def add_to_turbo_queue(
             "scan_name": scan_name,
             "action": action,
             "context": context or {},
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": ist_naive().isoformat(),
             "status": "QUEUED",
             "config": {
                 "capital": config.get("capital", 100000),
@@ -152,7 +153,7 @@ async def add_to_turbo_queue(
 async def get_queue_status() -> Dict[str, Any]:
     """Return current turbo queue status for the API."""
     async with _queue_lock:
-        now = datetime.now()
+        now = ist_naive()
 
         queued, processing, completed, expired = [], [], [], []
         for entry in _turbo_queue:
@@ -231,7 +232,7 @@ async def _process_single_signal(entry: Dict[str, Any]) -> None:
             "aligned": trend.aligned,
             "confidence": trend.confidence,
             "reason": trend.reason,
-            "checked_at": datetime.now().isoformat(),
+            "checked_at": ist_naive().isoformat(),
         }
     })
 
@@ -244,7 +245,7 @@ async def _process_single_signal(entry: Dict[str, Any]) -> None:
     # Step 2: monitor for entry
     monitor_until_close = turbo_cfg.get("monitor_until_market_close", True)
     await _update_entry_status(entry, "MONITORING", {
-        "monitoring_started_at": datetime.now().isoformat(),
+        "monitoring_started_at": ist_naive().isoformat(),
     })
 
     try:
@@ -316,7 +317,7 @@ async def _turbo_processor() -> None:
                         next_item = entry
                         break
                 if next_item:
-                    _processing[next_item["symbol"]] = {"started_at": datetime.now().isoformat()}
+                    _processing[next_item["symbol"]] = {"started_at": ist_naive().isoformat()}
 
             if next_item:
                 symbol = next_item["symbol"]
@@ -355,7 +356,7 @@ async def start_turbo_processor() -> None:
             _save_entry_to_db(entry)
 
     # Drop completed entries older than 24 h from memory (keep in DB)
-    cutoff = datetime.now() - timedelta(hours=24)
+    cutoff = ist_naive() - timedelta(hours=24)
     terminal = {"EXECUTED", "FALLBACK_EXECUTED", "FAILED", "EXPIRED", "CANCELLED",
                 "TREND_MISMATCH", "ERROR"}
     _turbo_queue = [
@@ -387,7 +388,7 @@ async def cleanup_turbo_queue(max_age_hours: int = 24) -> Dict[str, Any]:
     """Remove old terminal entries from memory and DB."""
     global _turbo_queue
 
-    cutoff = datetime.now() - timedelta(hours=max_age_hours)
+    cutoff = ist_naive() - timedelta(hours=max_age_hours)
     terminal = {"EXECUTED", "FALLBACK_EXECUTED", "FAILED", "EXPIRED", "CANCELLED",
                 "TREND_MISMATCH", "ERROR"}
 
@@ -396,7 +397,7 @@ async def cleanup_turbo_queue(max_age_hours: int = 24) -> Dict[str, Any]:
         _turbo_queue = [
             e for e in _turbo_queue
             if e.get("status") not in terminal
-            or datetime.fromisoformat(e.get("timestamp", datetime.now().isoformat())) > cutoff
+            or datetime.fromisoformat(e.get("timestamp", ist_naive().isoformat())) > cutoff
         ]
         removed = original - len(_turbo_queue)
 

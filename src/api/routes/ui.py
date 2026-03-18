@@ -15,6 +15,7 @@ KITE_LOGIN_HTML = Path("kite-login.html")
 DEBUG_HTML = Path("debug.html")
 ESP_SETUP_HTML = Path("esp-setup.html")
 TEST_CORS_HTML = Path("test_cors.html")
+API_EXPLORER_HTML = Path("api-explorer.html")
 UPLOAD_DIR = Path("uploads")
 
 
@@ -53,6 +54,12 @@ async def kite_login_page():
 async def debug_page():
     """Debug page."""
     return _read_html(DEBUG_HTML, "<h1>Debug file not found</h1>")
+
+
+@router.get("/api-explorer", response_class=HTMLResponse)
+async def api_explorer_page():
+    """Melon API Explorer — Postman-style API testing UI."""
+    return _read_html(API_EXPLORER_HTML, "<h1>API Explorer not found</h1>")
 
 
 @router.get("/upload", response_class=HTMLResponse)

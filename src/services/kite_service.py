@@ -4,6 +4,7 @@ Enhanced Kite API service with circuit breaker and caching.
 import httpx
 from typing import Optional, Dict, Any
 from datetime import datetime
+from src.utils.time_utils import ist_naive
 
 from src.core.config import get_settings
 from src.core.logging_config import get_logger
@@ -25,7 +26,7 @@ class KiteQuote:
         self.volume = int(data.get("volume", 0))
         self.change = float(data.get("change", 0))
         self.change_percent = float(data.get("change_percent", 0))
-        self.timestamp = datetime.utcnow()
+        self.timestamp = ist_naive()
 
 
 class KiteService:
@@ -347,3 +348,9 @@ def get_kite_service() -> KiteService:
     if _kite_service is None:
         _kite_service = KiteService()
     return _kite_service
+
+
+def reset_kite_service():
+    """Discard the singleton so the next call to get_kite_service() creates a fresh instance."""
+    global _kite_service
+    _kite_service = None

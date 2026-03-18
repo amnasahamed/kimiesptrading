@@ -4,6 +4,7 @@ Receives signals from ChartInk and dispatches them to the trading service.
 """
 from collections import defaultdict
 from datetime import datetime, timedelta
+from src.utils.time_utils import ist_naive
 from typing import Optional, List, Dict, Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
@@ -26,7 +27,7 @@ RATE_WINDOW = 60
 
 
 def _check_rate_limit(client_ip: str) -> tuple[bool, str]:
-    now = datetime.now()
+    now = ist_naive()
     window_start = now - timedelta(seconds=RATE_WINDOW)
     _webhook_calls[client_ip] = [t for t in _webhook_calls[client_ip] if t > window_start]
 
@@ -120,7 +121,7 @@ async def _process_alert(alert: ChartinkAlert, config: dict) -> Dict[str, Any]:
         return {
             "status": "REJECTED",
             "reason": "No valid stocks in alert",
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": ist_naive().isoformat(),
         }
 
     trading_service = get_trading_service()
@@ -147,7 +148,7 @@ async def _process_alert(alert: ChartinkAlert, config: dict) -> Dict[str, Any]:
             "status": "ALL_REJECTED",
             "reason": f"All {len(results)} stocks rejected",
             "results": results,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": ist_naive().isoformat(),
         }
 
     return {
@@ -156,7 +157,7 @@ async def _process_alert(alert: ChartinkAlert, config: dict) -> Dict[str, Any]:
         "executed": len(executed),
         "rejected": len(rejected),
         "results": results,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": ist_naive().isoformat(),
     }
 
 
@@ -199,7 +200,7 @@ async def _handle_webhook(
     from src.api.routes.config import load_config
     config = load_config()
 
-    start = datetime.now()
+    start = ist_naive()
     try:
         result = await _process_alert(alert, config)
 
@@ -212,7 +213,7 @@ async def _handle_webhook(
         else:
             status = "error"
 
-        latency_ms = (datetime.now() - start).total_seconds() * 1000
+        latency_ms = (ist_naive() - start).total_seconds() * 1000
         db = get_db_session()
         try:
             await update_status(db, alert_id, status,
@@ -224,7 +225,7 @@ async def _handle_webhook(
         return result
 
     except HTTPException as he:
-        latency_ms = (datetime.now() - start).total_seconds() * 1000
+        latency_ms = (ist_naive() - start).total_seconds() * 1000
         db = get_db_session()
         try:
             await update_status(db, alert_id, "error",
@@ -234,7 +235,7 @@ async def _handle_webhook(
         raise
 
     except Exception as e:
-        latency_ms = (datetime.now() - start).total_seconds() * 1000
+        latency_ms = (ist_naive() - start).total_seconds() * 1000
         db = get_db_session()
         try:
             await update_status(db, alert_id, "error", str(e), round(latency_ms, 2))
@@ -329,6 +330,6 @@ async def chartink_webhook_status(request: Request):
         "status": "active",
         "endpoint": "/webhook/chartink",
         "methods": ["POST", "GET"],
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": ist_naive().isoformat(),
         "message": "ChartInk webhook active. Use POST to send signals.",
     }

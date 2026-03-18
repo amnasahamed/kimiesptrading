@@ -6,6 +6,7 @@ import sys
 from typing import Any, Dict
 import json
 from datetime import datetime
+from src.utils.time_utils import ist_naive
 
 from src.core.config import get_settings
 
@@ -15,7 +16,7 @@ class JSONFormatter(logging.Formatter):
     
     def format(self, record: logging.LogRecord) -> str:
         log_data = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": ist_naive().isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),

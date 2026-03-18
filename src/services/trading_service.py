@@ -3,6 +3,7 @@ Main trading service orchestrating all operations.
 """
 from typing import Optional, Dict, Any, List
 from datetime import datetime
+from src.utils.time_utils import ist_naive
 import asyncio
 
 from src.core.config import get_settings
@@ -36,7 +37,7 @@ class TradingService:
         """
         Process a trading signal end-to-end.
         """
-        start_time = datetime.utcnow()
+        start_time = ist_naive()
         cfg = config or self._load_config()
         paper_setting = cfg.get("paper_trading", self.settings.paper_trading)
         is_paper = paper_setting if isinstance(paper_setting, bool) else bool(paper_setting)
@@ -105,7 +106,7 @@ class TradingService:
             
             # Create position
             position_data = {
-                "id": f"{'PAPER' if is_paper else 'LIVE'}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{symbol}",
+                "id": f"{'PAPER' if is_paper else 'LIVE'}_{ist_naive().strftime('%Y%m%d%H%M%S')}_{symbol}",
                 "symbol": symbol,
                 "quantity": position_calc.quantity,
                 "entry_price": current_price,
@@ -120,7 +121,7 @@ class TradingService:
                 position = position_repo.create(position_data)
                 order_result = {
                     "status": "SUCCESS",
-                    "order_id": f"PAPER_{symbol}_{int(datetime.utcnow().timestamp())}",
+                    "order_id": f"PAPER_{symbol}_{int(ist_naive().timestamp())}",
                     "message": "Paper trade executed"
                 }
             else:
@@ -156,7 +157,8 @@ class TradingService:
                 "order_id": order_result.get("order_id"),
                 "status": "OPEN",
                 "paper_trading": is_paper,
-                "alert_name": scan_name
+                "alert_name": scan_name,
+                "position_id": position.id,
             }
             trade_repo.create(trade_data)
 

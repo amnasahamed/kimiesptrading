@@ -3,6 +3,7 @@ Alert repository — absorbs incoming_alerts.py.
 Records every incoming webhook alert for audit and analytics.
 """
 from datetime import datetime, timedelta
+from src.utils.time_utils import ist_naive
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -17,7 +18,7 @@ _RESET_HOUR = 8
 
 
 def _day_start() -> datetime:
-    now = datetime.now()
+    now = ist_naive()
     today_reset = now.replace(hour=_RESET_HOUR, minute=0, second=0, microsecond=0)
     if now < today_reset:
         return today_reset - timedelta(days=1)
@@ -33,7 +34,7 @@ async def record_alert(
     symbols: Optional[list] = None,
 ) -> IncomingAlert:
     """Record an incoming webhook alert and return the created record."""
-    now = datetime.now()
+    now = ist_naive()
     alert_id = f"ALT{now.strftime('%Y%m%d%H%M%S%f')[:-3]}"
 
     if symbols is None:
@@ -107,7 +108,7 @@ async def get_stats(db: Session) -> dict:
             latencies.append(a.latency_ms)
 
     return {
-        "date": datetime.now().strftime("%Y-%m-%d"),
+        "date": ist_naive().strftime("%Y-%m-%d"),
         "total": len(alerts),
         "by_type": by_type,
         "by_status": by_status,

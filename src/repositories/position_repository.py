@@ -3,6 +3,7 @@ Position repository for database operations.
 """
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
+from src.utils.time_utils import ist_naive
 
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, and_
@@ -100,7 +101,7 @@ class PositionRepository:
             position.exit_price = exit_price
             position.pnl = pnl
             position.exit_reason = reason
-            position.exit_time = datetime.utcnow()
+            position.exit_time = ist_naive()
             self.db.commit()
             self.db.refresh(position)
             logger.info(f"Closed position: {position_id}, P&L: ₹{pnl:.2f}")
@@ -175,7 +176,7 @@ class TradeRepository:
         paper_trading: Optional[bool] = None
     ) -> List[TradeModel]:
         """Get today's trades."""
-        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today = ist_naive().replace(hour=0, minute=0, second=0, microsecond=0)
         
         query = self.db.query(TradeModel).filter(
             TradeModel.date >= today
@@ -225,7 +226,7 @@ class TradeRepository:
     
     def get_trade_stats(self, days: int = 30) -> Dict[str, Any]:
         """Get trading statistics."""
-        since = datetime.utcnow() - timedelta(days=days)
+        since = ist_naive() - timedelta(days=days)
         
         trades = self.db.query(TradeModel).filter(
             TradeModel.date >= since

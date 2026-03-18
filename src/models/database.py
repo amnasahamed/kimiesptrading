@@ -2,6 +2,7 @@
 Database models and connection management.
 """
 from datetime import datetime
+from src.utils.time_utils import ist_naive
 from enum import Enum
 from typing import Optional, List
 
@@ -40,7 +41,7 @@ class Position(Base):
     sl_order_id = Column(String(100))
     tp_order_id = Column(String(100))
     status = Column(String(20), default="OPEN", index=True)
-    entry_time = Column(DateTime, default=datetime.utcnow)
+    entry_time = Column(DateTime, default=ist_naive)
     exit_price = Column(Float)
     exit_time = Column(DateTime)
     exit_reason = Column(String(50))
@@ -68,7 +69,7 @@ class Trade(Base):
     __tablename__ = "trades"
     
     id = Column(String(100), primary_key=True)
-    date = Column(DateTime, default=datetime.utcnow, index=True)
+    date = Column(DateTime, default=ist_naive, index=True)
     symbol = Column(String(20), nullable=False, index=True)
     action = Column(String(10), nullable=False)
     entry_price = Column(Float, nullable=False)
@@ -105,7 +106,7 @@ class Signal(Base):
     __tablename__ = "signals"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    timestamp = Column(DateTime, default=ist_naive, index=True)
     symbol = Column(String(20), nullable=False, index=True)
     status = Column(String(20), nullable=False)  # RECEIVED, VALIDATED, EXECUTING, EXECUTED, REJECTED
     reason = Column(Text)
@@ -122,7 +123,7 @@ class IncomingAlert(Base):
     __tablename__ = "incoming_alerts"
     
     id = Column(String(50), primary_key=True)
-    received_at = Column(DateTime, default=datetime.utcnow, index=True)
+    received_at = Column(DateTime, default=ist_naive, index=True)
     alert_type = Column(String(20))  # json, form, get
     symbols = Column(JSON)
     raw_payload = Column(JSON)
@@ -144,7 +145,7 @@ class Config(Base):
     id = Column(Integer, primary_key=True, default=1)
     key = Column(String(100), unique=True, nullable=False)
     value = Column(JSON)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=ist_naive, onupdate=ist_naive)
 
 
 class Insight(Base):
@@ -153,7 +154,7 @@ class Insight(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     symbol = Column(String(20), nullable=False, index=True)
-    date = Column(DateTime, default=datetime.utcnow, index=True)
+    date = Column(DateTime, default=ist_naive, index=True)
     trades = Column(Integer, default=0)
     wins = Column(Integer, default=0)
     losses = Column(Integer, default=0)
@@ -178,7 +179,7 @@ class TurboQueueItem(Base):
     symbol = Column(String(20), nullable=False, index=True)
     scan_name = Column(String(200))
     alert_price = Column(Float)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=ist_naive, index=True)
     status = Column(String(20), default="pending", index=True)  # pending, processing, done, failed
     timeframes_confirmed = Column(JSON, default=list)
     timeframes_required = Column(JSON, default=list)
@@ -196,7 +197,7 @@ class ErrorLog(Base):
     __tablename__ = "error_log"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    timestamp = Column(DateTime, default=ist_naive, index=True)
     category = Column(String(50), index=True)
     message = Column(Text, nullable=False)
     details = Column(JSON, default=dict)

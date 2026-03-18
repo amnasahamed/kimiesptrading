@@ -7,6 +7,7 @@ All public functions are sync (engines run quickly on in-memory data).
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
+from src.utils.time_utils import ist_naive
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
@@ -40,7 +41,7 @@ _TRADE_HISTORY_DAYS = 90
 
 def _load_trades_from_db(db: Session) -> List[Dict]:
     from src.models.database import Trade
-    cutoff = datetime.utcnow() - timedelta(days=_TRADE_HISTORY_DAYS)
+    cutoff = ist_naive() - timedelta(days=_TRADE_HISTORY_DAYS)
     rows = db.query(Trade).filter(Trade.date >= cutoff).all()
     result = []
     for t in rows:
@@ -63,7 +64,7 @@ def _load_trades_from_db(db: Session) -> List[Dict]:
 
 def _load_signals_from_db(db: Session) -> List[Dict]:
     from src.models.database import Signal
-    cutoff = datetime.utcnow() - timedelta(days=_TRADE_HISTORY_DAYS)
+    cutoff = ist_naive() - timedelta(days=_TRADE_HISTORY_DAYS)
     rows = db.query(Signal).filter(Signal.timestamp >= cutoff).all()
     return [
         {
@@ -287,7 +288,7 @@ class LearningEngine:
 
     def get_full_report(self) -> Dict:
         return {
-            "generated_at": datetime.now().isoformat(),
+            "generated_at": ist_naive().isoformat(),
             "summary": self.get_summary(),
             "symbols": self.get_symbol_performance(),
             "signals": self.get_signal_analysis(),
@@ -482,42 +483,69 @@ def get_strategy_analytics(db: Session, config: Dict) -> Dict:
         "position_sizing_analysis": optimizer.analyze_position_sizing(),
         "recommendations": optimizer.generate_strategy_recommendations(),
         "total_trades_analyzed": len(trades),
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": ist_naive().isoformat(),
+    }
+
+
+def _compute_side_stats(trades_rows) -> Dict:
+    """Compute stats for one side (paper or live)."""
+    closed = [t for t in trades_rows if t.status in ("CLOSED", "closed") and t.pnl is not None]
+    wins = [t for t in closed if t.pnl > 0]
+    total_pnl = sum(t.pnl for t in closed)
+    win_rate = round(len(wins) / len(closed) * 100, 1) if closed else 0.0
+    return {
+        "trades": len(trades_rows),
+        "closed": len(closed),
+        "wins": len(wins),
+        "losses": len(closed) - len(wins),
+        "pnl": round(total_pnl, 2),
+        "total_pnl": round(total_pnl, 2),
+        "win_rate": win_rate,
+        "avg_pnl": round(total_pnl / len(closed), 2) if closed else 0.0,
+        "best_pnl": round(max((t.pnl for t in closed), default=0.0), 2),
+        "worst_pnl": round(min((t.pnl for t in closed), default=0.0), 2),
+    }
+
+
+def _compute_symbol_insights(trades_rows) -> Dict:
+    """Compute per-symbol insight metrics with paper/live breakdown."""
+    paper = _compute_side_stats([t for t in trades_rows if getattr(t, 'paper_trading', False)])
+    live = _compute_side_stats([t for t in trades_rows if not getattr(t, 'paper_trading', False)])
+    combined_pnl = round(paper["total_pnl"] + live["total_pnl"], 2)
+    combined_closed = paper["closed"] + live["closed"]
+    combined_wins = paper["wins"] + live["wins"]
+    return {
+        "paper": paper,
+        "live": live,
+        "combined": {
+            "trades": paper["trades"] + live["trades"],
+            "closed": combined_closed,
+            "pnl": combined_pnl,
+            "win_rate": round(combined_wins / combined_closed * 100, 1) if combined_closed else 0.0,
+        },
+        "total_pnl": combined_pnl,
+        "avg_pnl": round(combined_pnl / combined_closed, 2) if combined_closed else 0.0,
+        "win_rate": round(combined_wins / combined_closed * 100, 1) if combined_closed else 0.0,
     }
 
 
 def get_insights(db: Session) -> Dict:
-    """Return per-symbol insights from the insights table."""
-    from src.models.database import Insight
-    rows = db.query(Insight).all()
-    symbols = {}
+    """Return per-symbol insights with paper/live breakdown, computed from trades table."""
+    from src.models.database import Trade
+    from collections import defaultdict
+    rows = db.query(Trade).all()
+    grouped: Dict[str, list] = defaultdict(list)
     for row in rows:
-        symbols[row.symbol] = {
-            "trades": row.trades,
-            "wins": row.wins,
-            "losses": row.losses,
-            "total_pnl": row.total_pnl,
-            "avg_pnl": row.avg_pnl,
-            "win_rate": row.win_rate,
-            "best_pnl": row.best_pnl,
-            "worst_pnl": row.worst_pnl,
-        }
-    return {"status": "success", "symbols": symbols, "last_updated": datetime.now().isoformat()}
+        grouped[row.symbol].append(row)
+    symbols = {sym: _compute_symbol_insights(trades) for sym, trades in grouped.items()}
+    return {"status": "success", "symbols": symbols, "last_updated": ist_naive().isoformat()}
 
 
 def get_symbol_insights(db: Session, symbol: str) -> Optional[Dict]:
-    from src.models.database import Insight
-    row = db.query(Insight).filter(Insight.symbol == symbol.upper()).first()
-    if not row:
+    from src.models.database import Trade
+    rows = db.query(Trade).filter(Trade.symbol == symbol.upper()).all()
+    if not rows:
         return None
-    return {
-        "symbol": row.symbol,
-        "trades": row.trades,
-        "wins": row.wins,
-        "losses": row.losses,
-        "total_pnl": row.total_pnl,
-        "avg_pnl": row.avg_pnl,
-        "win_rate": row.win_rate,
-        "best_pnl": row.best_pnl,
-        "worst_pnl": row.worst_pnl,
-    }
+    data = _compute_symbol_insights(rows)
+    data["symbol"] = symbol.upper()
+    return data

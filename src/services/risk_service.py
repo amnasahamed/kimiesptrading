@@ -2,6 +2,7 @@
 Risk management service — 5-step signal validation and position sizing.
 """
 from datetime import datetime
+from src.utils.time_utils import ist_naive
 from typing import Optional, NamedTuple
 
 from src.core.config import get_settings
@@ -171,7 +172,7 @@ class RiskService:
         return load_config()
 
     def _is_in_trading_window(self, config: dict) -> tuple:
-        now = datetime.now().time()
+        now = ist_naive().time()
         trading_windows = config.get("trading_windows", [])
 
         if trading_windows:
@@ -217,7 +218,7 @@ class RiskService:
 
     def _get_daily_pnl(self, db) -> float:
         from src.models.database import Trade
-        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today = ist_naive().replace(hour=0, minute=0, second=0, microsecond=0)
         trades = (
             db.query(Trade)
             .filter(

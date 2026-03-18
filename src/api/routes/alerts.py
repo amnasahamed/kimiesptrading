@@ -8,6 +8,7 @@ GET /api/incoming-alerts/scan/{scan_name}
 GET /api/incoming-alerts/today
 """
 from datetime import datetime
+from src.utils.time_utils import ist_naive
 from typing import Optional
 
 from fastapi import APIRouter
@@ -59,7 +60,7 @@ async def incoming_alerts_stats():
     db = get_db_session()
     try:
         stats = await get_stats(db)
-        return {"stats": stats, "timestamp": datetime.now().isoformat()}
+        return {"stats": stats, "timestamp": ist_naive().isoformat()}
     finally:
         db.close()
 

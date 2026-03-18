@@ -16,6 +16,7 @@ POST /api/strategy/reset
 GET  /api/strategy/history
 """
 from datetime import datetime
+from src.utils.time_utils import ist_naive
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, HTTPException
@@ -183,7 +184,7 @@ async def apply_strategy(request: StrategyApplyRequest):
         if "strategy_history" not in config:
             config["strategy_history"] = []
         config["strategy_history"].append({
-            "date": datetime.now().isoformat(),
+            "date": ist_naive().isoformat(),
             "reason": rec["title"],
             "type": rec.get("type"),
             "new_values": suggested,
@@ -253,7 +254,7 @@ async def apply_custom_strategy(settings: CustomStrategyRequest):
 
     if changes:
         config.setdefault("strategy_history", []).append({
-            "date": datetime.now().isoformat(),
+            "date": ist_naive().isoformat(),
             "reason": "Manual strategy adjustment",
             "type": "custom",
             "changes": changes,
@@ -303,7 +304,7 @@ async def reset_strategy():
     config["trading_hours"] = {"start": "09:15", "end": "15:30"}
     config["signal_validation"] = {"enabled": True, "max_slippage_percent": 0.5}
     config.setdefault("strategy_history", []).append({
-        "date": datetime.now().isoformat(),
+        "date": ist_naive().isoformat(),
         "reason": "Strategy reset to defaults",
         "type": "reset",
         "previous_config": old,

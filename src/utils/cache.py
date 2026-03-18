@@ -5,6 +5,7 @@ import json
 import pickle
 from typing import Optional, Any, Union
 from datetime import datetime, timedelta
+from src.utils.time_utils import ist_naive
 import hashlib
 
 from src.core.config import get_settings
@@ -53,7 +54,7 @@ class Cache:
                 # In-memory cache
                 if key in self._memory_cache:
                     expiry = self._memory_ttl.get(key)
-                    if expiry and datetime.utcnow() > expiry:
+                    if expiry and ist_naive() > expiry:
                         del self._memory_cache[key]
                         del self._memory_ttl[key]
                         return None
@@ -80,7 +81,7 @@ class Cache:
             else:
                 # In-memory cache
                 self._memory_cache[key] = value
-                self._memory_ttl[key] = datetime.utcnow() + timedelta(seconds=ttl)
+                self._memory_ttl[key] = ist_naive() + timedelta(seconds=ttl)
             
             return True
         except Exception as e:

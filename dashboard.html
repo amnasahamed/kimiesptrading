@@ -5599,15 +5599,18 @@
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             const btn = document.getElementById('mobile-menu-btn');
-            
+
+            if (!sidebar) return;
             sidebar.classList.toggle('mobile-open');
-            overlay.classList.toggle('show');
-            
+            if (overlay) overlay.classList.toggle('show');
+
             // Update icon
-            if (sidebar.classList.contains('mobile-open')) {
-                btn.innerHTML = '<i class="fas fa-times text-gray-300"></i>';
-            } else {
-                btn.innerHTML = '<i class="fas fa-bars text-gray-300"></i>';
+            if (btn) {
+                if (sidebar.classList.contains('mobile-open')) {
+                    btn.innerHTML = '<i class="fas fa-times text-gray-300"></i>';
+                } else {
+                    btn.innerHTML = '<i class="fas fa-bars text-gray-300"></i>';
+                }
             }
         }
         
@@ -5826,35 +5829,46 @@
             
             // P&L
             const pnlEl = document.getElementById('stat-pnl');
-            pnlEl.textContent = '₹' + pnl.toFixed(2);
-            pnlEl.className = 'text-2xl font-bold font-mono mt-1 ' + (pnl >= 0 ? 'text-primary-400' : 'text-danger-500');
+            if (pnlEl) {
+                pnlEl.textContent = '₹' + pnl.toFixed(2);
+                pnlEl.className = 'stat-value ' + (pnl >= 0 ? 'text-green' : 'text-red');
+            }
 
             const pnlIcon = document.getElementById('pnl-icon');
-            pnlIcon.className = 'w-10 h-10 rounded-xl flex items-center justify-center ' +
-                (pnl >= 0 ? 'bg-primary-500/20' : 'bg-danger-500/20');
-            pnlIcon.innerHTML = pnl >= 0 ?
-                '<i class="fas fa-arrow-trend-up text-primary-400"></i>' :
-                '<i class="fas fa-arrow-trend-down text-danger-500"></i>';
-            
-            document.getElementById('pnl-change').textContent = trades + ' trades today';
-            
+            if (pnlIcon) {
+                pnlIcon.className = 'w-10 h-10 rounded-xl flex items-center justify-center ' +
+                    (pnl >= 0 ? 'bg-primary-500/20' : 'bg-danger-500/20');
+                pnlIcon.innerHTML = pnl >= 0 ?
+                    '<i class="fas fa-arrow-trend-up text-primary-400"></i>' :
+                    '<i class="fas fa-arrow-trend-down text-danger-500"></i>';
+            }
+
+            const pnlSub = document.getElementById('pnl-change') || document.getElementById('stat-pnl-sub');
+            if (pnlSub) pnlSub.textContent = trades + ' trades today';
+
             // Win Rate
-            document.getElementById('stat-winrate').textContent = winRate + '%';
-            document.getElementById('win-stats').textContent = `${wins}W / ${losses}L`;
-            
+            const winRateEl = document.getElementById('stat-winrate');
+            if (winRateEl) winRateEl.textContent = winRate + '%';
+            const winStats = document.getElementById('win-stats') || document.getElementById('stat-win-sub');
+            if (winStats) winStats.textContent = `${wins}W / ${losses}L`;
+
             // Positions
-            document.getElementById('stat-positions').textContent = openPos;
-            const posPnlEl = document.getElementById('position-pnl');
-            posPnlEl.textContent = '₹' + unrealized.toFixed(2) + ' unrealized';
-            posPnlEl.className = 'text-sm ' + (unrealized >= 0 ? 'text-primary-400' : 'text-danger-500');
+            const statPos = document.getElementById('stat-positions');
+            if (statPos) statPos.textContent = openPos;
+            const posPnlEl = document.getElementById('position-pnl') || document.getElementById('stat-pos-sub');
+            if (posPnlEl) {
+                posPnlEl.textContent = '₹' + unrealized.toFixed(2) + ' unrealized';
+            }
             
             // Update position badge
             const posBadge = document.getElementById('position-count');
-            if (openPos > 0) {
-                posBadge.textContent = openPos;
-                posBadge.classList.remove('hidden');
-            } else {
-                posBadge.classList.add('hidden');
+            if (posBadge) {
+                if (openPos > 0) {
+                    posBadge.textContent = openPos;
+                    posBadge.classList.remove('hidden');
+                } else {
+                    posBadge.classList.add('hidden');
+                }
             }
             
             // Paper Trading Stats
@@ -5884,25 +5898,30 @@
             if (livePositionsEl) livePositionsEl.textContent = livePositions;
             
             // Market Status
-            const marketStatus = document.getElementById('market-status');
-            if (appData.stats?.within_trading_hours) {
-                marketStatus.textContent = 'Open';
-                marketStatus.className = 'text-2xl font-bold mt-1 text-primary-400';
-            } else {
-                marketStatus.textContent = 'Closed';
-                marketStatus.className = 'text-2xl font-bold mt-1 text-gray-500';
+            const marketStatus = document.getElementById('market-status') || document.getElementById('stat-market');
+            if (marketStatus) {
+                if (appData.stats?.within_trading_hours) {
+                    marketStatus.textContent = 'Open';
+                    marketStatus.className = 'stat-value text-green';
+                } else {
+                    marketStatus.textContent = 'Closed';
+                    marketStatus.className = 'stat-value';
+                }
             }
-            
+
             // Daily limit bar (only applies to live trading)
             const maxTrades = appData.config?.max_trades_per_day || 10;
             const isPaper = appData.config?.paper_trading;
             const liveTradesCount = liveTrades.length;
             const pct = isPaper ? 0 : Math.min((liveTradesCount / maxTrades) * 100, 100);
-            document.getElementById('daily-limit-bar').style.width = pct + '%';
-            document.getElementById('daily-limit-used').textContent = isPaper ? '∞' : `${liveTradesCount}/${maxTrades}`;
-            
+            const limitBar = document.getElementById('daily-limit-bar');
+            if (limitBar) limitBar.style.width = pct + '%';
+            const limitUsed = document.getElementById('daily-limit-used');
+            if (limitUsed) limitUsed.textContent = isPaper ? '∞' : `${liveTradesCount}/${maxTrades}`;
+
             // Quick stats
-            document.getElementById('quick-total-trades').textContent = trades;
+            const quickTotal = document.getElementById('quick-total-trades');
+            if (quickTotal) quickTotal.textContent = trades;
             
             // 🔥 UPDATE RISK PANEL
             updateRiskPanel();
@@ -5941,66 +5960,85 @@
             
             // Update System Mode Badge
             const modeBadge = document.getElementById('system-mode-badge');
-            if (isPaper) {
-                modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
-                modeBadge.innerHTML = '<i class="fas fa-flask text-xs mr-1"></i> PAPER TRADING';
-            } else if (appData.config.system_enabled) {
-                modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-primary-500/20 text-primary-400 border border-primary-500/30';
-                modeBadge.innerHTML = '<i class="fas fa-circle text-xs mr-1"></i> LIVE TRADING';
-            } else {
-                modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-400';
-                modeBadge.innerHTML = '<i class="fas fa-pause text-xs mr-1"></i> SYSTEM PAUSED';
+            if (modeBadge) {
+                if (isPaper) {
+                    modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+                    modeBadge.innerHTML = '<i class="fas fa-flask text-xs mr-1"></i> PAPER TRADING';
+                } else if (appData.config.system_enabled) {
+                    modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-primary-500/20 text-primary-400 border border-primary-500/30';
+                    modeBadge.innerHTML = '<i class="fas fa-circle text-xs mr-1"></i> LIVE TRADING';
+                } else {
+                    modeBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-400';
+                    modeBadge.innerHTML = '<i class="fas fa-pause text-xs mr-1"></i> SYSTEM PAUSED';
+                }
             }
-            
+
             // P&L
             const pnlEl = document.getElementById('risk-pnl');
-            pnlEl.textContent = (pnl >= 0 ? '+' : '') + '₹' + Math.abs(pnl).toLocaleString('en-IN');
-            pnlEl.className = 'text-2xl font-bold font-mono ' + (pnl >= 0 ? 'text-primary-400' : 'text-danger-500');
+            if (pnlEl) {
+                pnlEl.textContent = (pnl >= 0 ? '+' : '') + '₹' + Math.abs(pnl).toLocaleString('en-IN');
+                pnlEl.className = 'text-2xl font-bold font-mono ' + (pnl >= 0 ? 'text-primary-400' : 'text-danger-500');
+            }
 
             const pnlPct = ((pnl / capital) * 100).toFixed(2);
-            document.getElementById('risk-pnl-pct').textContent = (pnl >= 0 ? '+' : '') + pnlPct + '%';
-            document.getElementById('risk-pnl-pct').className = 'text-xs mt-1 ' + (pnl >= 0 ? 'text-primary-400' : 'text-danger-500');
-            
+            const riskPnlPct = document.getElementById('risk-pnl-pct');
+            if (riskPnlPct) {
+                riskPnlPct.textContent = (pnl >= 0 ? '+' : '') + pnlPct + '%';
+                riskPnlPct.className = 'text-xs mt-1 ' + (pnl >= 0 ? 'text-primary-400' : 'text-danger-500');
+            }
+
             // Capital Used
-            document.getElementById('risk-capital-used').textContent = '₹' + capitalUsed.toLocaleString('en-IN');
-            document.getElementById('risk-capital-total').textContent = '₹' + capital.toLocaleString('en-IN');
+            const capUsedEl = document.getElementById('risk-capital-used');
+            if (capUsedEl) capUsedEl.textContent = '₹' + capitalUsed.toLocaleString('en-IN');
+            const capTotalEl = document.getElementById('risk-capital-total');
+            if (capTotalEl) capTotalEl.textContent = '₹' + capital.toLocaleString('en-IN');
             const capitalPct = Math.min((capitalUsed / capital) * 100, 100);
-            document.getElementById('risk-capital-bar').style.width = capitalPct + '%';
-            
+            const capBar = document.getElementById('risk-capital-bar');
+            if (capBar) capBar.style.width = capitalPct + '%';
+
             // Risk Used
             const maxRiskPercent = 3; // 3% max risk
-            document.getElementById('risk-used').textContent = riskPercent.toFixed(1) + '%';
-            document.getElementById('risk-max').textContent = maxRiskPercent + '%';
+            const riskUsedEl = document.getElementById('risk-used');
+            if (riskUsedEl) riskUsedEl.textContent = riskPercent.toFixed(1) + '%';
+            const riskMaxEl = document.getElementById('risk-max');
+            if (riskMaxEl) riskMaxEl.textContent = maxRiskPercent + '%';
             const riskPctBar = Math.min((riskPercent / maxRiskPercent) * 100, 100);
             const riskBar = document.getElementById('risk-bar');
-            riskBar.style.width = riskPctBar + '%';
-            // Color code risk bar
-            if (riskPercent > maxRiskPercent * 0.8) {
-                riskBar.className = 'h-1.5 rounded-full transition-all bg-danger-500';
-            } else if (riskPercent > maxRiskPercent * 0.5) {
-                riskBar.className = 'h-1.5 rounded-full transition-all bg-warning-500';
-            } else {
-                riskBar.className = 'h-1.5 rounded-full transition-all bg-primary-500';
+            if (riskBar) {
+                riskBar.style.width = riskPctBar + '%';
+                if (riskPercent > maxRiskPercent * 0.8) {
+                    riskBar.className = 'h-1.5 rounded-full transition-all bg-danger-500';
+                } else if (riskPercent > maxRiskPercent * 0.5) {
+                    riskBar.className = 'h-1.5 rounded-full transition-all bg-warning-500';
+                } else {
+                    riskBar.className = 'h-1.5 rounded-full transition-all bg-primary-500';
+                }
             }
-            
+
             // Open Positions
-            document.getElementById('risk-positions').textContent = openPos;
-            document.getElementById('risk-max-positions').textContent = maxPositions;
+            const riskPosEl = document.getElementById('risk-positions');
+            if (riskPosEl) riskPosEl.textContent = openPos;
+            const riskMaxPosEl = document.getElementById('risk-max-positions');
+            if (riskMaxPosEl) riskMaxPosEl.textContent = maxPositions;
             const posStatus = document.getElementById('risk-position-status');
-            if (openPos >= maxPositions) {
-                posStatus.textContent = 'Max Reached';
-                posStatus.className = 'text-xs mt-1 text-danger-500';
-            } else if (openPos >= maxPositions * 0.8) {
-                posStatus.textContent = 'Near Limit';
-                posStatus.className = 'text-xs mt-1 text-warning-500';
-            } else {
-                posStatus.textContent = 'Safe';
-                posStatus.className = 'text-xs mt-1 text-primary-400';
+            if (posStatus) {
+                if (openPos >= maxPositions) {
+                    posStatus.textContent = 'Max Reached';
+                    posStatus.className = 'text-xs mt-1 text-danger-500';
+                } else if (openPos >= maxPositions * 0.8) {
+                    posStatus.textContent = 'Near Limit';
+                    posStatus.className = 'text-xs mt-1 text-warning-500';
+                } else {
+                    posStatus.textContent = 'Safe';
+                    posStatus.className = 'text-xs mt-1 text-primary-400';
+                }
             }
-            
+
             // Win Rate
-            document.getElementById('risk-winrate').textContent = winRate + '%';
-            document.getElementById('risk-win-stats').textContent = `${wins}W / ${losses}L`;
+            const riskWinrateEl = document.getElementById('risk-winrate');
+            if (riskWinrateEl) riskWinrateEl.textContent = winRate + '%';
+            const riskWinStats = document.getElementById('risk-win-stats');
+            if (riskWinStats) riskWinStats.textContent = `${wins}W / ${losses}L`;
         }
 
         // Update charts
@@ -6150,8 +6188,8 @@
             
             if (trades.length === 0) {
                 if (noMsg) noMsg.classList.remove('hidden');
-                recentBody.innerHTML = '';
-                allBody.innerHTML = '';
+                if (recentBody) recentBody.innerHTML = '';
+                if (allBody) allBody.innerHTML = '';
                 return;
             }
             
@@ -6162,7 +6200,7 @@
             applyTradesFilters();
             
             // Update recent trades (always show unfiltered)
-            recentBody.innerHTML = trades.slice(0, 5).map(t => renderRecentTradeRow(t)).join('');
+            if (recentBody) recentBody.innerHTML = trades.slice(0, 5).map(t => renderRecentTradeRow(t)).join('');
         }
         
         // Render row for recent trades (dashboard view)
@@ -8873,7 +8911,7 @@
             if (noAlertsMsg) noAlertsMsg.classList.add('hidden');
             
             tbody.innerHTML = incomingAlertsData.slice().reverse().map(alert => {
-                const time = new Date(alert.received_at).toLocaleTimeString('en-IN', {
+                const time = new Date(alert.timestamp || alert.received_at).toLocaleTimeString('en-IN', {
                     hour: '2-digit', minute: '2-digit', second: '2-digit'
                 });
                 
@@ -8959,7 +8997,7 @@
                         <td class="px-4 py-3 text-xs" data-label="Reason">${reasonDisplay}</td>
                         <td class="px-4 py-3 text-xs text-gray-400 font-mono" data-label="Source IP">${alert.source_ip || '-'}</td>
                         <td class="px-4 py-3 text-right font-mono text-xs" data-label="Latency">
-                            ${alert.total_latency_ms ? Math.round(alert.total_latency_ms) + 'ms' : '-'}
+                            ${(alert.latency_ms || alert.total_latency_ms) ? Math.round(alert.latency_ms || alert.total_latency_ms) + 'ms' : '-'}
                         </td>
                     </tr>
                 `;
@@ -9006,7 +9044,7 @@
             const modal = document.getElementById('alert-details-modal');
             const content = document.getElementById('alert-details-content');
             
-            const time = new Date(alert.received_at).toLocaleString('en-IN');
+            const time = new Date(alert.timestamp || alert.received_at).toLocaleString('en-IN');
             const symbols = alert.symbols?.join(', ') || '-';
             
             // Status display config
@@ -9088,7 +9126,7 @@
                     </div>
                     <div>
                         <div class="text-gray-400 text-xs mb-1">Latency</div>
-                        <div>${alert.total_latency_ms ? Math.round(alert.total_latency_ms) + 'ms' : '-'}</div>
+                        <div>${(alert.latency_ms || alert.total_latency_ms) ? Math.round(alert.latency_ms || alert.total_latency_ms) + 'ms' : '-'}</div>
                     </div>
                 </div>
                 

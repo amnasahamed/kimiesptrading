@@ -3,6 +3,7 @@ Trading API routes.
 """
 import asyncio
 from datetime import datetime
+from src.utils.time_utils import ist_naive
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -83,7 +84,7 @@ async def get_kite_funds():
     return {
         "status": "success" if result else "error",
         "funds": result,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": ist_naive().isoformat(),
     }
 
 
@@ -224,7 +225,7 @@ async def clear_signals():
     db = get_db_session()
     try:
         from src.models.database import Signal
-        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today = ist_naive().replace(hour=0, minute=0, second=0, microsecond=0)
         deleted = db.query(Signal).filter(Signal.timestamp >= today).delete()
         db.commit()
         return {"status": "cleared", "message": f"{deleted} signals cleared"}
@@ -366,7 +367,7 @@ async def reset_daily():
                 "trades_today": len(today_trades),
                 "insights_preserved": True,
             },
-            "reset_time": datetime.now().isoformat(),
+            "reset_time": ist_naive().isoformat(),
         }
     finally:
         db.close()
@@ -407,7 +408,7 @@ async def debug_classification():
         return {
             "system_mode": {
                 "paper_trading_enabled": config.get("paper_trading", False),
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": ist_naive().isoformat(),
             },
             "open_positions": {
                 "total": len(open_positions),
