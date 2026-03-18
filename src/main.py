@@ -89,8 +89,9 @@ def create_app() -> FastAPI:
     # Static assets
     try:
         app.mount("/static", StaticFiles(directory="static"), name="static")
-    except Exception:
-        pass  # static/ may not exist in all environments
+    except Exception as e:
+        import logging
+        logging.getLogger("trading_bot").warning(f"Static files mount failed: {e}")
 
     @app.get("/health")
     async def health_check():

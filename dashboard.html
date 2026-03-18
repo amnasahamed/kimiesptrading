@@ -16,8 +16,10 @@
     <!-- Mobile Web App Capabilities -->
     <meta name="theme-color" content="#0a0a0f">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>🍈</text></svg>">
 <style>
 /* ============================================
    ULTRA COMPACT CONFIG TAB - BENTO GRID 2.0
@@ -5819,8 +5821,8 @@
             const losses = appData.stats.losing_trades || 0;
             const total = wins + losses;
             const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
-            const openPos = appData.positions.length;
-            const unrealized = appData.positions.reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0);
+            const openPos = (appData.positions || []).length;
+            const unrealized = (appData.positions || []).reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0);
             
             // P&L
             const pnlEl = document.getElementById('stat-pnl');
@@ -5883,7 +5885,7 @@
             
             // Market Status
             const marketStatus = document.getElementById('market-status');
-            if (appData.stats.within_trading_hours) {
+            if (appData.stats?.within_trading_hours) {
                 marketStatus.textContent = 'Open';
                 marketStatus.className = 'text-2xl font-bold mt-1 text-primary-400';
             } else {
@@ -7500,6 +7502,7 @@
         async function refreshPositions() {
             try {
                 const res = await fetch('/api/positions?_=' + Date.now());
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 appData.positions = data.positions || [];
                 updatePositions();
@@ -7513,6 +7516,7 @@
         async function loadInsights() {
             try {
                 const res = await fetch('/api/insights?_=' + Date.now());
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 
                 if (data.status === 'success') {
@@ -7665,8 +7669,9 @@
             try {
                 showToast('Performing daily reset...', 'info');
                 const res = await fetch('/api/reset-daily', { method: 'POST' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
-                
+
                 if (data.status === 'reset') {
                     showToast(`Reset complete! ${data.details.closed_positions} positions archived.`, 'success');
                     await loadData();
@@ -7686,6 +7691,7 @@
             showToast('Analyzing strategy performance...', 'info');
             try {
                 const res = await fetch('/api/strategy/analytics?_=' + Date.now());
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 
                 if (data.status === 'success') {
@@ -7784,6 +7790,7 @@
             try {
                 showToast('Applying recommendation...', 'info');
                 const res = await fetch(`/api/strategy/apply?recommendation_idx=${idx}`, { method: 'POST' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 
                 if (data.status === 'success') {
@@ -7829,6 +7836,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(settings)
                 });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 
                 if (data.status === 'success') {
@@ -7845,6 +7853,7 @@
         async function loadStrategyHistory() {
             try {
                 const res = await fetch('/api/strategy/history');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 
                 const modal = document.getElementById('strategy-history-modal');
@@ -7886,6 +7895,7 @@
             try {
                 showToast('Resetting strategy...', 'info');
                 const res = await fetch('/api/strategy/reset', { method: 'POST' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 
                 if (data.status === 'success') {
@@ -8108,7 +8118,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sl_price: slPrice })
                 });
-                
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 
                 if (data.status === 'success') {
@@ -8155,7 +8165,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sl_price: roundedSL, trail: true })
                 });
-                
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 
                 if (data.status === 'success') {
@@ -8179,6 +8189,7 @@
             
             try {
                 const res = await fetch('/api/sync-kite', { method: 'POST' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 
                 if (data.status === 'success') {
@@ -8200,6 +8211,7 @@
         async function refreshGTT() {
             try {
                 const res = await fetch('/api/gtt-orders?_=' + Date.now());
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 if (data.status === 'success') {
                     appData.gttOrders = data.orders || [];

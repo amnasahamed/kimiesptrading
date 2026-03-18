@@ -184,8 +184,8 @@ async def update_config(update: ConfigUpdate):
                     kite_cfg["access_token"] = access_token
                     save_config(config)
                     return {"status": "updated", "message": "Token exchanged successfully"}
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Token exchange failed, storing raw token: {e}")
         kite_cfg["access_token"] = update.kite_access_token
 
     save_config(config)
