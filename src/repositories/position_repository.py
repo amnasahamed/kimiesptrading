@@ -27,21 +27,38 @@ class PositionRepository:
         ).first()
     
     def get_open_positions(
-        self, 
+        self,
         paper_trading: Optional[bool] = None
     ) -> List[PositionModel]:
         """Get all open positions, optionally filtered by paper trading mode."""
         query = self.db.query(PositionModel).filter(
             PositionModel.status == "OPEN"
         )
-        
+
         if paper_trading is not None:
             query = query.filter(
                 PositionModel.paper_trading == paper_trading
             )
-        
+
         return query.all()
-    
+
+    def get_closed_positions(
+        self,
+        paper_trading: Optional[bool] = None,
+        limit: int = 50,
+    ) -> List[PositionModel]:
+        """Get recent closed positions."""
+        query = self.db.query(PositionModel).filter(
+            PositionModel.status == "CLOSED"
+        ).order_by(PositionModel.exit_time.desc())
+
+        if paper_trading is not None:
+            query = query.filter(
+                PositionModel.paper_trading == paper_trading
+            )
+
+        return query.limit(limit).all()
+
     def get_by_symbol(
         self, 
         symbol: str, 

@@ -14,6 +14,7 @@ from src.models.database import get_db, get_db_session
 from src.repositories.position_repository import PositionRepository, TradeRepository
 from src.repositories.signal_repository import get_stats as signal_stats, get_today_signals
 from src.services.kite_service import get_kite_service
+from src.services.risk_service import get_risk_service
 from src.services.trading_service import get_trading_service
 
 router = APIRouter(prefix="/api", tags=["trading"])
@@ -140,22 +141,51 @@ async def get_trades():
 
 
 @router.get("/positions")
-async def get_positions():
-    """Get current open positions with live P&L."""
+async def get_positions(status: str = "open"):
+    """Get positions. Use ?status=open or ?status=closed."""
     db = get_db_session()
     try:
         position_repo = PositionRepository(db)
-        open_positions = position_repo.get_open_positions()
-        if not open_positions:
-            return {"positions": [], "count": 0, "total_unrealized_pnl": 0}
-
         kite = get_kite_service()
 
-        # Fetch all quotes in parallel instead of one-by-one
+        if status == "closed":
+            positions = position_repo.get_closed_positions(limit=100)
+            result = []
+            for pos in positions:
+                is_long = getattr(pos, "side", None) != "SELL"
+                pnl = pos.pnl or 0
+                pos_dict = {
+                    "id": pos.id,
+                    "symbol": pos.symbol,
+                    "quantity": pos.quantity,
+                    "entry_price": pos.entry_price,
+                    "exit_price": pos.exit_price,
+                    "sl_price": pos.sl_price,
+                    "tp_price": pos.tp_price,
+                    "status": pos.status,
+                    "paper_trading": pos.paper_trading,
+                    "entry_time": pos.entry_time.isoformat() if pos.entry_time else None,
+                    "exit_time": pos.exit_time.isoformat() if pos.exit_time else None,
+                    "pnl": pnl,
+                    "pnl_percent": round((pnl / (pos.entry_price * pos.quantity)) * 100, 2)
+                    if pos.entry_price and pos.quantity else 0,
+                    "source": pos.source,
+                    "side": getattr(pos, "side", None) or "BUY",
+                    "exit_reason": getattr(pos, "exit_reason", None),
+                }
+                result.append(pos_dict)
+            return {"positions": result, "count": len(result), "status": "closed"}
+
+        # Open positions
+        open_positions = position_repo.get_open_positions()
+        if not open_positions:
+            return {"positions": [], "count": 0, "total_unrealized_pnl": 0, "status": "open"}
+
         quotes = await asyncio.gather(*[kite.get_quote(pos.symbol) for pos in open_positions])
 
         positions_with_pnl = []
         for pos, quote in zip(open_positions, quotes):
+            is_long = getattr(pos, "side", None) != "SELL"
             pos_dict = {
                 "id": pos.id,
                 "symbol": pos.symbol,
@@ -168,16 +198,19 @@ async def get_positions():
                 "entry_time": pos.entry_time.isoformat() if pos.entry_time else None,
                 "pnl": pos.pnl or 0,
                 "source": pos.source,
+                "side": getattr(pos, "side", None) or "BUY",
             }
             if quote:
                 ltp = quote.ltp
-                unrealized_pnl = round((ltp - pos.entry_price) * pos.quantity, 2)
+                if is_long:
+                    unrealized_pnl = round((ltp - pos.entry_price) * pos.quantity, 2)
+                else:
+                    unrealized_pnl = round((pos.entry_price - ltp) * pos.quantity, 2)
                 pos_dict.update({
                     "ltp": ltp,
                     "unrealized_pnl": unrealized_pnl,
-                    "pnl_percent": round((ltp - pos.entry_price) / pos.entry_price * 100, 2)
-                    if pos.entry_price > 0
-                    else 0,
+                    "pnl_percent": round((unrealized_pnl / (pos.entry_price * pos.quantity)) * 100, 2)
+                    if pos.entry_price and pos.quantity else 0,
                 })
             positions_with_pnl.append(pos_dict)
 
@@ -186,6 +219,7 @@ async def get_positions():
             "positions": positions_with_pnl,
             "count": len(positions_with_pnl),
             "total_unrealized_pnl": total_pnl,
+            "status": "open",
         }
     finally:
         db.close()
@@ -249,7 +283,7 @@ async def get_dashboard():
         stats = trade_repo.get_trade_stats(days=30)
         config = load_config()
 
-        rs = __import__('src.services.risk_service', fromlist=['get_risk_service']).get_risk_service()
+        rs = get_risk_service()
         within_hours, _ = rs._is_in_trading_window(config)
 
         paper_trades = [t for t in today_trades if t.paper_trading]
@@ -311,11 +345,9 @@ async def get_stats():
         stats = trade_repo.get_trade_stats(days=30)
 
         from src.api.routes.config import load_config
-        from src.services.risk_service import get_risk_service
         config = load_config()
 
         def _is_within_hours():
-            from src.services.risk_service import get_risk_service
             rs = get_risk_service()
             ok, _ = rs._is_in_trading_window(config)
             return ok

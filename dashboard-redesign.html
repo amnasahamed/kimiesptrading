@@ -821,11 +821,10 @@
         <!-- ==================== POSITIONS TAB ==================== -->
         <div id="tab-positions" class="tab-content">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-display">Positions</h2>
+                <h2 class="text-2xl font-display" id="positions-title">Positions — Open (0)</h2>
                 <div class="flex gap-2">
-                    <button class="btn btn-sm btn-primary active" data-filter="open">Open</button>
-                    <button class="btn btn-sm btn-ghost" data-filter="closed">Closed</button>
-                    <button class="btn btn-sm btn-ghost" data-filter="all">All</button>
+                    <button class="btn btn-sm btn-primary active" data-filter="open" onclick="setPositionFilter('open')">Open</button>
+                    <button class="btn btn-sm btn-ghost" data-filter="closed" onclick="setPositionFilter('closed')">Closed</button>
                     <button class="btn btn-sm btn-secondary" onclick="syncPositions()">
                         <i class="fas fa-sync-alt mr-1"></i> Sync
                     </button>
@@ -1387,6 +1386,7 @@ function switchTab(tabId) {
     if (tabId === 'learning') loadLearning();
     if (tabId === 'alerts') loadAlerts();
     if (tabId === 'trades') updateTradesTable();
+    if (tabId === 'positions') loadPositions();
 }
 
 /* ============================================================
@@ -1523,66 +1523,76 @@ function updateRiskOverview() {
 /* ============================================================
    POSITIONS
    ============================================================ */
-function updatePositionsPreview() {
-    const container = document.getElementById('positions-preview');
-    const empty = document.getElementById('positions-empty');
-    if (!container) return;
+var _positionFilter = 'open';
 
-    const positions = appData.positions.slice(0, 2);
-    if (!positions.length) {
-        if (empty) empty.style.display = 'flex';
-        // Clear existing position cards
-        container.querySelectorAll('.position-card').forEach(c => c.remove());
-        return;
-    }
-
-    if (empty) empty.style.display = 'none';
-    container.querySelectorAll('.position-card').forEach(c => c.remove());
-
-    positions.forEach(pos => {
-        const card = createPositionCard(pos);
-        container.appendChild(card);
+function setPositionFilter(filter) {
+    _positionFilter = filter;
+    document.querySelectorAll('[data-filter]').forEach(b => {
+        b.classList.toggle('btn-primary', b.dataset.filter === filter);
+        b.classList.toggle('btn-ghost', b.dataset.filter !== filter);
+        b.classList.toggle('active', b.dataset.filter === filter);
     });
+    loadPositions();
 }
 
-function updatePositionsTab() {
+async function loadPositions() {
     const container = document.getElementById('positions-list');
     const empty = document.getElementById('positions-tab-empty');
+    const title = document.getElementById('positions-title');
     if (!container) return;
 
-    const positions = appData.positions;
-    if (!positions.length) {
+    try {
+        const res = await fetch(`/api/positions?status=${_positionFilter}&_=${Date.now()}`);
+        if (!res.ok) throw new Error('Failed to load positions');
+        const data = await res.json();
+        const positions = data.positions || [];
+
+        if (title) {
+            const label = _positionFilter.charAt(0).toUpperCase() + _positionFilter.slice(1);
+            title.textContent = `Positions — ${label} (${positions.length})`;
+        }
+
         container.querySelectorAll('.position-card').forEach(c => c.remove());
-        if (empty) empty.style.display = 'flex';
-        return;
+
+        if (!positions.length) {
+            if (empty) {
+                empty.querySelector('h4').textContent = `No ${_positionFilter} positions`;
+                empty.style.display = 'flex';
+            }
+            return;
+        }
+
+        if (empty) empty.style.display = 'none';
+
+        positions.forEach(pos => {
+            const card = createPositionCard(pos, _positionFilter === 'open');
+            container.appendChild(card);
+        });
+    } catch (err) {
+        console.error('Positions load error:', err);
     }
-
-    if (empty) empty.style.display = 'none';
-    container.querySelectorAll('.position-card').forEach(c => c.remove());
-
-    positions.forEach(pos => {
-        const card = createPositionCard(pos, true);
-        container.appendChild(card);
-    });
 }
 
-function createPositionCard(pos, full = false) {
+function createPositionCard(pos, isOpen = false) {
     const card = document.createElement('div');
-    card.className = 'position-card ' + (pos.unrealized_pnl > 0 ? 'open' : pos.unrealized_pnl < 0 ? 'loss' : 'open');
+    const pnl = isOpen ? (pos.unrealized_pnl || 0) : (pos.pnl || 0);
+    card.className = 'position-card ' + (pnl > 0 ? 'gain' : pnl < 0 ? 'loss' : 'open');
     card.dataset.id = pos.id;
 
-    const pnl = pos.unrealized_pnl || pos.pnl || 0;
-    const pnlClass = pnl > 0 ? 'text-green' : pnl < 0 ? 'text-pink' : 'text-muted';
+    const pnlClass = pnl > 0 ? 'green' : pnl < 0 ? 'pink' : 'muted';
     const pnlSign = pnl > 0 ? '+' : '';
+    const side = pos.side || 'BUY';
+    const isShort = side === 'SELL';
 
     card.innerHTML = `
         <div class="position-header">
-            <div class="flex items-center gap-2">
-                <span class="position-symbol ${pnlClass}">${pos.symbol}</span>
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-mono font-bold text-lg" style="color:var(--text)">${pos.symbol}</span>
+                <span class="badge ${isShort ? 'badge-pink' : 'badge-green'}">${isShort ? 'SHORT' : 'LONG'}</span>
                 <span class="badge ${pos.paper_trading ? 'badge-warning' : 'badge-green'}">${pos.paper_trading ? 'Paper' : 'Live'}</span>
-                ${pos.source ? `<span class="badge badge-gray">${pos.source}</span>` : ''}
+                ${pos.exit_reason ? `<span class="badge badge-gray">${pos.exit_reason}</span>` : ''}
             </div>
-            <span class="font-mono font-bold text-lg ${pnlClass}">${pnlSign}${formatCurrency(pnl)}</span>
+            <span class="font-mono font-bold text-xl text-${pnlClass}">${pnlSign}${formatCurrency(pnl)}</span>
         </div>
         <div class="position-details">
             <div class="position-detail">
@@ -1593,11 +1603,11 @@ function createPositionCard(pos, full = false) {
                 <div class="position-detail-value font-mono">₹${(pos.entry_price || 0).toFixed(2)}</div>
                 <div class="position-detail-label">Entry</div>
             </div>
+            ${isOpen ? `
             <div class="position-detail">
-                <div class="position-detail-value font-mono ${pnlClass}">₹${(pos.ltp || pos.entry_price || 0).toFixed(2)}</div>
+                <div class="position-detail-value font-mono text-${pnlClass}">₹${(pos.ltp || pos.entry_price || 0).toFixed(2)}</div>
                 <div class="position-detail-label">LTP</div>
             </div>
-            ${full ? `
             <div class="position-detail">
                 <div class="position-detail-value font-mono text-warning">₹${(pos.sl_price || 0).toFixed(2)}</div>
                 <div class="position-detail-label">Stoploss</div>
@@ -1607,14 +1617,29 @@ function createPositionCard(pos, full = false) {
                 <div class="position-detail-label">Target</div>
             </div>
             <div class="position-detail">
-                <div class="position-detail-value font-mono ${pnlClass}">${(pos.pnl_percent || 0).toFixed(1)}%</div>
+                <div class="position-detail-value font-mono text-${pnlClass}">${(pos.pnl_percent || 0).toFixed(1)}%</div>
                 <div class="position-detail-label">P&L %</div>
-            </div>` : ''}
+            </div>
+            ` : `
+            <div class="position-detail">
+                <div class="position-detail-value font-mono">₹${(pos.exit_price || 0).toFixed(2)}</div>
+                <div class="position-detail-label">Exit</div>
+            </div>
+            <div class="position-detail">
+                <div class="position-detail-value font-mono text-${pnlClass}">${(pos.pnl_percent || 0).toFixed(1)}%</div>
+                <div class="position-detail-label">P&L %</div>
+            </div>
+            <div class="position-detail">
+                <div class="position-detail-value font-mono text-muted">${pos.exit_time ? new Date(pos.exit_time).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—'}</div>
+                <div class="position-detail-label">Closed At</div>
+            </div>
+            `}
         </div>
+        ${isOpen ? `
         <div class="position-actions">
             <button class="btn btn-sm btn-secondary" onclick="modifyPosition('${pos.id}')"><i class="fas fa-edit mr-1"></i> Modify</button>
             <button class="btn btn-sm btn-danger" onclick="closePosition('${pos.id}', '${pos.symbol}', ${pos.quantity})"><i class="fas fa-times mr-1"></i> Close</button>
-        </div>
+        </div>` : ''}
     `;
     return card;
 }
