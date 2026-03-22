@@ -82,24 +82,32 @@ async def _auto_square_off():
                         # Get current price
                         quote = await kite.get_quote(pos.symbol)
                         exit_price = quote.ltp if quote else pos.entry_price
-                        
-                        # Calculate P&L
-                        pnl = (exit_price - pos.entry_price) * pos.quantity
+
+                        # Determine position side
+                        side = getattr(pos, "side", None) or "BUY"
+                        is_long = side.upper() == "BUY"
+
+                        # Calculate P&L — LONG: (exit - entry) * qty, SHORT: (entry - exit) * qty
+                        if is_long:
+                            pnl = (exit_price - pos.entry_price) * pos.quantity
+                        else:
+                            pnl = (pos.entry_price - exit_price) * pos.quantity
                         total_pnl += pnl
-                        
+
                         # Close position
                         position_repo.close_position(
-                            pos.id, 
-                            exit_price, 
-                            pnl, 
+                            pos.id,
+                            exit_price,
+                            pnl,
                             "AUTO_SQUARE_OFF"
                         )
-                        
-                        # Place sell order for live positions
+
+                        # Place closing order for live positions (opposite of entry side)
                         if not pos.paper_trading:
+                            close_transaction = "SELL" if is_long else "BUY"
                             await kite.place_order(
                                 symbol=pos.symbol,
-                                transaction_type="SELL",
+                                transaction_type=close_transaction,
                                 quantity=pos.quantity
                             )
                         

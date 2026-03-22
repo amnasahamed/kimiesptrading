@@ -53,7 +53,8 @@ class Position(Base):
     component_trades = Column(JSON, default=list)
     partial_exits = Column(JSON, default=list)
     highest_r = Column(Float, default=0.0)
-    
+    side = Column(String(10))  # BUY (LONG) or SELL (SHORT)
+
     # Relationships
     trades = relationship("Trade", back_populates="position")
     

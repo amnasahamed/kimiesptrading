@@ -43,6 +43,7 @@ class TradingService:
         cfg = config or self._load_config()
         paper_setting = cfg.get("paper_trading", self.settings.paper_trading)
         is_paper = paper_setting if isinstance(paper_setting, bool) else bool(paper_setting)
+        side = action.upper()  # BUY = LONG, SELL = SHORT
 
         logger.info(f"Processing signal: {symbol} ({'PAPER' if is_paper else 'LIVE'})")
 
@@ -117,7 +118,8 @@ class TradingService:
                 "sl_price": position_calc.stop_loss,
                 "tp_price": position_calc.target,
                 "paper_trading": is_paper,
-                "status": "OPEN"
+                "status": "OPEN",
+                "side": side,
             }
 
             if is_paper:
@@ -136,7 +138,7 @@ class TradingService:
                     quantity=position_calc.quantity
                 )
 
-                if order_result["status"] == "SUCCESS":
+                if order_result.get("status") == "SUCCESS":
                     position_data["entry_order_id"] = order_result["order_id"]
                     position = position_repo.create(position_data)
                     
@@ -247,14 +249,29 @@ class TradingService:
         try:
             position_repo = PositionRepository(db)
             trade_repo = TradeRepository(db)
-            
+
             position = position_repo.get_by_id(position_id)
             if not position:
                 return {"status": "ERROR", "reason": "Position not found"}
-            
+
             if position.status != "OPEN":
                 return {"status": "ERROR", "reason": "Position already closed"}
-            
+
+            # Determine position side (LONG or SHORT)
+            # Prefer side stored on position; fall back to Trade.action for legacy positions
+            side = getattr(position, "side", None)
+            if not side:
+                from src.models.database import Trade
+                trade = db.query(Trade).filter(
+                    Trade.position_id == position_id
+                ).first()
+                if trade:
+                    side = trade.action  # BUY = LONG, SELL = SHORT
+                else:
+                    side = "BUY"  # Default to LONG for legacy positions without trade record
+
+            is_long = side.upper() == "BUY"
+
             # Get exit price
             if exit_price is None:
                 quote = await self.kite.get_quote(position.symbol)
@@ -262,33 +279,37 @@ class TradingService:
                     exit_price = quote.ltp
                 else:
                     return {"status": "ERROR", "reason": "Could not get market price"}
-            
-            # Calculate P&L
-            pnl = (exit_price - position.entry_price) * position.quantity
-            
-            # Close in broker if live
+
+            # Calculate P&L — LONG: (exit - entry) * qty, SHORT: (entry - exit) * qty
+            if is_long:
+                pnl = (exit_price - position.entry_price) * position.quantity
+            else:
+                pnl = (position.entry_price - exit_price) * position.quantity
+
+            # Close in broker if live — opposite of entry side
             if not position.paper_trading:
+                close_transaction = "SELL" if is_long else "BUY"
                 order_result = await self.kite.place_order(
                     symbol=position.symbol,
-                    transaction_type="SELL",
+                    transaction_type=close_transaction,
                     quantity=position.quantity
                 )
-                
-                if order_result["status"] != "SUCCESS":
+
+                if order_result.get("status") != "SUCCESS":
                     return {
                         "status": "FAILED",
                         "reason": order_result.get("message", "Exit order failed")
                     }
-                
-                # CRITICAL FIX: Use actual fill price from order, not LTP
-                # The order result may contain average_price from Kite
+
+                # Use actual fill price from order if available
                 try:
-                    # Try to get actual fill price from order response
-                    # Kite order response should have average_price
                     fill_price = order_result.get("average_price") or order_result.get("price")
                     if fill_price and float(fill_price) > 0:
                         exit_price = float(fill_price)
-                        pnl = (exit_price - position.entry_price) * position.quantity
+                        if is_long:
+                            pnl = (exit_price - position.entry_price) * position.quantity
+                        else:
+                            pnl = (position.entry_price - exit_price) * position.quantity
                         logger.info(f"Using actual fill price for {position.symbol}: ₹{exit_price}")
                 except Exception as e:
                     logger.warning(f"Could not get fill price, using LTP: {e}")

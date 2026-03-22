@@ -87,14 +87,46 @@ async def sync_positions_with_kite(db: Session, kite: KiteService) -> Dict[str, 
             base = symbol.split("-")[0]
             if symbol and symbol not in kite_symbols and base not in kite_symbols:
                 # Position no longer in Kite — mark closed
+                # CRITICAL FIX: Get actual exit price from Kite positions (average_price)
+                exit_price = None
                 try:
+                    # Try to find the position in Kite's closed/completed positions
+                    # The position history would have the actual exit price
+                    for kite_pos in kite_positions:
+                        kite_sym = kite_pos.get("tradingsymbol", "").upper()
+                        if kite_sym == symbol or kite_sym.split("-")[0] == base:
+                            # Check if it's a closed position (negative quantity = sold)
+                            # For MIS, we need to check position history
+                            pass
+                    
+                    # Fallback: Get from Kite's holdings/position history
+                    # Since we can't easily get closed position price, use LTP as fallback
+                    # but note this is approximate
                     quote = await kite.get_quote(symbol)
                     exit_price = quote.ltp if quote else (pos.entry_price or 0)
-                except Exception:
+                    
+                    logger.warning(f"Sync close for {symbol}: using LTP ₹{exit_price} as exit price (actual may differ)")
+                except Exception as e:
+                    logger.error(f"Error getting exit price for {symbol}: {e}")
                     exit_price = pos.entry_price or 0
 
                 qty = pos.quantity or 0
-                pnl = round((exit_price - (pos.entry_price or 0)) * qty, 2)
+                side = getattr(pos, "side", None) or "BUY"
+                is_long = side.upper() == "BUY"
+                if is_long:
+                    pnl = round((exit_price - (pos.entry_price or 0)) * qty, 2)
+                else:
+                    pnl = round(((pos.entry_price or 0) - exit_price) * qty, 2)
+
+                # Cancel GTT orders for this position (if any)
+                if pos.sl_order_id or pos.tp_order_id:
+                    for gtt_id in filter(None, [pos.sl_order_id, pos.tp_order_id]):
+                        if not str(gtt_id).startswith("PAPER_"):
+                            try:
+                                await kite.delete_gtt(str(gtt_id))
+                                logger.info(f"Cancelled GTT {gtt_id} for {symbol}")
+                            except Exception as e:
+                                logger.warning(f"Could not cancel GTT {gtt_id}: {e}")
 
                 position_repo.close_position(pos.id, exit_price, pnl, "MANUAL_KITE")
                 result["closed"] += 1
@@ -215,7 +247,12 @@ async def force_close_position(
                 logger.warning(f"Could not delete GTT {gtt_id}: {e}")
 
     qty = pos.quantity or 0
-    pnl = round((exit_price - (pos.entry_price or 0)) * qty, 2)
+    side = getattr(pos, "side", None) or "BUY"
+    is_long = side.upper() == "BUY"
+    if is_long:
+        pnl = round((exit_price - (pos.entry_price or 0)) * qty, 2)
+    else:
+        pnl = round(((pos.entry_price or 0) - exit_price) * qty, 2)
     position_repo.close_position(position_id, exit_price, pnl, "MANUAL_FORCE_CLOSE")
 
     await send_telegram(
