@@ -342,61 +342,51 @@ async def scanner_performance():
     """
     Get performance breakdown by scanner/scan_name.
     Shows which scanners are generating profitable signals.
+    Uses SQL GROUP BY — no Python loops over individual trades.
     """
     db = get_db_session()
     try:
-        from src.models.database import Trade, Position
-        
-        # Get all trades with scanner info
-        trades = db.query(Trade).filter(
-            Trade.scan_name.isnot(None),
-            Trade.scan_name != ""
-        ).all()
-        
-        # Also get positions
-        positions = db.query(Position).filter(
-            Position.source.isnot(None),
-            Position.source != ""
-        ).all()
-        
-        # Build scanner stats
-        scanner_stats = {}
-        
-        for trade in trades:
-            scanner = trade.scan_name or "Unknown"
-            if scanner not in scanner_stats:
-                scanner_stats[scanner] = {
-                    "scanner": scanner,
-                    "total_trades": 0,
-                    "winning_trades": 0,
-                    "losing_trades": 0,
-                    "total_pnl": 0.0,
-                    "avg_pnl": 0.0,
-                    "win_rate": 0.0,
-                }
-            
-            scanner_stats[scanner]["total_trades"] += 1
-            
-            if trade.pnl:
-                scanner_stats[scanner]["total_pnl"] += trade.pnl
-                if trade.pnl > 0:
-                    scanner_stats[scanner]["winning_trades"] += 1
-                elif trade.pnl < 0:
-                    scanner_stats[scanner]["losing_trades"] += 1
-        
-        # Calculate win rates and averages
+        from src.models.database import Trade
+        from sqlalchemy import case, func
+
+        rows = (
+            db.query(
+                Trade.scan_name,
+                func.count(Trade.id).label("total_trades"),
+                func.sum(
+                    case((Trade.pnl.isnot(None) & (Trade.pnl > 0), 1), else_=0)
+                ).label("winning_trades"),
+                func.sum(
+                    case((Trade.pnl.isnot(None) & (Trade.pnl < 0), 1), else_=0)
+                ).label("losing_trades"),
+                func.coalesce(func.sum(Trade.pnl), 0.0).label("total_pnl"),
+            )
+            .filter(
+                Trade.scan_name.isnot(None),
+                Trade.scan_name != "",
+            )
+            .group_by(Trade.scan_name)
+            .all()
+        )
+
         results = []
-        for scanner, stats in scanner_stats.items():
-            if stats["total_trades"] > 0:
-                stats["win_rate"] = round(
-                    (stats["winning_trades"] / stats["total_trades"]) * 100, 1
-                )
-                stats["avg_pnl"] = round(stats["total_pnl"] / stats["total_trades"], 2)
-                results.append(stats)
-        
-        # Sort by total P&L
+        for r in rows:
+            total = r.total_trades
+            wins = int(r.winning_trades or 0)
+            losses = int(r.losing_trades or 0)
+            pnl = float(r.total_pnl or 0)
+            results.append({
+                "scanner": r.scan_name,
+                "total_trades": total,
+                "winning_trades": wins,
+                "losing_trades": losses,
+                "total_pnl": round(pnl, 2),
+                "avg_pnl": round(pnl / total, 2) if total else 0.0,
+                "win_rate": round(wins / total * 100, 1) if total else 0.0,
+            })
+
         results.sort(key=lambda x: x["total_pnl"], reverse=True)
-        
+
         return {
             "status": "success",
             "scanners": results,
@@ -406,7 +396,7 @@ async def scanner_performance():
                 "total_pnl": sum(s["total_pnl"] for s in results),
                 "best_scanner": results[0]["scanner"] if results else None,
                 "worst_scanner": results[-1]["scanner"] if results else None,
-            }
+            },
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}

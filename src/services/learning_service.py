@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from src.utils.time_utils import ist_naive
 from typing import Any, Dict, List, Optional
 
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from src.core.logging_config import get_logger
@@ -22,7 +23,7 @@ logger = get_logger()
 # ---------------------------------------------------------------------------
 _analytics_cache: Dict[str, Any] = {}
 _analytics_cache_ts: float = 0.0
-_ANALYTICS_TTL = 120.0  # 2 minutes
+_ANALYTICS_TTL = 600.0  # 10 minutes — analytics data changes infrequently
 
 
 def _bust_analytics_cache():
@@ -431,48 +432,53 @@ class StrategyOptimizer:
 # ---------------------------------------------------------------------------
 
 def _get_scanner_performance(db: Session) -> Dict[str, Any]:
-    """Compute per-scanner win rate and P&L from trades table."""
+    """Compute per-scanner win rate and P&L using SQL GROUP BY."""
     from src.models.database import Trade
     cutoff = ist_naive() - timedelta(days=_TRADE_HISTORY_DAYS)
-    rows = db.query(Trade).filter(
-        Trade.date >= cutoff,
-        Trade.scan_name.isnot(None),
-        Trade.scan_name != "",
-    ).all()
 
-    by_scanner: Dict[str, Dict] = defaultdict(lambda: {"trades": 0, "wins": 0, "pnl": 0.0})
-    for t in rows:
-        scanner = t.scan_name or "Unknown"
-        by_scanner[scanner]["trades"] += 1
-        pnl = float(t.pnl or 0)
-        by_scanner[scanner]["pnl"] += pnl
-        if pnl > 0:
-            by_scanner[scanner]["wins"] += 1
+    rows = (
+        db.query(
+            Trade.scan_name,
+            func.count(Trade.id).label("trades"),
+            func.sum(case((Trade.pnl.isnot(None) & (Trade.pnl > 0), 1), else_=0)).label("wins"),
+            func.sum(case((Trade.pnl.isnot(None), Trade.pnl), else_=0.0)).label("pnl"),
+        )
+        .filter(
+            Trade.date >= cutoff,
+            Trade.scan_name.isnot(None),
+            Trade.scan_name != "",
+        )
+        .group_by(Trade.scan_name)
+        .all()
+    )
 
     results = []
-    for scanner, d in by_scanner.items():
-        count = d["trades"]
-        wr = round(d["wins"] / count * 100, 1) if count else 0
-        avg_pnl = round(d["pnl"] / count, 2) if count else 0
+    for r in rows:
+        count = r.trades
+        wins = int(r.wins or 0)
+        pnl = float(r.pnl or 0)
+        wr = round(wins / count * 100, 1) if count else 0
+        avg_pnl = round(pnl / count, 2) if count else 0
         grade = "A" if wr >= 60 else "B" if wr >= 50 else "C" if wr >= 40 else "D"
         results.append({
-            "scanner": scanner,
+            "scanner": r.scan_name,
             "trades": count,
-            "wins": d["wins"],
-            "losses": count - d["wins"],
+            "wins": wins,
+            "losses": count - wins,
             "win_rate": wr,
-            "total_pnl": round(d["pnl"], 2),
+            "total_pnl": round(pnl, 2),
             "avg_pnl": avg_pnl,
             "grade": grade,
         })
 
     results.sort(key=lambda x: x["total_pnl"], reverse=True)
     total_trades = sum(r["trades"] for r in results)
+    total_pnl = sum(r["total_pnl"] for r in results)
     return {
         "scanners": results,
         "total_scanners": len(results),
         "total_trades": total_trades,
-        "total_pnl": round(sum(r["total_pnl"] for r in results), 2),
+        "total_pnl": round(total_pnl, 2),
         "best": results[0] if results else None,
         "worst": results[-1] if results else None,
     }
@@ -672,7 +678,7 @@ def _compute_learning_grade(
 def _learning_dashboard_impl(db: Session) -> Dict[str, Any]:
     """Aggregate all learning data into a single dashboard payload."""
     engine = _engine_from_db(db)
-    trades = _load_trades_from_db(db)
+    trades = engine.trades  # reuse already-loaded trades (avoids duplicate query)
     optimizer = StrategyOptimizer(trades, {})
 
     summary = engine.get_summary()
@@ -815,6 +821,11 @@ def _compute_symbol_insights(trades_rows) -> Dict:
 
 def get_insights(db: Session) -> Dict:
     """Return per-symbol insights with paper/live breakdown, computed from trades table."""
+    return _cached("insights", db, lambda: _get_insights_impl(db))
+
+
+def _get_insights_impl(db: Session) -> Dict:
+    """Uncached implementation of get_insights."""
     from src.models.database import Trade
     from collections import defaultdict
     cutoff = ist_naive() - timedelta(days=_TRADE_HISTORY_DAYS)
