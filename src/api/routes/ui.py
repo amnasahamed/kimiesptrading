@@ -10,7 +10,8 @@ from fastapi.responses import HTMLResponse
 
 router = APIRouter(tags=["ui"])
 
-DASHBOARD_HTML = Path("dashboard.html")
+DASHBOARD_HTML = Path("dashboard-redesign.html")
+DASHBOARD_REDESIGN_HTML = Path("dashboard.html")
 KITE_LOGIN_HTML = Path("kite-login.html")
 DEBUG_HTML = Path("debug.html")
 ESP_SETUP_HTML = Path("esp-setup.html")
@@ -30,6 +31,12 @@ def _read_html(path: Path, fallback: str) -> str:
 async def dashboard():
     """Serve the main trading dashboard."""
     return _read_html(DASHBOARD_HTML, "<h1>Dashboard not found</h1>")
+
+
+@router.get("/redesign", response_class=HTMLResponse)
+async def dashboard_redesign():
+    """Serve the Electric Melon redesign dashboard."""
+    return _read_html(DASHBOARD_REDESIGN_HTML, "<h1>Redesign not found</h1>")
 
 
 @router.get("/test-cors", response_class=HTMLResponse)
