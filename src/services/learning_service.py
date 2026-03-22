@@ -46,7 +46,8 @@ def _load_trades_from_db(db: Session) -> List[Dict]:
     result = []
     for t in rows:
         order_id = str(t.order_id or "")
-        is_paper = order_id.startswith("PAPER_") or order_id.startswith("ANALYSIS_")
+        is_paper_from_order = order_id.startswith("PAPER_") or order_id.startswith("ANALYSIS_")
+        is_paper = t.paper_trading if t.paper_trading is not None else is_paper_from_order
         result.append({
             "symbol": t.symbol,
             "pnl": float(t.pnl or 0),
@@ -54,8 +55,8 @@ def _load_trades_from_db(db: Session) -> List[Dict]:
             "exit_price": float(t.exit_price or 0),
             "status": t.status,
             "order_id": order_id,
-            "paper_trading": t.paper_trading if t.paper_trading is not None else is_paper,
-            "trade_type": "paper" if (t.paper_trading or is_paper) else "live",
+            "paper_trading": is_paper,
+            "trade_type": "paper" if is_paper else "live",
             "date": t.date.isoformat() if t.date else None,
             "scan_name": t.scan_name,
         })
@@ -426,6 +427,284 @@ class StrategyOptimizer:
 
 
 # ---------------------------------------------------------------------------
+# Scanner performance helper
+# ---------------------------------------------------------------------------
+
+def _get_scanner_performance(db: Session) -> Dict[str, Any]:
+    """Compute per-scanner win rate and P&L from trades table."""
+    from src.models.database import Trade
+    cutoff = ist_naive() - timedelta(days=_TRADE_HISTORY_DAYS)
+    rows = db.query(Trade).filter(
+        Trade.date >= cutoff,
+        Trade.scan_name.isnot(None),
+        Trade.scan_name != "",
+    ).all()
+
+    by_scanner: Dict[str, Dict] = defaultdict(lambda: {"trades": 0, "wins": 0, "pnl": 0.0})
+    for t in rows:
+        scanner = t.scan_name or "Unknown"
+        by_scanner[scanner]["trades"] += 1
+        pnl = float(t.pnl or 0)
+        by_scanner[scanner]["pnl"] += pnl
+        if pnl > 0:
+            by_scanner[scanner]["wins"] += 1
+
+    results = []
+    for scanner, d in by_scanner.items():
+        count = d["trades"]
+        wr = round(d["wins"] / count * 100, 1) if count else 0
+        avg_pnl = round(d["pnl"] / count, 2) if count else 0
+        grade = "A" if wr >= 60 else "B" if wr >= 50 else "C" if wr >= 40 else "D"
+        results.append({
+            "scanner": scanner,
+            "trades": count,
+            "wins": d["wins"],
+            "losses": count - d["wins"],
+            "win_rate": wr,
+            "total_pnl": round(d["pnl"], 2),
+            "avg_pnl": avg_pnl,
+            "grade": grade,
+        })
+
+    results.sort(key=lambda x: x["total_pnl"], reverse=True)
+    total_trades = sum(r["trades"] for r in results)
+    return {
+        "scanners": results,
+        "total_scanners": len(results),
+        "total_trades": total_trades,
+        "total_pnl": round(sum(r["total_pnl"] for r in results), 2),
+        "best": results[0] if results else None,
+        "worst": results[-1] if results else None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Priority recommendations builder
+# ---------------------------------------------------------------------------
+
+def _build_priority_recommendations(
+    engine: "LearningEngine",
+    optimizer: "StrategyOptimizer",
+    scanner_data: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    """Generate ranked, actionable recommendations with specific config changes."""
+    recs: List[Dict[str, Any]] = []
+    summary = engine.get_summary()
+    sig = engine.get_signal_analysis()
+    time_data = engine.get_time_analysis()
+    symbol_data = engine.get_symbol_performance()
+
+    # HIGH: No live trades yet — don't go live
+    live = summary.get("live", {})
+    if live.get("count", 0) == 0 and summary.get("paper", {}).get("count", 0) >= 5:
+        recs.append({
+            "priority": "HIGH",
+            "title": "Validate in paper before going live",
+            "message": f"{summary['paper']['count']} paper trades but 0 live trades. Run live with small capital to validate.",
+            "action": "Enable paper mode",
+            "action_type": "paper_mode",
+        })
+
+    # HIGH: Execution gap — paper vs live mismatch
+    paper = summary.get("paper", {})
+    if paper.get("count", 0) >= 5 and live.get("count", 0) >= 2:
+        gap = paper.get("win_rate", 0) - live.get("win_rate", 0)
+        if gap > 15:
+            recs.append({
+                "priority": "HIGH",
+                "title": f"Execution gap: {gap:.0f}%",
+                "message": f"Paper {paper['win_rate']:.0f}% win rate vs Live {live['win_rate']:.0f}%. "
+                            f"Check slippage and order execution.",
+                "action": "Review entry timing",
+                "action_type": "review",
+            })
+
+    # HIGH: Low signal conversion
+    conv = sig.get("conversion_rate", 0)
+    if conv < 30 and sig.get("total_signals", 0) > 10:
+        recs.append({
+            "priority": "HIGH",
+            "title": f"Signal conversion only {conv:.0f}%",
+            "message": f"{sig['total_signals']} signals received but only {sig.get('breakdown', {}).get('EXECUTED', 0)} executed.",
+            "action": "Relax validation filters",
+            "action_type": "config",
+            "suggested": {"prevent_duplicate_stocks": False},
+        })
+
+    # HIGH: Losing scanner generating most trades
+    scanners = scanner_data.get("scanners", [])
+    if len(scanners) >= 2:
+        worst = scanners[-1]
+        best = scanners[0]
+        if worst["win_rate"] < 40 and worst["trades"] >= 3:
+            recs.append({
+                "priority": "HIGH",
+                "title": f"Stop using: {worst['scanner']}",
+                "message": f"{worst['trades']} trades, {worst['win_rate']:.0f}% win rate, ₹{worst['total_pnl']:.0f} loss. "
+                            f"Best alternative: {best['scanner']} ({best['win_rate']:.0f}% win rate).",
+                "action": f"Disable {worst['scanner']}",
+                "action_type": "scanner_disable",
+                "scanner": worst["scanner"],
+            })
+
+    # HIGH: Negative total P&L
+    if summary.get("combined_pnl", 0) < 0:
+        recs.append({
+            "priority": "HIGH",
+            "title": "Overall P&L is negative",
+            "message": f"Total P&L: ₹{summary['combined_pnl']:.0f}. Review worst-performing symbols.",
+            "action": "Review losers",
+            "action_type": "review",
+        })
+
+    # MEDIUM: Time-based insight
+    best_hour = time_data.get("best_hour")
+    worst_hour = time_data.get("worst_hour")
+    if best_hour and best_hour["win_rate"] >= 55:
+        recs.append({
+            "priority": "MEDIUM",
+            "title": f"Trade more at {best_hour['hour']}",
+            "message": f"{best_hour['win_rate']:.0f}% win rate, ₹{best_hour['avg_pnl']:.2f} avg P&L. "
+                        f"{worst_hour['hour']} is worst at {worst_hour['win_rate']:.0f}%.",
+            "action": f"Focus on {best_hour['hour']} window",
+            "action_type": "time_window",
+        })
+
+    # MEDIUM: Symbol avoid
+    symbols = symbol_data.get("symbols", [])
+    avoid = [s for s in symbols if s["grade"] in ("C", "D") and s["combined"]["trades"] >= 3]
+    for sym in avoid[:2]:
+        recs.append({
+            "priority": "MEDIUM",
+            "title": f"Review {sym['symbol']}",
+            "message": f"{sym['combined']['win_rate']:.0f}% win rate, ₹{sym['combined']['pnl']:.0f} P&L across {sym['combined']['trades']} trades.",
+            "action": f"Remove {sym['symbol']} from watchlist",
+            "action_type": "symbol_avoid",
+            "symbol": sym["symbol"],
+        })
+
+    # MEDIUM: R:R validation
+    rr_buckets = optimizer.analyze_risk_reward_performance().get("buckets", [])
+    for bucket in rr_buckets:
+        rr = float(bucket["rr_ratio"])
+        achieved_wr = bucket["win_rate"]
+        # If 1:2 R:R but only winning 30%, that's terrible
+        if rr >= 2.0 and achieved_wr < 40:
+            recs.append({
+                "priority": "MEDIUM",
+                "title": f"Risk:Reward mismatch at {rr:.1f}x",
+                "message": f"Using {rr:.1f}x R:R but only winning {achieved_wr:.0f}% of trades. "
+                            f"Need {max(35, round(100/rr, 0)):.0f}% win rate to break even.",
+                "action": "Tighten stop loss",
+                "action_type": "config",
+            })
+
+    # Sort: HIGH first, then by type
+    priority_order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
+    recs.sort(key=lambda r: priority_order.get(r["priority"], 2))
+    return recs[:10]  # Cap at 10
+
+
+def _compute_learning_grade(
+    summary: Dict,
+    signal_data: Dict,
+    scanner_data: Dict,
+) -> Dict[str, Any]:
+    """Compute overall A-F learning grade and confidence metrics."""
+    paper = summary.get("paper", {})
+    live = summary.get("live", {})
+    combined_wr = 0.0
+    if paper.get("count", 0) + live.get("count", 0) > 0:
+        total_wins = paper.get("wins", 0) + live.get("wins", 0)
+        total_trades = paper.get("count", 0) + live.get("count", 0)
+        combined_wr = round(total_wins / total_trades * 100, 1) if total_trades else 0
+
+    conv = signal_data.get("conversion_rate", 0)
+    scanners = scanner_data.get("scanners", [])
+    best_scanner_wr = scanners[0]["win_rate"] if scanners else 0
+    combined_pnl = summary.get("combined_pnl", 0)
+
+    # Scoring: win rate 40%, P&L 30%, signal conversion 20%, best scanner 10%
+    wr_score = min(combined_wr / 60 * 100, 100) if combined_wr else 0
+    pnl_score = 100 if combined_pnl > 0 else max(0, 100 + combined_pnl / 10)
+    conv_score = min(conv / 60 * 100, 100) if conv else 0
+    scanner_score = min(best_scanner_wr / 60 * 100, 100) if best_scanner_wr else 0
+
+    overall = round(
+        wr_score * 0.40 +
+        pnl_score * 0.30 +
+        conv_score * 0.20 +
+        scanner_score * 0.10,
+        1,
+    )
+
+    if overall >= 80:
+        grade = "A"
+        label = "Excellent"
+    elif overall >= 65:
+        grade = "B"
+        label = "Good"
+    elif overall >= 50:
+        grade = "C"
+        label = "Average"
+    elif overall >= 35:
+        grade = "D"
+        label = "Needs Work"
+    else:
+        grade = "F"
+        label = "Critical"
+
+    return {
+        "grade": grade,
+        "label": label,
+        "score": overall,
+        "win_rate": combined_wr,
+        "total_pnl": combined_pnl,
+        "signal_conversion": conv,
+        "best_scanner_wr": best_scanner_wr,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Main dashboard aggregator (cached)
+# ---------------------------------------------------------------------------
+
+def _learning_dashboard_impl(db: Session) -> Dict[str, Any]:
+    """Aggregate all learning data into a single dashboard payload."""
+    engine = _engine_from_db(db)
+    trades = _load_trades_from_db(db)
+    optimizer = StrategyOptimizer(trades, {})
+
+    summary = engine.get_summary()
+    symbol_data = engine.get_symbol_performance()
+    scanner_data = _get_scanner_performance(db)
+    time_data = engine.get_time_analysis()
+    rr_data = optimizer.analyze_risk_reward_performance()
+    signal_data = engine.get_signal_analysis()
+
+    grade = _compute_learning_grade(summary, signal_data, scanner_data)
+    recommendations = _build_priority_recommendations(engine, optimizer, scanner_data)
+
+    # Top/bottom symbols
+    symbols = symbol_data.get("symbols", [])
+    top_winners = symbols[:5]
+    top_losers = sorted(symbols, key=lambda s: s["combined"]["pnl"])[:5]
+
+    return {
+        "grade": grade,
+        "summary": summary,
+        "top_winners": top_winners,
+        "top_losers": top_losers,
+        "time_patterns": time_data,
+        "scanner_performance": scanner_data,
+        "risk_reward": rr_data,
+        "signals": signal_data,
+        "recommendations": recommendations,
+        "generated_at": ist_naive().isoformat(),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Public API functions
 # ---------------------------------------------------------------------------
 
@@ -472,6 +751,10 @@ def get_recommendations(db: Session) -> List[Dict]:
     return _cached("recommendations", db, lambda: _engine_from_db(db).get_recommendations())
 
 
+def get_learning_dashboard(db: Session) -> Dict:
+    return _cached("learning_dashboard", db, lambda: _learning_dashboard_impl(db))
+
+
 def get_strategy_analytics(db: Session, config: Dict) -> Dict:
     trades = _load_trades_from_db(db)
     optimizer = StrategyOptimizer(trades, config)
@@ -490,20 +773,21 @@ def get_strategy_analytics(db: Session, config: Dict) -> Dict:
 def _compute_side_stats(trades_rows) -> Dict:
     """Compute stats for one side (paper or live)."""
     closed = [t for t in trades_rows if t.status in ("CLOSED", "closed") and t.pnl is not None]
-    wins = [t for t in closed if t.pnl > 0]
-    total_pnl = sum(t.pnl for t in closed)
-    win_rate = round(len(wins) / len(closed) * 100, 1) if closed else 0.0
+    pnl_values = [float(t.pnl) for t in closed if t.pnl is not None]
+    wins = [t for t in closed if float(t.pnl or 0) > 0]
+    total_pnl = sum(pnl_values)
+    win_rate = round(len(wins) / len(pnl_values) * 100, 1) if pnl_values else 0.0
     return {
         "trades": len(trades_rows),
-        "closed": len(closed),
+        "closed": len(pnl_values),
         "wins": len(wins),
-        "losses": len(closed) - len(wins),
+        "losses": len(pnl_values) - len(wins),
         "pnl": round(total_pnl, 2),
         "total_pnl": round(total_pnl, 2),
         "win_rate": win_rate,
-        "avg_pnl": round(total_pnl / len(closed), 2) if closed else 0.0,
-        "best_pnl": round(max((t.pnl for t in closed), default=0.0), 2),
-        "worst_pnl": round(min((t.pnl for t in closed), default=0.0), 2),
+        "avg_pnl": round(total_pnl / len(pnl_values), 2) if pnl_values else 0.0,
+        "best_pnl": round(max(pnl_values, default=0.0), 2),
+        "worst_pnl": round(min(pnl_values, default=0.0), 2),
     }
 
 
@@ -533,7 +817,8 @@ def get_insights(db: Session) -> Dict:
     """Return per-symbol insights with paper/live breakdown, computed from trades table."""
     from src.models.database import Trade
     from collections import defaultdict
-    rows = db.query(Trade).all()
+    cutoff = ist_naive() - timedelta(days=_TRADE_HISTORY_DAYS)
+    rows = db.query(Trade).filter(Trade.date >= cutoff).all()
     grouped: Dict[str, list] = defaultdict(list)
     for row in rows:
         grouped[row.symbol].append(row)
@@ -543,7 +828,11 @@ def get_insights(db: Session) -> Dict:
 
 def get_symbol_insights(db: Session, symbol: str) -> Optional[Dict]:
     from src.models.database import Trade
-    rows = db.query(Trade).filter(Trade.symbol == symbol.upper()).all()
+    cutoff = ist_naive() - timedelta(days=_TRADE_HISTORY_DAYS)
+    rows = db.query(Trade).filter(
+        Trade.symbol == symbol.upper(),
+        Trade.date >= cutoff
+    ).all()
     if not rows:
         return None
     data = _compute_symbol_insights(rows)

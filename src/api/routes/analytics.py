@@ -316,3 +316,176 @@ async def reset_strategy():
         "message": "Strategy reset to default values",
         "new_config": config["risk_management"],
     }
+
+
+# ---------------------------------------------------------------------------
+# Learning Dashboard
+# ---------------------------------------------------------------------------
+
+@router.get("/learning/dashboard")
+async def learning_dashboard():
+    """Full learning intelligence dashboard — single aggregated call."""
+    db = get_db_session()
+    try:
+        from src.services.learning_service import get_learning_dashboard
+        return get_learning_dashboard(db)
+    finally:
+        db.close()
+
+
+# ---------------------------------------------------------------------------
+# Scanner Performance Analytics
+# ---------------------------------------------------------------------------
+
+@router.get("/scanner-performance")
+async def scanner_performance():
+    """
+    Get performance breakdown by scanner/scan_name.
+    Shows which scanners are generating profitable signals.
+    """
+    db = get_db_session()
+    try:
+        from src.models.database import Trade, Position
+        
+        # Get all trades with scanner info
+        trades = db.query(Trade).filter(
+            Trade.scan_name.isnot(None),
+            Trade.scan_name != ""
+        ).all()
+        
+        # Also get positions
+        positions = db.query(Position).filter(
+            Position.source.isnot(None),
+            Position.source != ""
+        ).all()
+        
+        # Build scanner stats
+        scanner_stats = {}
+        
+        for trade in trades:
+            scanner = trade.scan_name or "Unknown"
+            if scanner not in scanner_stats:
+                scanner_stats[scanner] = {
+                    "scanner": scanner,
+                    "total_trades": 0,
+                    "winning_trades": 0,
+                    "losing_trades": 0,
+                    "total_pnl": 0.0,
+                    "avg_pnl": 0.0,
+                    "win_rate": 0.0,
+                }
+            
+            scanner_stats[scanner]["total_trades"] += 1
+            
+            if trade.pnl:
+                scanner_stats[scanner]["total_pnl"] += trade.pnl
+                if trade.pnl > 0:
+                    scanner_stats[scanner]["winning_trades"] += 1
+                elif trade.pnl < 0:
+                    scanner_stats[scanner]["losing_trades"] += 1
+        
+        # Calculate win rates and averages
+        results = []
+        for scanner, stats in scanner_stats.items():
+            if stats["total_trades"] > 0:
+                stats["win_rate"] = round(
+                    (stats["winning_trades"] / stats["total_trades"]) * 100, 1
+                )
+                stats["avg_pnl"] = round(stats["total_pnl"] / stats["total_trades"], 2)
+                results.append(stats)
+        
+        # Sort by total P&L
+        results.sort(key=lambda x: x["total_pnl"], reverse=True)
+        
+        return {
+            "status": "success",
+            "scanners": results,
+            "summary": {
+                "total_scanners": len(results),
+                "total_trades": sum(s["total_trades"] for s in results),
+                "total_pnl": sum(s["total_pnl"] for s in results),
+                "best_scanner": results[0]["scanner"] if results else None,
+                "worst_scanner": results[-1]["scanner"] if results else None,
+            }
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    finally:
+        db.close()
+
+
+@router.get("/scanner-performance/detailed")
+async def scanner_performance_detailed(days: int = 30):
+    """
+    Get detailed scanner performance over time.
+    Shows performance trends per scanner.
+    """
+    db = get_db_session()
+    try:
+        from src.models.database import Trade
+        from datetime import timedelta
+        
+        cutoff = ist_naive() - timedelta(days=days)
+        
+        trades = db.query(Trade).filter(
+            Trade.scan_name.isnot(None),
+            Trade.scan_name != "",
+            Trade.date >= cutoff
+        ).order_by(Trade.date.desc()).all()
+        
+        # Group by scanner and date
+        daily_stats = {}
+        scanner_totals = {}
+        
+        for trade in trades:
+            scanner = trade.scan_name or "Unknown"
+            date_key = trade.date.strftime("%Y-%m-%d") if trade.date else "Unknown"
+            
+            if scanner not in scanner_totals:
+                scanner_totals[scanner] = {
+                    "scanner": scanner,
+                    "trades": [],
+                    "total_pnl": 0,
+                    "wins": 0,
+                    "losses": 0,
+                }
+            
+            if trade.pnl:
+                scanner_totals[scanner]["total_pnl"] += trade.pnl
+                if trade.pnl > 0:
+                    scanner_totals[scanner]["wins"] += 1
+                else:
+                    scanner_totals[scanner]["losses"] += 1
+                
+                scanner_totals[scanner]["trades"].append({
+                    "date": date_key,
+                    "symbol": trade.symbol,
+                    "pnl": trade.pnl,
+                    "entry": trade.entry_price,
+                    "exit": trade.exit_price,
+                })
+        
+        results = []
+        for scanner, data in scanner_totals.items():
+            total = data["wins"] + data["losses"]
+            results.append({
+                "scanner": scanner,
+                "total_trades": total,
+                "wins": data["wins"],
+                "losses": data["losses"],
+                "win_rate": round((data["wins"] / total * 100), 1) if total > 0 else 0,
+                "total_pnl": round(data["total_pnl"], 2),
+                "recent_trades": data["trades"][:10],  # Last 10 trades
+            })
+        
+        results.sort(key=lambda x: x["total_pnl"], reverse=True)
+        
+        return {
+            "status": "success",
+            "period_days": days,
+            "scanners": results,
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    finally:
+        db.close()

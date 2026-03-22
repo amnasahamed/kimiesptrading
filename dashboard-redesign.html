@@ -965,40 +965,202 @@
 
         <!-- ==================== LEARNING TAB ==================== -->
         <div id="tab-learning" class="tab-content">
-            <div class="mb-6">
-                <h2 class="text-2xl font-display mb-4">Learning System</h2>
-                <div class="flex gap-2">
-                    <button class="btn btn-sm btn-primary" data-period="today">Today</button>
-                    <button class="btn btn-sm btn-ghost" data-period="week">Week</button>
-                    <button class="btn btn-sm btn-ghost" data-period="month">Month</button>
+            <!-- Header -->
+            <div class="mb-6 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-display">Strategy Intelligence</h2>
+                    <p class="text-muted text-sm mt-1" id="learning-period-label">Analyzing last 90 days</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="learning-grade-badge" class="px-4 py-2 rounded-xl text-center" style="background:var(--bg-elevated);border:2px solid var(--melon-flesh)">
+                        <div class="text-3xl font-display font-bold" style="color:var(--melon-flesh)" id="learning-grade-letter">—</div>
+                        <div class="text-xs text-muted" id="learning-grade-label">Grade</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-mono font-bold" id="learning-total-pnl">—</div>
+                        <div class="text-xs text-muted">Combined P&L</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="bento bento-3 mb-6">
+            <!-- Stats Row -->
+            <div class="bento bento-4 mb-6">
                 <div class="stat-box">
-                    <div class="stat-box-value green" id="learning-paper-pnl">—</div>
+                    <div class="stat-box-value" id="learning-paper-pnl">—</div>
                     <div class="stat-box-label">Paper P&L</div>
+                    <div class="text-xs text-muted mt-1" id="learning-paper-trades">— trades</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-box-value warning" id="learning-live-pnl">—</div>
+                    <div class="stat-box-value" id="learning-live-pnl">—</div>
                     <div class="stat-box-label">Live P&L</div>
+                    <div class="text-xs text-muted mt-1" id="learning-live-trades">— trades</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-box-value blue" id="learning-signal-rate">—%</div>
-                    <div class="stat-box-label">Signal Rate</div>
+                    <div class="stat-box-value" id="learning-paper-wr">—%</div>
+                    <div class="stat-box-label">Paper Win Rate</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" id="learning-live-wr">—%</div>
+                    <div class="stat-box-label">Live Win Rate</div>
                 </div>
             </div>
 
+            <!-- Paper vs Live Comparison + Best Hour -->
+            <div class="bento bento-2 mb-6">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title icon-green"><i class="fas fa-balance-scale"></i>Paper vs Live</div>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        <div class="flex gap-4">
+                            <div class="flex-1 text-center p-3 rounded-lg" style="background:var(--bg-elevated)">
+                                <div class="text-lg font-bold" style="color:var(--melon-cream)" id="lr-paper-wr">—%</div>
+                                <div class="text-xs text-muted">Paper Win Rate</div>
+                            </div>
+                            <div class="flex items-center text-muted"><i class="fas fa-arrow-right"></i></div>
+                            <div class="flex-1 text-center p-3 rounded-lg" style="background:var(--bg-elevated)">
+                                <div class="text-lg font-bold" style="color:var(--melon-flesh)" id="lr-live-wr">—%</div>
+                                <div class="text-xs text-muted">Live Win Rate</div>
+                            </div>
+                        </div>
+                        <div class="text-sm text-center text-muted" id="lr-gap">—</div>
+                        <div id="lr-gap-bar" class="h-2 rounded-full" style="background:var(--bg-elevated)">
+                            <div id="lr-gap-fill" class="h-2 rounded-full" style="background:var(--melon-flesh);width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title icon-yellow"><i class="fas fa-clock"></i>Best Trading Hour</div>
+                    </div>
+                    <div class="p-4 space-y-3" id="lr-time-hours">
+                        <div class="text-sm text-muted text-center py-4">No time data yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Winners & Losers -->
+            <div class="bento bento-2 mb-6">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title icon-green"><i class="fas fa-trophy"></i>Top Winners</div>
+                    </div>
+                    <div id="lr-winners">
+                        <div class="text-sm text-muted text-center py-8">No data yet</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title icon-red"><i class="fas fa-exclamation-triangle"></i>Bottom Performers</div>
+                    </div>
+                    <div id="lr-losers">
+                        <div class="text-sm text-muted text-center py-8">No data yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scanner Performance -->
             <div class="card mb-6">
                 <div class="card-header">
-                    <div class="card-title icon-green"><i class="fas fa-lightbulb"></i>Recommendations</div>
+                    <div class="card-title icon-blue"><i class="fas fa-satellite-dish"></i>Scanner Performance</div>
+                    <div class="text-xs text-muted" id="lr-scanner-count">— scanners</div>
                 </div>
-                <div id="recommendations-list">
-                    <div class="empty-state">
-                        <i class="fas fa-brain"></i>
-                        <h4>No recommendations yet</h4>
-                        <p>Keep trading to generate insights</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-muted border-b" style="border-color:var(--border)">
+                                <th class="text-left p-3 font-medium">Scanner</th>
+                                <th class="text-center p-3 font-medium">Trades</th>
+                                <th class="text-center p-3 font-medium">Win Rate</th>
+                                <th class="text-right p-3 font-medium">P&L</th>
+                                <th class="text-right p-3 font-medium">Avg/Trade</th>
+                                <th class="text-center p-3 font-medium">Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lr-scanner-table">
+                            <tr><td colspan="6" class="text-center text-muted p-8">No scanner data yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Risk:Reward Effectiveness -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <div class="card-title icon-yellow"><i class="fas fa-chart-line"></i>Risk:Reward Effectiveness</div>
+                    <div class="text-xs text-muted">Do your R:R ratios match actual outcomes?</div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-muted border-b" style="border-color:var(--border)">
+                                <th class="text-left p-3 font-medium">R:R Ratio</th>
+                                <th class="text-center p-3 font-medium">Trades</th>
+                                <th class="text-center p-3 font-medium">Win Rate Achieved</th>
+                                <th class="text-right p-3 font-medium">P&L</th>
+                                <th class="text-center p-3 font-medium">Break-even WR</th>
+                                <th class="text-center p-3 font-medium">Verdict</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lr-rr-table">
+                            <tr><td colspan="6" class="text-center text-muted p-8">No R:R data yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Strategy Settings + History -->
+            <div class="bento bento-2 mb-6">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title icon-green"><i class="fas fa-sliders-h"></i>Active Strategy Settings</div>
+                        <button class="btn btn-sm btn-ghost text-xs" onclick="loadLearning()"><i class="fas fa-sync-alt text-xs"></i></button>
                     </div>
+                    <div class="bento bento-4 p-4 gap-4">
+                        <div class="text-center p-3 rounded-lg" style="background:var(--bg-elevated)">
+                            <div class="text-xl font-bold font-mono" id="lr-risk-pct">—</div>
+                            <div class="text-xs text-muted mt-1">Risk %</div>
+                        </div>
+                        <div class="text-center p-3 rounded-lg" style="background:var(--bg-elevated)">
+                            <div class="text-xl font-bold font-mono" id="lr-min-rr">—</div>
+                            <div class="text-xs text-muted mt-1">Min R:R</div>
+                        </div>
+                        <div class="text-center p-3 rounded-lg" style="background:var(--bg-elevated)">
+                            <div class="text-xl font-bold font-mono" id="lr-atr-sl">—</div>
+                            <div class="text-xs text-muted mt-1">SL ATR ×</div>
+                        </div>
+                        <div class="text-center p-3 rounded-lg" style="background:var(--bg-elevated)">
+                            <div class="text-xl font-bold font-mono" id="lr-atr-tp">—</div>
+                            <div class="text-xs text-muted mt-1">TP ATR ×</div>
+                        </div>
+                    </div>
+                    <div class="px-4 pb-4">
+                        <div class="text-xs text-muted flex gap-4">
+                            <span>Max SL: <span id="lr-max-sl">—%</span></span>
+                            <span>Sessions: <span id="lr-sessions">—</span></span>
+                            <span>Trading: <span id="lr-hours">—</span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title icon-yellow"><i class="fas fa-history"></i>Strategy Changes</div>
+                        <div class="text-xs text-muted" id="lr-history-count">—</div>
+                    </div>
+                    <div id="lr-strategy-history">
+                        <div class="text-sm text-muted text-center py-8">No strategy changes yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title icon-green"><i class="fas fa-lightbulb"></i>Priority Actions</div>
+                    <div class="text-xs text-muted" id="lr-rec-count">—</div>
+                </div>
+                <div id="lr-recommendations">
+                    <div class="text-sm text-muted text-center py-8">Keep trading to generate insights</div>
                 </div>
             </div>
         </div>
@@ -1696,50 +1858,367 @@ function updateChartsFromTrades() {
    ============================================================ */
 async function loadLearning() {
     try {
-        const res = await fetch('/api/learning/report?_=' + Date.now());
-        if (res.ok) {
-            const data = await res.json();
-            updateLearningUI(data);
-        }
+        const [dashRes, histRes] = await Promise.all([
+            fetch('/api/learning/dashboard?_=' + Date.now()),
+            fetch('/api/strategy/history'),
+        ]);
+        let dashData = null;
+        if (dashRes.ok) dashData = await dashRes.json();
+        let histData = null;
+        if (histRes.ok) histData = await histRes.json();
+        updateLearningUI(dashData, histData);
     } catch (err) { console.error('Learning load error:', err); }
 }
 
-function updateLearningUI(data) {
-    const summary = data.summary || {};
+function updateLearningUI(data, histData) {
+    if (!data || data.error) return;
+
+    // Grade
+    const grade = data.grade || {};
+    const gradeEl = document.getElementById('learning-grade-letter');
+    const gradeLabelEl = document.getElementById('learning-grade-label');
+    if (gradeEl) {
+        gradeEl.textContent = grade.grade || '—';
+        const colors = { A: 'var(--melon-flesh)', B: 'var(--melon-flesh)', C: 'var(--melon-cream)', D: 'var(--melon-pulp)', F: 'var(--melon-pulp)' };
+        gradeEl.style.color = colors[grade.grade] || 'var(--text)';
+        gradeLabelEl.textContent = grade.label || 'Grade';
+    }
+
+    // Total P&L
+    const totalPnlEl = document.getElementById('learning-total-pnl');
+    if (totalPnlEl) {
+        const pnl = data.summary?.combined_pnl || 0;
+        totalPnlEl.textContent = (pnl >= 0 ? '+' : '') + formatCurrency(pnl);
+        totalPnlEl.style.color = pnl >= 0 ? 'var(--melon-flesh)' : 'var(--melon-pulp)';
+    }
+
+    // Paper stats
+    const paper = data.summary?.paper || {};
+    const live = data.summary?.live || {};
     const paperPnlEl = document.getElementById('learning-paper-pnl');
     const livePnlEl = document.getElementById('learning-live-pnl');
-    const signalEl = document.getElementById('learning-signal-rate');
+    const paperWrEl = document.getElementById('learning-paper-wr');
+    const liveWrEl = document.getElementById('learning-live-wr');
+    const paperTradesEl = document.getElementById('learning-paper-trades');
+    const liveTradesEl = document.getElementById('learning-live-trades');
 
     if (paperPnlEl) {
-        const pnl = summary.paper_pnl || 0;
-        paperPnlEl.textContent = (pnl >= 0 ? '+' : '') + formatCurrency(pnl);
+        paperPnlEl.textContent = (paper.pnl >= 0 ? '+' : '') + formatCurrency(paper.pnl || 0);
+        paperPnlEl.style.color = (paper.pnl || 0) >= 0 ? 'var(--melon-flesh)' : 'var(--melon-pulp)';
     }
     if (livePnlEl) {
-        const pnl = summary.live_pnl || 0;
-        livePnlEl.textContent = (pnl >= 0 ? '+' : '') + formatCurrency(pnl);
+        livePnlEl.textContent = (live.pnl >= 0 ? '+' : '') + formatCurrency(live.pnl || 0);
+        livePnlEl.style.color = (live.pnl || 0) >= 0 ? 'var(--melon-flesh)' : 'var(--melon-pulp)';
     }
-    if (signalEl) {
-        signalEl.textContent = (summary.signal_conversion_rate || 0) + '%';
-    }
+    if (paperWrEl) paperWrEl.textContent = (paper.win_rate || 0) + '%';
+    if (liveWrEl) liveWrEl.textContent = (live.win_rate || 0) + '%';
+    if (paperTradesEl) paperTradesEl.textContent = (paper.count || 0) + ' trades';
+    if (liveTradesEl) liveTradesEl.textContent = (live.count || 0) + ' trades';
+
+    // Paper vs Live comparison
+    _updatePaperVsLive(paper, live);
+
+    // Time patterns
+    _updateTimePatterns(data.time_patterns);
+
+    // Top winners & losers
+    _updateWinnersLosers(data.top_winners, data.top_losers);
+
+    // Scanner performance
+    _updateScannerPerf(data.scanner_performance);
+
+    // R:R effectiveness
+    _updateRREffectiveness(data.risk_reward);
+
+    // Strategy settings + history
+    _updateStrategySettings(histData);
 
     // Recommendations
-    const recs = data.recommendations || [];
-    const recsEl = document.getElementById('recommendations-list');
-    if (recsEl && recs.length) {
-        recsEl.innerHTML = recs.map((r, i) => `
-            <div class="flex items-center justify-between py-3 border-t">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:${r.impact === 'high' ? 'var(--melon-flesh-dim)' : 'var(--bg-elevated)'}">
-                        <i class="fas fa-lightbulb" style="color:${r.impact === 'high' ? 'var(--melon-flesh)' : 'var(--melon-cream)'}"></i>
-                    </div>
-                    <div>
-                        <div class="font-semibold">${r.title || r.text}</div>
-                        <div class="text-sm text-muted">${r.description || ''}</div>
-                    </div>
+    _updateRecommendations(data.recommendations);
+}
+
+function _updatePaperVsLive(paper, live) {
+    const pWrEl = document.getElementById('lr-paper-wr');
+    const lWrEl = document.getElementById('lr-live-wr');
+    const gapEl = document.getElementById('lr-gap');
+    const gapFillEl = document.getElementById('lr-gap-fill');
+
+    if (pWrEl) pWrEl.textContent = (paper.win_rate || 0) + '%';
+    if (lWrEl) lWrEl.textContent = (live.win_rate || 0) + '%';
+
+    if (gapEl && gapFillEl) {
+        const pWr = paper.win_rate || 0;
+        const lWr = live.win_rate || 0;
+        const gap = pWr - lWr;
+        gapEl.textContent = `Execution gap: ${gap >= 0 ? '+' : ''}${gap.toFixed(0)}%`;
+        const pct = Math.min(Math.abs(gap) / 30 * 100, 100);
+        gapFillEl.style.width = pct + '%';
+        gapFillEl.style.background = gap > 15 ? 'var(--melon-pulp)' : gap < -15 ? 'var(--melon-flesh)' : 'var(--melon-cream)';
+    }
+}
+
+function _updateTimePatterns(timeData) {
+    const el = document.getElementById('lr-time-hours');
+    if (!el || !timeData) return;
+
+    const hours = timeData.hours || [];
+    if (!hours.length) {
+        el.innerHTML = '<div class="text-sm text-muted text-center py-4">No time data yet</div>';
+        return;
+    }
+
+    const best = timeData.best_hour;
+    const maxPnl = Math.max(...hours.map(h => Math.abs(h.pnl || 0)), 1);
+
+    el.innerHTML = hours.map(h => {
+        const barWidth = Math.abs((h.pnl || 0) / maxPnl * 100).toFixed(0);
+        const isBest = best && best.hour === h.hour;
+        const isProfitable = (h.pnl || 0) > 0;
+        return `
+            <div class="flex items-center gap-3 py-2 ${isBest ? 'bg-elevated rounded-lg px-2' : ''}">
+                <div class="w-12 text-xs text-muted font-mono">${h.hour}</div>
+                <div class="flex-1 h-5 rounded" style="background:var(--bg-elevated)">
+                    <div class="h-5 rounded" style="width:${barWidth}%;background:${isProfitable ? 'var(--melon-flesh)' : 'var(--melon-pulp)'}"></div>
                 </div>
-                <button class="btn btn-sm btn-primary" onclick="applyRecommendation(${i})">Apply</button>
+                <div class="w-16 text-right text-xs font-mono" style="color:${isProfitable ? 'var(--melon-flesh)' : 'var(--melon-pulp)'}">${isProfitable ? '+' : ''}${formatCurrency(h.pnl || 0)}</div>
+                <div class="w-10 text-right text-xs text-muted">${h.win_rate || 0}%</div>
+                ${isBest ? '<i class="fas fa-star text-xs" style="color:var(--melon-flesh)"></i>' : ''}
+            </div>`;
+    }).join('');
+}
+
+function _updateWinnersLosers(winners, losers) {
+    const winEl = document.getElementById('lr-winners');
+    const loseEl = document.getElementById('lr-losers');
+
+    if (winEl) {
+        if (!winners || !winners.length) {
+            winEl.innerHTML = '<div class="text-sm text-muted text-center py-8">No data yet</div>';
+        } else {
+            winEl.innerHTML = winners.map(s => `
+                <div class="flex items-center justify-between py-2 px-4 border-b" style="border-color:var(--border)">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full" style="background:var(--melon-flesh)"></div>
+                        <span class="font-mono font-medium">${s.symbol}</span>
+                        <span class="text-xs text-muted">${s.combined?.trades || 0}t</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-mono" style="color:var(--melon-flesh)">+${formatCurrency(s.combined?.pnl || 0)}</div>
+                        <div class="text-xs text-muted">${s.combined?.win_rate || 0}% WR</div>
+                    </div>
+                </div>`).join('');
+        }
+    }
+
+    if (loseEl) {
+        if (!losers || !losers.length) {
+            loseEl.innerHTML = '<div class="text-sm text-muted text-center py-8">No data yet</div>';
+        } else {
+            loseEl.innerHTML = losers.map(s => `
+                <div class="flex items-center justify-between py-2 px-4 border-b" style="border-color:var(--border)">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full" style="background:var(--melon-pulp)"></div>
+                        <span class="font-mono font-medium">${s.symbol}</span>
+                        <span class="text-xs text-muted">${s.combined?.trades || 0}t</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-mono" style="color:var(--melon-pulp)">${formatCurrency(s.combined?.pnl || 0)}</div>
+                        <div class="text-xs text-muted">${s.combined?.win_rate || 0}% WR</div>
+                    </div>
+                </div>`).join('');
+        }
+    }
+}
+
+function _updateScannerPerf(scannerData) {
+    const tableEl = document.getElementById('lr-scanner-table');
+    const countEl = document.getElementById('lr-scanner-count');
+    if (!tableEl || !scannerData) return;
+
+    const scanners = scannerData.scanners || [];
+    if (countEl) countEl.textContent = scanners.length + ' scanners';
+
+    if (!scanners.length) {
+        tableEl.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-8">No scanner data yet</td></tr>';
+        return;
+    }
+
+    tableEl.innerHTML = scanners.map(s => {
+        const wr = s.win_rate || 0;
+        const wrColor = wr >= 60 ? 'var(--melon-flesh)' : wr >= 40 ? 'var(--melon-cream)' : 'var(--melon-pulp)';
+        const gradeColors = { A: 'var(--melon-flesh)', B: 'var(--melon-flesh)', C: 'var(--melon-cream)', D: 'var(--melon-pulp)' };
+        const pnl = s.total_pnl || 0;
+        return `
+            <tr class="border-b" style="border-color:var(--border)">
+                <td class="p-3 font-medium">${s.scanner}</td>
+                <td class="p-3 text-center text-muted">${s.trades}</td>
+                <td class="p-3 text-center font-mono" style="color:${wrColor}">${wr}%</td>
+                <td class="p-3 text-right font-mono" style="color:${pnl >= 0 ? 'var(--melon-flesh)' : 'var(--melon-pulp)'}">${pnl >= 0 ? '+' : ''}${formatCurrency(pnl)}</td>
+                <td class="p-3 text-right text-muted font-mono">${formatCurrency(s.avg_pnl || 0)}</td>
+                <td class="p-3 text-center">
+                    <span class="px-2 py-0.5 rounded text-xs font-bold" style="background:var(--bg-elevated);color:${gradeColors[s.grade] || 'var(--text)'}">${s.grade || '—'}</span>
+                </td>
+            </tr>`;
+    }).join('');
+}
+
+function _updateRREffectiveness(rrData) {
+    const tableEl = document.getElementById('lr-rr-table');
+    if (!tableEl || !rrData) return;
+
+    const buckets = rrData.buckets || [];
+    if (!buckets.length) {
+        tableEl.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-8">No R:R data yet</td></tr>';
+        return;
+    }
+
+    tableEl.innerHTML = buckets.map(b => {
+        const rr = parseFloat(b.rr_ratio) || 0;
+        const wr = b.win_rate || 0;
+        const breakEven = rr > 0 ? (100 / (1 + rr)).toFixed(0) + '%' : '—';
+        const verdict = wr >= 50 ? 'Good' : wr >= parseFloat(breakEven) ? 'OK' : 'Bad';
+        const verdictColor = verdict === 'Good' ? 'var(--melon-flesh)' : verdict === 'OK' ? 'var(--melon-cream)' : 'var(--melon-pulp)';
+        return `
+            <tr class="border-b" style="border-color:var(--border)">
+                <td class="p-3 font-mono font-medium">${rr}x</td>
+                <td class="p-3 text-center text-muted">${b.trades}</td>
+                <td class="p-3 text-center font-mono">${wr}%</td>
+                <td class="p-3 text-right font-mono" style="color:${(b.pnl || 0) >= 0 ? 'var(--melon-flesh)' : 'var(--melon-pulp)'}">${(b.pnl || 0) >= 0 ? '+' : ''}${formatCurrency(b.pnl || 0)}</td>
+                <td class="p-3 text-center text-muted">${breakEven}</td>
+                <td class="p-3 text-center"><span class="text-xs font-bold" style="color:${verdictColor}">${verdict}</span></td>
+            </tr>`;
+    }).join('');
+}
+
+function _updateStrategySettings(histData) {
+    // Strategy values from history response
+    const cfg = histData?.current_config || {};
+    const rm = cfg.risk_management || {};
+    const riskPct = cfg.risk_percent || 0;
+    const minRR = rm.min_risk_reward || 0;
+    const atrSL = rm.atr_multiplier_sl || 0;
+    const atrTP = rm.atr_multiplier_tp || 0;
+    const maxSL = rm.max_sl_percent || 0;
+
+    const el = document.getElementById('lr-risk-pct');
+    if (el) el.textContent = riskPct + '%';
+    const rrEl = document.getElementById('lr-min-rr');
+    if (rrEl) rrEl.textContent = minRR + 'x';
+    const slEl = document.getElementById('lr-atr-sl');
+    if (slEl) slEl.textContent = atrSL + 'x';
+    const tpEl = document.getElementById('lr-atr-tp');
+    if (tpEl) tpEl.textContent = atrTP + 'x';
+    const msEl = document.getElementById('lr-max-sl');
+    if (msEl) msEl.textContent = maxSL ? maxSL + '%' : '—';
+    const sesEl = document.getElementById('lr-sessions');
+    if (sesEl) sesEl.textContent = histData?.total_changes ?? '—';
+    const hrsEl = document.getElementById('lr-hours');
+    if (hrsEl) {
+        const th = cfg.trading_hours || {};
+        hrsEl.textContent = (th.start || '—') + ' – ' + (th.end || '—');
+    }
+
+    // Strategy history
+    const histEl = document.getElementById('lr-strategy-history');
+    const countEl = document.getElementById('lr-history-count');
+    const history = histData?.history || [];
+    if (countEl) countEl.textContent = history.length + ' changes';
+    if (!histEl) return;
+
+    if (!history.length) {
+        histEl.innerHTML = '<div class="text-sm text-muted text-center py-8">No strategy changes yet</div>';
+        return;
+    }
+
+    histEl.innerHTML = history.slice(0, 6).map(h => `
+        <div class="py-3 px-4 border-b" style="border-color:var(--border)">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-medium">${h.reason || h.type || 'Strategy change'}</span>
+                <span class="text-xs text-muted">${h.date ? new Date(h.date).toLocaleDateString('en-IN', {day:'2-digit',month:'short'}) : ''}</span>
             </div>
-        `).join('');
+            ${h.changes ? `<div class="text-xs text-muted">${Array.isArray(h.changes) ? h.changes.join(', ') : JSON.stringify(h.changes)}</div>` : ''}
+            ${h.new_values ? `<div class="text-xs text-muted mt-0.5">${Object.entries(h.new_values).map(([k,v]) => `${k}: ${v}`).join(', ')}</div>` : ''}
+        </div>`).join('');
+}
+
+function _updateRecommendations(recommendations) {
+    const el = document.getElementById('lr-recommendations');
+    const countEl = document.getElementById('lr-rec-count');
+    if (!el) return;
+
+    _lrRecs = recommendations || []; // store for applyLearningAction
+
+    if (countEl) countEl.textContent = _lrRecs.length + ' actions';
+
+    if (!_lrRecs.length) {
+        el.innerHTML = '<div class="text-sm text-muted text-center py-8">No recommendations yet — keep trading</div>';
+        return;
+    }
+
+    const priorityColors = { HIGH: 'var(--melon-pulp)', MEDIUM: 'var(--melon-cream)', LOW: 'var(--text-muted)' };
+
+    el.innerHTML = _lrRecs.map((r, i) => `
+        <div class="flex items-start justify-between py-4 border-b" style="border-color:var(--border)">
+            <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style="background:${priorityColors[r.priority] || 'var(--bg-elevated)'}20">
+                    <i class="fas fa-lightbulb text-sm" style="color:${priorityColors[r.priority] || 'var(--text)'}"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded" style="background:${priorityColors[r.priority] || 'var(--bg-elevated)'}20;color:${priorityColors[r.priority] || 'var(--text)'}">${r.priority}</span>
+                        <span class="font-semibold text-sm">${r.title || ''}</span>
+                    </div>
+                    <div class="text-sm text-muted">${r.message || ''}</div>
+                    ${r.action ? `<div class="text-xs text-muted mt-1"><i class="fas fa-arrow-right text-xs"></i> ${r.action}</div>` : ''}
+                </div>
+            </div>
+            ${r.action_type ? `<button class="btn btn-sm btn-ghost flex-shrink-0 ml-4" onclick="applyLearningAction(${i})">${r.action || 'Apply'}</button>` : ''}
+        </div>`).join('');
+}
+
+var _lrRecs = [];
+
+function applyLearningAction(idx) {
+    const rec = _lrRecs[idx];
+    if (!rec) return;
+    const at = rec.action_type;
+    if (at === 'paper_mode') {
+        saveConfigValue('paper_trading', true);
+        showToast('success', 'Paper Mode Enabled', 'Switched to paper trading mode');
+    } else if (at === 'scanner_disable' && rec.scanner) {
+        // Disable the scanner in config
+        const cfg = window.appData?.config || {};
+        const disabled = cfg.disabled_scanners || [];
+        if (!disabled.includes(rec.scanner)) {
+            disabled.push(rec.scanner);
+            saveConfigValue('disabled_scanners', disabled);
+            showToast('success', 'Scanner Disabled', `${rec.scanner} has been disabled`);
+        } else {
+            showToast('info', 'Already Disabled', `${rec.scanner} is already disabled`);
+        }
+    } else if (at === 'symbol_avoid' && rec.symbol) {
+        const cfg = window.appData?.config || {};
+        const blocked = cfg.blocked_symbols || [];
+        if (!blocked.includes(rec.symbol)) {
+            blocked.push(rec.symbol);
+            saveConfigValue('blocked_symbols', blocked);
+            showToast('success', 'Symbol Blocked', `${rec.symbol} added to blocked list`);
+        } else {
+            showToast('info', 'Already Blocked', `${rec.symbol} is already blocked`);
+        }
+    } else if (at === 'review') {
+        document.querySelector('button[data-tab="trades"]')?.click();
+        showToast('info', 'Review Trades', 'Switching to Trades tab');
+    } else if (at === 'time_window') {
+        document.querySelector('button[data-tab="config"]')?.click();
+        showToast('info', 'Trading Windows', 'Switch to Config to adjust trading hours');
+    } else if (at === 'config' && rec.suggested) {
+        for (const [key, val] of Object.entries(rec.suggested)) {
+            saveConfigValue(key, val);
+        }
+        showToast('success', 'Config Updated', 'Recommended settings applied');
+    } else {
+        showToast('info', rec.title || 'Action', rec.message || 'No action available for this recommendation');
     }
 }
 
