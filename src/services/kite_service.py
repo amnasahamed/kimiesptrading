@@ -311,7 +311,7 @@ class KiteService:
 
     async def place_sl_gtt(
         self, symbol: str, quantity: int, trigger_price: float, limit_price: float,
-        product: str = "MIS"
+        product: str = "MIS", side: str = "BUY"
     ) -> Optional[Dict]:
         """Place a Stop-Loss GTT order.
 
@@ -319,11 +319,15 @@ class KiteService:
             symbol: Trading symbol
             quantity: Number of shares
             trigger_price: Price at which GTT triggers
-            limit_price: Limit price for the triggered sell order
-            product: "MIS" for intraday, "CNC" for delivery. Defaults to MIS since
-                     most bot positions are intraday. Ensure this matches the original
-                     buy order's product type to avoid GTT trigger failures.
+            limit_price: Limit price for the triggered order
+            product: "MIS" for intraday, "CNC" for delivery.
+            side: "BUY" for LONG positions (GTT closes LONG by selling),
+                  "SELL" for SHORT positions (GTT closes SHORT by buying).
         """
+        # transaction_type is the CLOSING transaction — opposite of entry
+        # LONG entry (BUY) → close with SELL
+        # SHORT entry (SELL) → close with BUY
+        transaction_type = "SELL" if side.upper() == "BUY" else "BUY"
         url = f"{self.base_url}/gtt/triggers"
         payload = {
             "type": "single",
@@ -336,7 +340,7 @@ class KiteService:
             "orders": [{
                 "exchange": "NSE",
                 "tradingsymbol": symbol,
-                "transaction_type": "SELL",
+                "transaction_type": transaction_type,
                 "quantity": quantity,
                 "order_type": "LIMIT",
                 "product": product,

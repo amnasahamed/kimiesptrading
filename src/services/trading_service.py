@@ -10,6 +10,7 @@ from src.core.config import get_settings
 from src.core.logging_config import get_logger, log_trade, log_signal
 from src.models.database import get_db_session
 from src.repositories.position_repository import PositionRepository, TradeRepository
+from src.repositories.signal_repository import record_signal
 from src.services.kite_service import get_kite_service, KiteQuote
 from src.services.risk_service import get_risk_service
 from src.services.notification_service import send_telegram
@@ -47,12 +48,18 @@ class TradingService:
 
         logger.info(f"Processing signal: {symbol} ({'PAPER' if is_paper else 'LIVE'})")
 
+        # Get a DB session for signal recording
+        signal_db = get_db_session()
+
         # 1. Validate signal
         validation_result = await self.risk.validate_signal(
             symbol, is_paper, kite=self.kite, config=cfg
         )
         if not validation_result.is_valid:
             log_signal(symbol, "REJECTED", validation_result.reason, paper=is_paper)
+            await record_signal(signal_db, symbol, scan_name, "REJECTED",
+                                reason=validation_result.reason, paper_trading=is_paper)
+            signal_db.close()
             return {
                 "status": "REJECTED",
                 "symbol": symbol,
@@ -65,6 +72,9 @@ class TradingService:
         if not quote:
             quote = await self.kite.get_quote(symbol)
         if not quote:
+            await record_signal(signal_db, symbol, scan_name, "REJECTED",
+                                reason="Could not fetch market price", paper_trading=is_paper)
+            signal_db.close()
             return {
                 "status": "ERROR",
                 "symbol": symbol,
@@ -73,20 +83,24 @@ class TradingService:
             }
 
         current_price = quote.ltp
-        
+
         # 3. Check price slippage
         if alert_price and alert_price > 0:
             slippage = (current_price - alert_price) / alert_price * 100
             max_slippage = 1.0 if is_paper else 0.5
-            
+
             if slippage > max_slippage:
+                reason = f"Price slippage too high: {slippage:.2f}%"
+                await record_signal(signal_db, symbol, scan_name, "REJECTED",
+                                    reason=reason, paper_trading=is_paper)
+                signal_db.close()
                 return {
                     "status": "REJECTED",
                     "symbol": symbol,
-                    "reason": f"Price slippage too high: {slippage:.2f}%",
+                    "reason": reason,
                     "timestamp": start_time.isoformat()
                 }
-        
+
         # 4. Calculate position size (reuse quote already fetched above)
         position_calc = await self.risk.calculate_position(
             symbol=symbol,
@@ -94,8 +108,11 @@ class TradingService:
             atr=self._atr_from_quote(quote),
             paper_trading=is_paper
         )
-        
+
         if not position_calc:
+            await record_signal(signal_db, symbol, scan_name, "REJECTED",
+                                reason="Position sizing failed", paper_trading=is_paper)
+            signal_db.close()
             return {
                 "status": "REJECTED",
                 "symbol": symbol,
@@ -148,26 +165,29 @@ class TradingService:
                         sl_order_id = None
                         tp_order_id = None
                         
-                        # Place SL GTT (sell if price drops to stop loss)
+                        # Place SL GTT — opposite of entry side closes the position
+                        # BUY entry → close with SELL; SELL entry → close with BUY
                         sl_gtt = await self.kite.place_sl_gtt(
                             symbol=symbol,
                             quantity=position_calc.quantity,
                             trigger_price=position_calc.stop_loss,
                             limit_price=round(position_calc.stop_loss * 0.995, 2),
-                            product="MIS"
+                            product="MIS",
+                            side=side,
                         )
                         if sl_gtt:
                             sl_order_id = sl_gtt.get("gtt_id")
                             position_repo.update(position.id, {"sl_order_id": sl_order_id})
                             logger.info(f"Placed SL GTT for {symbol}: {sl_order_id} @ {position_calc.stop_loss}")
-                        
-                        # Place TP GTT (sell if price rises to target)
+
+                        # Place TP GTT — same closing logic
                         tp_gtt = await self.kite.place_sl_gtt(
                             symbol=symbol,
                             quantity=position_calc.quantity,
                             trigger_price=position_calc.target,
                             limit_price=round(position_calc.target * 0.995, 2),
-                            product="MIS"
+                            product="MIS",
+                            side=side,
                         )
                         if tp_gtt:
                             tp_order_id = tp_gtt.get("gtt_id")
@@ -202,6 +222,16 @@ class TradingService:
             }
             trade_repo.create(trade_data)
 
+            # Record EXECUTED signal to DB
+            await record_signal(signal_db, symbol, scan_name, "EXECUTED",
+                                paper_trading=is_paper,
+                                metadata={
+                                    "action": action,
+                                    "entry_price": current_price,
+                                    "quantity": position_calc.quantity,
+                                    "order_id": order_result.get("order_id"),
+                                })
+
             # Bust analytics cache so dashboard reflects this trade immediately
             from src.services.learning_service import _bust_analytics_cache
             _bust_analytics_cache()
@@ -230,6 +260,8 @@ class TradingService:
         except Exception as e:
             logger.error(f"Trade execution error: {e}")
             db.rollback()
+            await record_signal(signal_db, symbol, scan_name, "REJECTED",
+                                reason=f"Execution error: {e}", paper_trading=is_paper)
             return {
                 "status": "ERROR",
                 "symbol": symbol,
@@ -238,6 +270,11 @@ class TradingService:
             }
         finally:
             db.close()
+            # Ensure signal_db is always closed (it's opened before the try block)
+            try:
+                signal_db.close()
+            except Exception:
+                pass
     
     async def close_position(
         self,
@@ -476,12 +513,14 @@ class TradingService:
                 if position.sl_order_id and not str(position.sl_order_id).startswith("PAPER_"):
                     try:
                         await self.kite.delete_gtt(str(position.sl_order_id))
+                        position_side = getattr(position, "side", None) or "BUY"
                         new_gtt = await self.kite.place_sl_gtt(
                             symbol=position.symbol,
                             quantity=position.quantity,
                             trigger_price=round(new_sl, 2),
                             limit_price=round(new_sl * 0.995, 2),
-                            product="MIS"
+                            product="MIS",
+                            side=position_side,
                         )
                         if new_gtt:
                             position_repo.update(position_id, {"sl_order_id": new_gtt["gtt_id"]})

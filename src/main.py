@@ -41,8 +41,8 @@ async def _auto_square_off():
     global _square_off_done_today
     
     from src.api.routes.config import load_config
-    from src.models.database import get_db_session
-    from src.repositories.position_repository import PositionRepository
+    from src.models.database import get_db_session, Trade
+    from src.repositories.position_repository import PositionRepository, TradeRepository
     
     config = load_config()
     if not config.get("auto_square_off", False):
@@ -62,6 +62,7 @@ async def _auto_square_off():
         db = get_db_session()
         try:
             position_repo = PositionRepository(db)
+            trade_repo = TradeRepository(db)
             
             # Get all open positions
             paper_positions = position_repo.get_open_positions(paper_trading=True)
@@ -101,6 +102,10 @@ async def _auto_square_off():
                             pnl,
                             "AUTO_SQUARE_OFF"
                         )
+                        # Also update trade P&L so stats are accurate
+                        trade = db.query(Trade).filter(Trade.position_id == pos.id).first()
+                        if trade:
+                            trade_repo.update_pnl(trade.id, exit_price, pnl)
 
                         # Place closing order for live positions (opposite of entry side)
                         if not pos.paper_trading:

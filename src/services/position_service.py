@@ -80,6 +80,7 @@ async def sync_positions_with_kite(db: Session, kite: KiteService) -> Dict[str, 
         result["synced"] = len(kite_symbols)
 
         position_repo = PositionRepository(db)
+        trade_repo = TradeRepository(db)
         open_positions = position_repo.get_open_positions(paper_trading=False)
 
         for pos in open_positions:
@@ -129,6 +130,11 @@ async def sync_positions_with_kite(db: Session, kite: KiteService) -> Dict[str, 
                                 logger.warning(f"Could not cancel GTT {gtt_id}: {e}")
 
                 position_repo.close_position(pos.id, exit_price, pnl, "MANUAL_KITE")
+                # Also update the trade P&L so stats are accurate
+                from src.models.database import Trade
+                trade = db.query(Trade).filter(Trade.position_id == pos.id).first()
+                if trade:
+                    trade_repo.update_pnl(trade.id, exit_price, pnl)
                 result["closed"] += 1
                 result["details"].append({
                     "position_id": pos.id,
@@ -221,6 +227,7 @@ async def force_close_position(
 ) -> Dict[str, Any]:
     """Close a position locally without placing an order (already closed in Kite)."""
     position_repo = PositionRepository(db)
+    trade_repo = TradeRepository(db)
     pos = position_repo.get_by_id(position_id)
 
     if not pos:
@@ -254,6 +261,11 @@ async def force_close_position(
     else:
         pnl = round(((pos.entry_price or 0) - exit_price) * qty, 2)
     position_repo.close_position(position_id, exit_price, pnl, "MANUAL_FORCE_CLOSE")
+    # Also update the trade P&L so stats are accurate
+    from src.models.database import Trade
+    trade = db.query(Trade).filter(Trade.position_id == position_id).first()
+    if trade:
+        trade_repo.update_pnl(trade.id, exit_price, pnl)
 
     await send_telegram(
         f"🔴 *Force-Closed: {symbol}*\nExit: ₹{exit_price:.2f} | P&L: ₹{pnl:.2f}"
