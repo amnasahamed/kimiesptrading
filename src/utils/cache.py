@@ -2,11 +2,9 @@
 Caching layer with Redis or in-memory fallback.
 """
 import json
-import pickle
-from typing import Optional, Any, Union
+from typing import Optional, Any
 from datetime import datetime, timedelta
 from src.utils.time_utils import ist_naive
-import hashlib
 
 from src.core.config import get_settings
 from src.core.logging_config import get_logger
@@ -121,19 +119,6 @@ class Cache:
         except Exception as e:
             logger.error(f"Cache clear error: {e}")
             return False
-    
-    def generate_key(self, prefix: str, *args, **kwargs) -> str:
-        """Generate cache key from arguments."""
-        key_parts = [prefix]
-        key_parts.extend(str(arg) for arg in args)
-        key_parts.extend(f"{k}={v}" for k, v in sorted(kwargs.items()))
-        raw_key = ":".join(key_parts)
-        
-        # Hash if too long
-        if len(raw_key) > 200:
-            return f"{prefix}:{hashlib.md5(raw_key.encode()).hexdigest()}"
-        
-        return raw_key
 
 
 # Global cache instance
@@ -146,33 +131,3 @@ def get_cache() -> Cache:
     if _cache is None:
         _cache = Cache()
     return _cache
-
-
-class cached:
-    """Decorator for caching function results."""
-    
-    def __init__(self, ttl: int = 300, key_prefix: Optional[str] = None):
-        self.ttl = ttl
-        self.key_prefix = key_prefix
-    
-    def __call__(self, func):
-        async def wrapper(*args, **kwargs):
-            cache = get_cache()
-            
-            # Generate cache key
-            prefix = self.key_prefix or func.__name__
-            cache_key = cache.generate_key(prefix, *args, **kwargs)
-            
-            # Try to get from cache
-            cached_value = await cache.get(cache_key)
-            if cached_value is not None:
-                logger.debug(f"Cache hit: {cache_key}")
-                return cached_value
-            
-            # Call function and cache result
-            result = await func(*args, **kwargs)
-            await cache.set(cache_key, result, self.ttl)
-            
-            return result
-        
-        return wrapper

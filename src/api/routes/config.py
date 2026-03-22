@@ -87,6 +87,8 @@ async def get_config():
     if "kite" in config:
         config["kite"] = {
             **config["kite"],
+            "api_key": "***" if config["kite"].get("api_key") else "",
+            "api_secret": "***" if config["kite"].get("api_secret") else "",
             "access_token": "***" if config["kite"].get("access_token") else "",
         }
     if "telegram" in config:
@@ -167,50 +169,71 @@ async def update_config(update: ConfigUpdate):
         config.setdefault("kite", {})["api_key"] = update.kite_api_key
     if update.kite_api_secret:
         config.setdefault("kite", {})["api_secret"] = update.kite_api_secret
-    if update.kite_access_token:
+    if update.kite_access_token is not None:
         kite_cfg = config.setdefault("kite", {})
-        api_key = kite_cfg.get("api_key")
-        api_secret = kite_cfg.get("api_secret")
-        # If it looks like a request_token (< 50 chars) and we have credentials, try exchange
-        if api_key and api_secret and len(update.kite_access_token) < 50:
-            from src.services.kite_service import KiteService
-            svc = KiteService()
-            try:
-                # Simple direct set for now — exchange logic lives in kite_service
-                access_token = await svc.exchange_request_token(
-                    update.kite_access_token, api_key, api_secret
-                )
-                if access_token:
-                    kite_cfg["access_token"] = access_token
-                    save_config(config)
-                    return {"status": "updated", "message": "Token exchanged successfully"}
-            except Exception as e:
-                logger.warning(f"Token exchange failed, storing raw token: {e}")
-        kite_cfg["access_token"] = update.kite_access_token
+        if update.kite_access_token == "":
+            # Revoke — clear the token
+            kite_cfg.pop("access_token", None)
+        else:
+            api_key = kite_cfg.get("api_key")
+            api_secret = kite_cfg.get("api_secret")
+            # Kite request_tokens are 32 hex chars; access_tokens are longer
+            # Try exchange if we have credentials and token looks like a request_token
+            if api_key and api_secret and len(update.kite_access_token) <= 64:
+                from src.services.kite_service import KiteService
+                svc = KiteService()
+                try:
+                    access_token = await svc.exchange_request_token(
+                        update.kite_access_token, api_key, api_secret
+                    )
+                    if access_token:
+                        kite_cfg["access_token"] = access_token
+                        save_config(config)
+                        from src.services.kite_service import reset_kite_service
+                        reset_kite_service()
+                        return {"status": "updated", "message": "Token exchanged successfully", "exchanged": True}
+                except Exception as e:
+                    logger.warning(f"Token exchange failed, storing raw token: {e}")
+            kite_cfg["access_token"] = update.kite_access_token
 
     save_config(config)
-    # Reload pydantic settings so in-memory state reflects config.json changes
     reload_settings()
+    from src.services.kite_service import reset_kite_service
+    reset_kite_service()
     return {"status": "updated"}
 
 
 @router.post("/api/test-kite")
 async def test_kite():
-    """Test Kite API connection."""
+    """Test Kite API connection using credentials from config.json."""
     config = load_config()
     kite_cfg = config.get("kite", {})
-    api_key = kite_cfg.get("api_key")
-    access_token = kite_cfg.get("access_token")
+    api_key = kite_cfg.get("api_key", "")
+    access_token = kite_cfg.get("access_token", "")
 
     if not api_key or not access_token:
-        return {"status": "failed", "message": "API Key or Access Token missing"}
+        return {"status": "failed", "message": "API Key or Access Token missing in config"}
 
-    from src.services.kite_service import get_kite_service
-    kite = get_kite_service()
+    # Always use a fresh KiteService built with current config credentials
+    # (the singleton may have stale headers from env vars)
+    from src.services.kite_service import KiteService
+    kite = KiteService()
+    # Override headers with credentials from config.json
+    kite.headers = {
+        "X-Kite-Version": "3",
+        "Authorization": f"token {api_key}:{access_token}",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
     try:
+        quote = await kite.get_quote("NIFTY 50")
+        if quote:
+            return {"status": "success", "message": f"Connected! NIFTY 50 LTP: ₹{quote.ltp}", "nifty_ltp": quote.ltp}
+        # Fallback to RELIANCE if NIFTY 50 quote fails
         quote = await kite.get_quote("RELIANCE")
         if quote:
-            return {"status": "success", "message": f"Connected! RELIANCE LTP: ₹{quote.ltp}"}
-        return {"status": "failed", "message": "Could not fetch quote. Check Token."}
+            return {"status": "success", "message": f"Connected! RELIANCE LTP: ₹{quote.ltp}", "nifty_ltp": quote.ltp}
+        return {"status": "failed", "message": "Could not fetch quote — token may be expired or invalid"}
     except Exception as e:
         return {"status": "failed", "message": str(e)}
+    finally:
+        await kite.close()

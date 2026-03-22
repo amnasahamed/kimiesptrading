@@ -1,5 +1,5 @@
 """
-Main trading service orchestrating all operations.
+Main trading service orchestrating all operations - Enhanced Version.
 """
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -12,19 +12,21 @@ from src.models.database import get_db_session
 from src.repositories.position_repository import PositionRepository, TradeRepository
 from src.services.kite_service import get_kite_service, KiteQuote
 from src.services.risk_service import get_risk_service
+from src.services.notification_service import send_telegram
 from src.utils.cache import get_cache
 
 logger = get_logger()
 
 
 class TradingService:
-    """Main trading service."""
+    """Main trading service with smart exits."""
     
     def __init__(self):
         self.settings = get_settings()
         self.kite = get_kite_service()
         self.risk = get_risk_service()
         self.cache = get_cache()
+        self._monitored_positions: Dict[str, Any] = {}
     
     async def process_signal(
         self,
@@ -56,9 +58,11 @@ class TradingService:
                 "reason": validation_result.reason,
                 "timestamp": start_time.isoformat()
             }
-        
-        # 2. Get current market price
-        quote = await self.kite.get_quote(symbol)
+
+        # 2. Get current market price (reuse quote from validation if available)
+        quote = validation_result.quote
+        if not quote:
+            quote = await self.kite.get_quote(symbol)
         if not quote:
             return {
                 "status": "ERROR",
@@ -66,7 +70,7 @@ class TradingService:
                 "reason": "Could not fetch market price",
                 "timestamp": start_time.isoformat()
             }
-        
+
         current_price = quote.ltp
         
         # 3. Check price slippage
@@ -115,7 +119,7 @@ class TradingService:
                 "paper_trading": is_paper,
                 "status": "OPEN"
             }
-            
+
             if is_paper:
                 # Simulate paper trade
                 position = position_repo.create(position_data)
@@ -131,10 +135,44 @@ class TradingService:
                     transaction_type=action,
                     quantity=position_calc.quantity
                 )
-                
+
                 if order_result["status"] == "SUCCESS":
                     position_data["entry_order_id"] = order_result["order_id"]
                     position = position_repo.create(position_data)
+                    
+                    # Only place GTT orders for LIVE trades, NOT paper trades
+                    # For paper trades, we simulate the exit conditions
+                    if not is_paper:
+                        sl_order_id = None
+                        tp_order_id = None
+                        
+                        # Place SL GTT (sell if price drops to stop loss)
+                        sl_gtt = await self.kite.place_sl_gtt(
+                            symbol=symbol,
+                            quantity=position_calc.quantity,
+                            trigger_price=position_calc.stop_loss,
+                            limit_price=round(position_calc.stop_loss * 0.995, 2),
+                            product="MIS"
+                        )
+                        if sl_gtt:
+                            sl_order_id = sl_gtt.get("gtt_id")
+                            position_repo.update(position.id, {"sl_order_id": sl_order_id})
+                            logger.info(f"Placed SL GTT for {symbol}: {sl_order_id} @ {position_calc.stop_loss}")
+                        
+                        # Place TP GTT (sell if price rises to target)
+                        tp_gtt = await self.kite.place_sl_gtt(
+                            symbol=symbol,
+                            quantity=position_calc.quantity,
+                            trigger_price=position_calc.target,
+                            limit_price=round(position_calc.target * 0.995, 2),
+                            product="MIS"
+                        )
+                        if tp_gtt:
+                            tp_order_id = tp_gtt.get("gtt_id")
+                            position_repo.update(position.id, {"tp_order_id": tp_order_id})
+                            logger.info(f"Placed TP GTT for {symbol}: {tp_order_id} @ {position_calc.target}")
+                    else:
+                        logger.info(f"PAPER TRADE: No GTT orders placed (simulation mode)")
                 else:
                     return {
                         "status": "FAILED",
@@ -142,12 +180,12 @@ class TradingService:
                         "reason": order_result.get("message", "Order failed"),
                         "timestamp": start_time.isoformat()
                     }
-            
+
             # Log trade
             trade_data = {
                 "id": f"TRADE_{position.id}",
                 "symbol": symbol,
-                "action": action,
+                "action": action.upper(),
                 "entry_price": current_price,
                 "stop_loss": position_calc.stop_loss,
                 "target": position_calc.target,
@@ -241,13 +279,26 @@ class TradingService:
                         "status": "FAILED",
                         "reason": order_result.get("message", "Exit order failed")
                     }
+                
+                # CRITICAL FIX: Use actual fill price from order, not LTP
+                # The order result may contain average_price from Kite
+                try:
+                    # Try to get actual fill price from order response
+                    # Kite order response should have average_price
+                    fill_price = order_result.get("average_price") or order_result.get("price")
+                    if fill_price and float(fill_price) > 0:
+                        exit_price = float(fill_price)
+                        pnl = (exit_price - position.entry_price) * position.quantity
+                        logger.info(f"Using actual fill price for {position.symbol}: ₹{exit_price}")
+                except Exception as e:
+                    logger.warning(f"Could not get fill price, using LTP: {e}")
             
             # Update database
             position_repo.close_position(position_id, exit_price, pnl, "MANUAL")
             
             # Update trade record
             from src.models.database import Trade
-            trade = trade_repo.db.query(Trade).filter(
+            trade = db.query(Trade).filter(
                 Trade.position_id == position_id
             ).first()
             
@@ -317,11 +368,188 @@ class TradingService:
         from src.api.routes.config import load_config
         return load_config()
 
+    async def _get_atr(self, symbol: str) -> float:
+        """Fetch and compute true ATR (Average True Range) over 14 periods."""
+        try:
+            candles = await self.kite.get_historical_data(symbol, "day", 20)
+            if not candles or len(candles) < 14:
+                return 2.0
+            trs = []
+            for i in range(1, len(candles)):
+                high = candles[i].get("high", 0)
+                low = candles[i].get("low", 0)
+                prev_close = candles[i - 1].get("close", 0)
+                tr = max(
+                    high - low,
+                    abs(high - prev_close),
+                    abs(low - prev_close)
+                )
+                trs.append(tr)
+            if len(trs) < 14:
+                return sum(trs) / len(trs) if trs else 2.0
+            return sum(trs[-14:]) / 14
+        except Exception:
+            return 2.0
+
     def _atr_from_quote(self, quote) -> float:
         """Estimate ATR from an already-fetched quote (no extra API call)."""
         if quote and quote.high and quote.low and quote.high > quote.low:
             return (quote.high - quote.low) * 0.5
         return 2.0  # Default fallback
+
+
+    async def check_trailing_stop(self, position_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Check and update trailing stop loss for a position.
+        Call this periodically for open positions.
+        
+        Strategy:
+        - Move SL to breakeven when profit reaches 1%
+        - Move SL to 50% of profit when profit reaches 2%
+        - Move SL to 75% of profit when profit reaches 3%
+        """
+        cfg = self._load_config()
+        if not cfg.get("trailing_tp_enabled", True):
+            return None
+            
+        db = get_db_session()
+        try:
+            position_repo = PositionRepository(db)
+            position = position_repo.get_by_id(position_id)
+            
+            if not position or position.status != "OPEN":
+                return None
+            
+            # Get current price
+            quote = await self.kite.get_quote(position.symbol)
+            if not quote:
+                return None
+            
+            current_price = quote.ltp
+            entry_price = position.entry_price
+            current_sl = position.sl_price
+            
+            # Calculate profit percentage
+            profit_pct = ((current_price - entry_price) / entry_price) * 100
+            
+            # Determine new SL based on profit
+            new_sl = None
+            
+            if profit_pct >= 3:
+                # Lock in 75% of profit
+                profit_amount = current_price - entry_price
+                new_sl = entry_price + (profit_amount * 0.75)
+            elif profit_pct >= 2:
+                # Lock in 50% of profit  
+                profit_amount = current_price - entry_price
+                new_sl = entry_price + (profit_amount * 0.50)
+            elif profit_pct >= 1:
+                # Move to breakeven + 0.2%
+                new_sl = entry_price * 1.002
+            
+            # Update SL if it's higher than current SL
+            if new_sl and new_sl > current_sl:
+                position_repo.update(position_id, {"sl_price": round(new_sl, 2)})
+                
+                # Update GTT order if exists
+                if position.sl_order_id and not str(position.sl_order_id).startswith("PAPER_"):
+                    try:
+                        await self.kite.delete_gtt(str(position.sl_order_id))
+                        new_gtt = await self.kite.place_sl_gtt(
+                            symbol=position.symbol,
+                            quantity=position.quantity,
+                            trigger_price=round(new_sl, 2),
+                            limit_price=round(new_sl * 0.995, 2),
+                            product="MIS"
+                        )
+                        if new_gtt:
+                            position_repo.update(position_id, {"sl_order_id": new_gtt["gtt_id"]})
+                            logger.info(f"Trailing SL updated for {position.symbol}: ₹{new_sl:.2f}")
+                    except Exception as e:
+                        logger.error(f"Failed to update trailing SL: {e}")
+                
+                return {
+                    "action": "trailing_sl_updated",
+                    "old_sl": current_sl,
+                    "new_sl": new_sl,
+                    "profit_pct": profit_pct
+                }
+                
+        except Exception as e:
+            logger.error(f"Trailing stop check error: {e}")
+        finally:
+            db.close()
+        
+        return None
+    
+    async def check_partial_profit(self, position_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Check if partial profit booking is needed.
+        Books 50% of position when profit reaches 2%.
+        """
+        cfg = self._load_config()
+        if not cfg.get("partial_profit_enabled", True):
+            return None
+            
+        db = get_db_session()
+        try:
+            position_repo = PositionRepository(db)
+            position = position_repo.get_by_id(position_id)
+            
+            if not position or position.status != "OPEN":
+                return None
+            
+            # Check if partial already taken
+            if getattr(position, "partial_exits", None):
+                return None  # Already took partial
+            
+            # Get current price
+            quote = await self.kite.get_quote(position.symbol)
+            if not quote:
+                return None
+            
+            current_price = quote.ltp
+            entry_price = position.entry_price
+            
+            # Calculate profit percentage
+            profit_pct = ((current_price - entry_price) / entry_price) * 100
+            
+            # Book partial at 2% profit
+            if profit_pct >= 2:
+                qty_to_close = position.quantity // 2
+                if qty_to_close < 1:
+                    return None
+                    
+                exit_price = current_price
+                pnl = (exit_price - entry_price) * qty_to_close
+                
+                # Close partial position
+                # Note: Full implementation would create a new closed position record
+                # For now, just log and notify
+                logger.info(f"Partial profit booking signal for {position.symbol}: {qty_to_close} qty @ ₹{exit_price}, P&L: ₹{pnl:.2f}")
+                
+                await send_telegram(
+                    f"📊 *Partial Profit Signal*\n"
+                    f"Symbol: {position.symbol}\n"
+                    f"Qty to book: {qty_to_close}\n"
+                    f"Entry: ₹{entry_price}\n"
+                    f"Current: ₹{current_price}\n"
+                    f"Profit: ₹{pnl:.2f} ({profit_pct:.1f}%)"
+                )
+                
+                return {
+                    "action": "partial_profit_signal",
+                    "quantity": qty_to_close,
+                    "profit_pct": profit_pct,
+                    "pnl": pnl
+                }
+                
+        except Exception as e:
+            logger.error(f"Partial profit check error: {e}")
+        finally:
+            db.close()
+        
+        return None
 
 
 # Global service instance

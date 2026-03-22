@@ -4,7 +4,7 @@ Application configuration with environment variables.
 import os
 from pathlib import Path
 from typing import Optional, List
-from pydantic import Field
+from pydantic import Field, ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -64,13 +64,12 @@ class Settings(BaseSettings):
     rate_limit: int = 20
     rate_window: int = 60
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-        
-        # Allow extra fields for backward compatibility
-        extra = "ignore"
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 # Global settings instance

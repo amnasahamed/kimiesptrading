@@ -1,6 +1,8 @@
 """
 Enhanced Kite API service with circuit breaker and caching.
 """
+import asyncio
+import json
 import httpx
 from typing import Optional, Dict, Any
 from datetime import datetime
@@ -9,14 +11,14 @@ from src.utils.time_utils import ist_naive
 from src.core.config import get_settings
 from src.core.logging_config import get_logger
 from src.utils.circuit_breaker import circuit_breaker, CircuitBreakerOpen
-from src.utils.cache import get_cache, cached
+from src.utils.cache import get_cache
 
 logger = get_logger()
 
 
 class KiteQuote:
     """Quote data class."""
-    def __init__(self, data: dict):
+    def __init__(self, data: Dict[str, Any]) -> None:
         self.symbol = data.get("symbol", "")
         self.ltp = float(data.get("last_price", 0))
         self.open = float(data.get("ohlc", {}).get("open", 0))
@@ -31,17 +33,26 @@ class KiteQuote:
 
 class KiteService:
     """Kite API service with resilience patterns."""
-    
+
     def __init__(self):
         self.settings = get_settings()
         self.base_url = self.settings.kite_base_url
-        self.headers = {
-            "X-Kite-Version": "3",
-            "Authorization": f"token {self.settings.kite_api_key}:{self.settings.kite_access_token}",
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
         self._client: Optional[httpx.AsyncClient] = None
         self.cache = get_cache()
+        self._reload_headers()
+
+    def _reload_headers(self) -> None:
+        """Reload headers from config.json (supports runtime token updates)."""
+        from src.api.routes.config import load_config
+        cfg = load_config()
+        kite_cfg = cfg.get("kite", {})
+        api_key = kite_cfg.get("api_key") or self.settings.kite_api_key
+        access_token = kite_cfg.get("access_token") or self.settings.kite_access_token
+        self.headers = {
+            "X-Kite-Version": "3",
+            "Authorization": f"token {api_key}:{access_token}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
     
     async def _get_client(self) -> httpx.AsyncClient:
         """Get or create HTTP client with connection pooling."""
@@ -203,9 +214,22 @@ class KiteService:
                 result = resp.json()
                 
                 if result.get("status") == "success":
+                    order_id = result.get("data", {}).get("order_id")
+                    
+                    # Try to get the filled/average price
+                    avg_price = None
+                    try:
+                        # Fetch order details to get fill price
+                        order_details = await self._get_order_details(order_id)
+                        if order_details:
+                            avg_price = order_details.get("average_price")
+                    except Exception as e:
+                        logger.warning(f"Could not fetch fill price for order {order_id}: {e}")
+                    
                     return {
                         "status": "SUCCESS",
-                        "order_id": result.get("data", {}).get("order_id"),
+                        "order_id": order_id,
+                        "average_price": avg_price,
                         "message": "Order placed successfully"
                     }
                 else:
@@ -244,6 +268,20 @@ class KiteService:
             "message": "Max retries exceeded"
         }
 
+    async def _get_order_details(self, order_id: str) -> Optional[Dict]:
+        """Get order details to find filled price."""
+        try:
+            url = f"{self.base_url}/orders/{order_id}"
+            client = await self._get_client()
+            resp = await client.get(url, headers=self.headers, timeout=10.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("status") == "success":
+                    return data.get("data", {})
+        except Exception as e:
+            logger.error(f"Error fetching order details for {order_id}: {e}")
+        return None
+
     async def list_gtt_orders(self) -> list:
         """List all GTT orders from Kite."""
         url = f"{self.base_url}/gtt/triggers"
@@ -272,9 +310,20 @@ class KiteService:
         return False
 
     async def place_sl_gtt(
-        self, symbol: str, quantity: int, trigger_price: float, limit_price: float
+        self, symbol: str, quantity: int, trigger_price: float, limit_price: float,
+        product: str = "MIS"
     ) -> Optional[Dict]:
-        """Place a Stop-Loss GTT order."""
+        """Place a Stop-Loss GTT order.
+
+        Args:
+            symbol: Trading symbol
+            quantity: Number of shares
+            trigger_price: Price at which GTT triggers
+            limit_price: Limit price for the triggered sell order
+            product: "MIS" for intraday, "CNC" for delivery. Defaults to MIS since
+                     most bot positions are intraday. Ensure this matches the original
+                     buy order's product type to avoid GTT trigger failures.
+        """
         url = f"{self.base_url}/gtt/triggers"
         payload = {
             "type": "single",
@@ -290,15 +339,14 @@ class KiteService:
                 "transaction_type": "SELL",
                 "quantity": quantity,
                 "order_type": "LIMIT",
-                "product": "CNC",
+                "product": product,
                 "price": limit_price,
             }],
         }
         try:
-            import json as _json
             client = await self._get_client()
             resp = await client.post(
-                url, headers=self.headers, content=_json.dumps(payload), timeout=10.0
+                url, headers=self.headers, content=json.dumps(payload), timeout=10.0
             )
             if resp.status_code == 200:
                 data = resp.json()
@@ -307,6 +355,86 @@ class KiteService:
         except Exception as e:
             logger.error(f"Error placing SL GTT for {symbol}: {e}")
         return None
+
+    @circuit_breaker("kite_historical")
+    async def get_historical_data(
+        self,
+        symbol: str,
+        interval: str,
+        duration: int = 30,
+    ) -> list:
+        """
+        Get historical candle data for a symbol.
+
+        Args:
+            symbol: Stock symbol (e.g., "RELIANCE")
+            interval: Kite interval (minute, 5minute, 15minute, 30minute, 60minute, day)
+            duration: Number of candles to fetch (e.g., 30 for last 30 candles)
+
+        Returns:
+            List of candle dicts with open, high, low, close, volume, timestamp
+        """
+        from datetime import datetime, timedelta
+
+        now = ist_naive()
+        interval_map = {
+            "minute": timedelta(minutes=1),
+            "5minute": timedelta(minutes=5),
+            "15minute": timedelta(minutes=15),
+            "30minute": timedelta(minutes=30),
+            "60minute": timedelta(hours=1),
+            "day": timedelta(days=1),
+        }
+        delta = interval_map.get(interval, timedelta(minutes=5))
+        from_time = now - (delta * duration)
+        from_str = from_time.strftime("%Y-%m-%d %H:%M:%S")
+        to_str = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        url = f"{self.base_url}/GetHistoricalData"
+        params = {
+            "symbol": f"NSE:{symbol}",
+            "token": "",
+            "exchange": "NSE",
+            "interval": interval,
+            "from": from_str,
+            "to": to_str,
+            "period": duration,
+        }
+
+        try:
+            client = await self._get_client()
+            resp = await client.get(
+                url,
+                headers=self.headers,
+                params=params,
+                timeout=15.0,
+            )
+
+            if resp.status_code == 401:
+                logger.error("Kite API unauthorized - check credentials")
+                return []
+            if resp.status_code != 200:
+                logger.error(f"Kite historical data error: {resp.status_code}")
+                return []
+
+            data = resp.json()
+            if data.get("status") == "success" and "data" in data:
+                candles = data["data"].get("candles", [])
+                return [
+                    {
+                        "open": float(c[1]),
+                        "high": float(c[2]),
+                        "low": float(c[3]),
+                        "close": float(c[4]),
+                        "volume": int(c[5]) if len(c) > 5 else 0,
+                        "timestamp": c[0] if len(c) > 0 else None,
+                    }
+                    for c in candles
+                ]
+        except Exception as e:
+            logger.error(f"Error fetching historical data for {symbol}: {e}")
+
+        return []
 
     async def exchange_request_token(
         self,
@@ -353,4 +481,13 @@ def get_kite_service() -> KiteService:
 def reset_kite_service():
     """Discard the singleton so the next call to get_kite_service() creates a fresh instance."""
     global _kite_service
-    _kite_service = None
+    if _kite_service is not None:
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.create_task(_kite_service.close())
+            else:
+                loop.run_until_complete(_kite_service.close())
+        except Exception:
+            pass
+        _kite_service = None

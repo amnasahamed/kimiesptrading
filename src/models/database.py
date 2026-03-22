@@ -10,8 +10,7 @@ from sqlalchemy import (
     create_engine, Column, Integer, String, Float, 
     DateTime, Boolean, Text, JSON, ForeignKey, Index
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session, relationship
+from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from sqlalchemy.pool import StaticPool
 
 from src.core.config import get_settings

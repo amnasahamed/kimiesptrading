@@ -1,9 +1,12 @@
-from src.utils.time_utils import ist_naive
 """
 Trading Bot Application — src/ entry point.
 """
+import asyncio
 import os
 import sys
+from datetime import time as dt_time
+from threading import Thread
+from src.utils.time_utils import ist_naive
 
 # Add project root to path so `src.*` imports resolve from any working directory
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,6 +31,110 @@ from src.api.routes import turbo as turbo_routes
 logger = setup_logging()
 
 
+# ---------------------------------------------------------------------------
+# Auto Square-Off Background Task
+# ---------------------------------------------------------------------------
+_square_off_done_today = False
+
+async def _auto_square_off():
+    """Close all open positions at end of market hours."""
+    global _square_off_done_today
+    
+    from src.api.routes.config import load_config
+    from src.models.database import get_db_session
+    from src.repositories.position_repository import PositionRepository
+    
+    config = load_config()
+    if not config.get("auto_square_off", False):
+        return
+    
+    now = ist_naive()
+    square_off_time = dt_time(15, 20)  # 3:20 PM
+    
+    # Reset flag at start of new day
+    if now.time() < dt_time(9, 0):
+        _square_off_done_today = False
+    
+    # Only run once per day, between 3:20 and 3:30 PM
+    if not _square_off_done_today and dt_time(15, 20) <= now.time() <= dt_time(15, 30):
+        logger.info("🔴 Auto square-off triggered")
+        
+        db = get_db_session()
+        try:
+            position_repo = PositionRepository(db)
+            
+            # Get all open positions
+            paper_positions = position_repo.get_open_positions(paper_trading=True)
+            live_positions = position_repo.get_open_positions(paper_trading=False)
+            
+            all_positions = paper_positions + live_positions
+            
+            if all_positions:
+                logger.info(f"Auto square-off: closing {len(all_positions)} positions")
+                
+                from src.services.kite_service import get_kite_service
+                from src.services.notification_service import send_telegram
+                kite = get_kite_service()
+                
+                total_pnl = 0
+                for pos in all_positions:
+                    try:
+                        # Get current price
+                        quote = await kite.get_quote(pos.symbol)
+                        exit_price = quote.ltp if quote else pos.entry_price
+                        
+                        # Calculate P&L
+                        pnl = (exit_price - pos.entry_price) * pos.quantity
+                        total_pnl += pnl
+                        
+                        # Close position
+                        position_repo.close_position(
+                            pos.id, 
+                            exit_price, 
+                            pnl, 
+                            "AUTO_SQUARE_OFF"
+                        )
+                        
+                        # Place sell order for live positions
+                        if not pos.paper_trading:
+                            await kite.place_order(
+                                symbol=pos.symbol,
+                                transaction_type="SELL",
+                                quantity=pos.quantity
+                            )
+                        
+                        logger.info(f"  Closed {pos.symbol}: P&L ₹{pnl:.2f}")
+                    except Exception as e:
+                        logger.error(f"  Error closing {pos.symbol}: {e}")
+                
+                _square_off_done_today = True
+                
+                await send_telegram(
+                    f"🔴 *Auto Square-Off Complete*\n"
+                    f"Positions closed: {len(all_positions)}\n"
+                    f"Total P&L: ₹{total_pnl:.2f}"
+                )
+            else:
+                logger.info("Auto square-off: no open positions")
+                _square_off_done_today = True
+                
+        except Exception as e:
+            logger.error(f"Auto square-off error: {e}")
+        finally:
+            db.close()
+
+
+async def _run_background_tasks(app: FastAPI):
+    """Background task runner for periodic operations."""
+    while True:
+        try:
+            await _auto_square_off()
+        except Exception as e:
+            logger.error(f"Background task error: {e}")
+        
+        await asyncio.sleep(60)  # Check every minute
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan — startup and shutdown."""
@@ -42,8 +149,19 @@ async def lifespan(app: FastAPI):
     await start_turbo_processor()
     logger.info("Turbo processor started")
 
+    # Start background tasks (auto square-off)
+    background_task = asyncio.create_task(_run_background_tasks(app))
+    logger.info("Background tasks started")
+
     yield
 
+    # Cancel background task
+    background_task.cancel()
+    try:
+        await background_task
+    except asyncio.CancelledError:
+        pass
+    
     await stop_turbo_processor()
     logger.info("=" * 50)
     logger.info("Trading Bot Shutting Down")
@@ -68,7 +186,6 @@ def create_app() -> FastAPI:
             "https://themelon.in",
             "http://localhost:8000",
             "http://localhost:3000",
-            "*",  # Allow all origins for webhook compatibility
         ],
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE"],

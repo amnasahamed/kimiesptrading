@@ -24,6 +24,8 @@ router = APIRouter(tags=["webhook"])
 _webhook_calls: dict = defaultdict(list)
 RATE_LIMIT = 20
 RATE_WINDOW = 60
+# Cleanup when any single IP accumulates more than this many entries
+_CLEANUP_THRESHOLD = 200
 
 
 def _check_rate_limit(client_ip: str) -> tuple[bool, str]:
@@ -37,7 +39,20 @@ def _check_rate_limit(client_ip: str) -> tuple[bool, str]:
         return False, f"Rate limit exceeded. Try again in {retry_after} seconds."
 
     _webhook_calls[client_ip].append(now)
+
+    if len(_webhook_calls[client_ip]) > _CLEANUP_THRESHOLD:
+        _cleanup_stale_entries(window_start)
+
     return True, "OK"
+
+
+def _cleanup_stale_entries(window_start) -> None:
+    stale_ips = [
+        ip for ip, timestamps in _webhook_calls.items()
+        if not any(t > window_start for t in timestamps)
+    ]
+    for ip in stale_ips:
+        del _webhook_calls[ip]
 
 
 def _client_ip(request: Request) -> str:
@@ -74,8 +89,8 @@ def _parse_payload(alert: ChartinkAlert) -> List[Dict[str, Any]]:
     alerts = []
 
     if alert.symbol and not alert.stocks:
-        sym = alert.symbol.upper().strip()
-        if sym.isalnum():
+        sym = alert.symbol.upper().strip().replace(" ", "")
+        if sym and len(sym) <= 20 and sym.replace("-", "").replace("_", "").isalnum():
             alerts.append({
                 "symbol": sym,
                 "price": alert.price,
@@ -84,8 +99,12 @@ def _parse_payload(alert: ChartinkAlert) -> List[Dict[str, Any]]:
         return alerts
 
     if alert.stocks:
-        stocks = [s.strip().upper() for s in alert.stocks.split(",") if s.strip()]
-        stocks = [s for s in stocks if s.isalnum() and len(s) <= 20]
+        raw_stocks = [s.strip().upper() for s in alert.stocks.split(",") if s.strip()]
+        stocks = []
+        for s in raw_stocks:
+            cleaned = s.replace("-", "").replace("_", "")
+            if cleaned.isalnum() and len(s) <= 20:
+                stocks.append(s)
 
         prices: list = []
         if alert.trigger_prices:
