@@ -862,7 +862,7 @@
                 <table class="trade-table">
                     <thead>
                         <tr>
-                            <th>Time</th><th>Symbol</th><th>Type</th><th>Qty</th><th>Entry</th><th>Exit</th><th>Status</th><th>P&L</th>
+                            <th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Entry</th><th>Exit</th><th>Status</th><th>P&L</th><th>Scanner</th>
                         </tr>
                     </thead>
                     <tbody id="trades-table-body">
@@ -1385,7 +1385,7 @@ function switchTab(tabId) {
     }
     if (tabId === 'learning') loadLearning();
     if (tabId === 'alerts') loadAlerts();
-    if (tabId === 'trades') updateTradesTable();
+    if (tabId === 'trades') { initFilters(); loadTrades(); }
     if (tabId === 'positions') loadPositions();
 }
 
@@ -1492,6 +1492,37 @@ function updateTurboModeUI() {
     const turbo = appData.config.turbo_mode || {};
     const track = document.getElementById('turbo-toggle');
     if (track) track.classList.toggle('on', turbo.enabled === true);
+}
+
+function updatePositionsPreview() {
+    const container = document.getElementById('positions-preview');
+    const empty = document.getElementById('positions-empty');
+    if (!container) return;
+
+    const openPositions = (appData.positions || []).filter(p => !p.status || p.status === 'OPEN');
+
+    // Remove existing cards
+    container.querySelectorAll('.position-card').forEach(c => c.remove());
+    if (empty) empty.style.display = 'none';
+
+    if (!openPositions.length) {
+        if (empty) empty.style.display = 'flex';
+        return;
+    }
+
+    // Show up to 3 preview cards
+    openPositions.slice(0, 3).forEach(pos => {
+        const card = createPositionCard(pos, true);
+        container.appendChild(card);
+    });
+}
+
+function updatePositionsTab() {
+    // Refresh positions tab if it's visible
+    const tab = document.getElementById('tab-positions');
+    if (tab && !tab.classList.contains('hidden')) {
+        loadPositions();
+    }
 }
 
 /* ============================================================
@@ -1647,53 +1678,61 @@ function createPositionCard(pos, isOpen = false) {
 /* ============================================================
    TRADES TABLE
    ============================================================ */
-function updateTradesTable() {
+async function loadTrades() {
     const tbody = document.getElementById('trades-table-body');
     const empty = document.getElementById('trades-empty');
     if (!tbody) return;
 
-    let trades = appData.trades || [];
+    try {
+        const res = await fetch('/api/trades?_=' + Date.now());
+        if (!res.ok) throw new Error('Failed to load trades');
+        let trades = await res.json();
 
-    // Apply filters
-    const search = document.getElementById('trade-search')?.value?.toUpperCase() || '';
-    const typeFilter = document.getElementById('trade-type-filter')?.value || '';
-    const statusFilter = document.getElementById('trade-status-filter')?.value || '';
+        // Apply filters
+        const search = document.getElementById('trade-search')?.value?.toUpperCase() || '';
+        const typeFilter = document.getElementById('trade-type-filter')?.value || '';
+        const statusFilter = document.getElementById('trade-status-filter')?.value || '';
 
-    if (search) trades = trades.filter(t => t.symbol?.toUpperCase().includes(search));
-    if (typeFilter) trades = trades.filter(t => t.action === typeFilter);
-    if (statusFilter) trades = trades.filter(t => t.status === statusFilter);
+        if (search) trades = trades.filter(t => t.symbol?.toUpperCase().includes(search));
+        if (typeFilter) trades = trades.filter(t => t.action === typeFilter);
+        if (statusFilter) trades = trades.filter(t => t.status === statusFilter);
 
-    if (!trades.length) {
-        tbody.innerHTML = '';
-        if (empty) empty.classList.remove('hidden');
-        return;
+        if (!trades.length) {
+            tbody.innerHTML = '';
+            if (empty) empty.classList.remove('hidden');
+            return;
+        }
+
+        if (empty) empty.classList.add('hidden');
+        tbody.innerHTML = trades.map(t => {
+            const pnl = t.pnl || 0;
+            const pnlClass = pnl > 0 ? 'text-green' : pnl < 0 ? 'text-pink' : 'text-muted';
+            const pnlSign = pnl > 0 ? '+' : '';
+            const date = t.date ? new Date(t.date).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : '—';
+            const isShort = t.action === 'SELL';
+            return `
+                <tr>
+                    <td class="font-mono text-xs text-muted whitespace-nowrap">${date}</td>
+                    <td class="font-semibold">${t.symbol || '—'}</td>
+                    <td><span class="badge ${isShort ? 'badge-pink' : 'badge-green'}">${isShort ? 'SHORT' : 'LONG'}</span></td>
+                    <td class="font-mono">${t.quantity || 0}</td>
+                    <td class="font-mono">₹${(t.entry_price || 0).toFixed(2)}</td>
+                    <td class="font-mono">${t.exit_price ? '₹' + t.exit_price.toFixed(2) : '—'}</td>
+                    <td><span class="badge ${t.status === 'CLOSED' ? 'badge-green' : t.status === 'OPEN' ? 'badge-warning' : 'badge-gray'}">${t.status || '—'}</span></td>
+                    <td class="font-mono ${pnlClass}">${t.status === 'CLOSED' ? pnlSign + formatCurrency(pnl) : '—'}</td>
+                    <td class="text-xs text-muted">${t.scan_name || t.alert_name || '—'}</td>
+                </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error('Trades load error:', err);
     }
-
-    if (empty) empty.classList.add('hidden');
-    tbody.innerHTML = trades.map(t => {
-        const pnl = t.pnl || 0;
-        const pnlClass = pnl > 0 ? 'text-green' : pnl < 0 ? 'text-pink' : 'text-muted';
-        const pnlSign = pnl > 0 ? '+' : '';
-        const date = t.date ? new Date(t.date).toLocaleTimeString('en-IN', { hour12: false }) : '—';
-        return `
-            <tr>
-                <td class="font-mono text-xs text-muted">${date}</td>
-                <td class="font-semibold">${t.symbol || '—'}</td>
-                <td><span class="badge ${t.action === 'BUY' ? 'badge-green' : 'badge-pink'}">${t.action || '—'}</span></td>
-                <td class="font-mono">${t.quantity || 0}</td>
-                <td class="font-mono">₹${(t.entry_price || 0).toFixed(2)}</td>
-                <td class="font-mono">${t.exit_price ? '₹' + t.exit_price.toFixed(2) : '—'}</td>
-                <td><span class="badge ${t.status === 'CLOSED' ? 'badge-green' : t.status === 'OPEN' ? 'badge-warning' : 'badge-gray'}">${t.status || '—'}</span></td>
-                <td class="font-mono ${pnlClass}">${t.status === 'CLOSED' ? pnlSign + formatCurrency(pnl) : '—'}</td>
-            </tr>
-        `;
-    }).join('');
 }
 
 function initFilters() {
-    document.getElementById('trade-search')?.addEventListener('input', updateTradesTable);
-    document.getElementById('trade-type-filter')?.addEventListener('change', updateTradesTable);
-    document.getElementById('trade-status-filter')?.addEventListener('change', updateTradesTable);
+    document.getElementById('trade-search')?.addEventListener('input', loadTrades);
+    document.getElementById('trade-type-filter')?.addEventListener('change', loadTrades);
+    document.getElementById('trade-status-filter')?.addEventListener('change', loadTrades);
 }
 
 /* ============================================================
@@ -2304,7 +2343,7 @@ function updateAlertsUI(data) {
 /* ============================================================
    CONFIG FORM
    ============================================================ */
-function updateConfigForm() {
+async function updateConfigForm() {
     if (!appData.config) return;
     const cfg = appData.config;
 
@@ -2322,12 +2361,30 @@ function updateConfigForm() {
     const paperToggle = document.getElementById('paper-toggle-track');
     if (paperToggle) paperToggle.classList.toggle('on', cfg.paper_trading !== false);
 
-    // Kite status
-    const kiteStatus = document.getElementById('kite-status-badge');
-    if (kiteStatus) {
-        const hasKite = cfg.kite?.api_key && cfg.kite?.access_token;
-        kiteStatus.textContent = hasKite ? 'Connected' : 'Not Connected';
-        kiteStatus.className = 'badge ' + (hasKite ? 'badge-green' : 'badge-gray');
+    // Kite credentials — fetch unmasked from /api/config
+    try {
+        const res = await fetch('/api/config');
+        if (res.ok) {
+            const fullCfg = await res.json();
+            const kite = fullCfg.kite || {};
+            const kiteKeyEl = document.getElementById('cfg-kite-key');
+            const kiteTokenEl = document.getElementById('cfg-kite-token');
+            if (kiteKeyEl && kite.api_key && kite.api_key !== '***') {
+                kiteKeyEl.value = kite.api_key;
+            }
+            if (kiteTokenEl && kite.access_token && kite.access_token !== '***') {
+                kiteTokenEl.value = kite.access_token;
+            }
+            // Kite status
+            const kiteStatus = document.getElementById('kite-status-badge');
+            if (kiteStatus) {
+                const hasKite = kite.api_key && kite.api_key !== '***' && kite.access_token && kite.access_token !== '***';
+                kiteStatus.textContent = hasKite ? 'Connected' : 'Not Connected';
+                kiteStatus.className = 'badge ' + (hasKite ? 'badge-green' : 'badge-gray');
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load kite credentials', e);
     }
 
     // Trading windows
@@ -2411,6 +2468,9 @@ async function saveConfigValue(key, value) {
 }
 
 async function saveConfig() {
+    const kiteKey = document.getElementById('cfg-kite-key')?.value.trim();
+    const kiteToken = document.getElementById('cfg-kite-token')?.value.trim();
+
     const payload = {
         capital: parseFloat(document.getElementById('cfg-capital').value) || 100000,
         risk_percent: parseFloat(document.getElementById('cfg-risk').value) || 2,
@@ -2421,6 +2481,10 @@ async function saveConfig() {
             { start: document.getElementById('window-2-start').value, end: document.getElementById('window-2-end').value, enabled: document.getElementById('window-2-track')?.classList.contains('on') }
         ]
     };
+
+    // Include kite credentials if provided
+    if (kiteKey) payload.kite_api_key = kiteKey;
+    if (kiteToken) payload.kite_access_token = kiteToken;
 
     try {
         const res = await fetch('/api/config', {

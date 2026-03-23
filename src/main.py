@@ -224,6 +224,12 @@ def create_app() -> FastAPI:
         import logging
         logging.getLogger("trading_bot").warning(f"Static files mount failed: {e}")
 
+    # Favicon
+    @app.get("/favicon.ico")
+    async def favicon():
+        from fastapi.responses import FileResponse
+        return FileResponse("static/favicon.ico")
+
     @app.get("/health")
     async def health_check():
         """Health check endpoint."""

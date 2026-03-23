@@ -499,8 +499,8 @@
         const apiKey = kite.api_key || '';
         const token  = kite.access_token || '';
 
-        // Fill inputs if empty
-        if (apiKey && !document.getElementById('api-key').value) {
+        // Fill inputs if empty (skip masked '***' values)
+        if (apiKey && apiKey !== '***' && !document.getElementById('api-key').value) {
             document.getElementById('api-key').value = apiKey;
         }
 
@@ -600,7 +600,9 @@
 
             if (res.ok) {
                 showResult(result, 'success', 'Credentials saved successfully');
-                await loadConfig();
+                // Update config locally with unmasked values instead of re-fetching masked /api/config
+                config.kite = { api_key: apiKey, api_secret: apiSecret || (config.kite || {}).api_secret, access_token: (config.kite || {}).access_token };
+                renderConfig();
             } else {
                 showResult(result, 'error', data.detail || 'Save failed');
             }
@@ -744,7 +746,10 @@
     // ─── Success card ──────────────────────────────────────
     function showSuccessCard(token) {
         document.getElementById('success-card').style.display = 'block';
-        document.getElementById('token-text').textContent = token;
+        // Show masked token in UI (token is sensitive)
+        document.getElementById('token-text').textContent = token && token !== '***'
+            ? token.slice(0, 8) + '••••••••'
+            : '••••••••';
 
         // Update step 3
         document.getElementById('step3-badge').className = 'step-badge done';
