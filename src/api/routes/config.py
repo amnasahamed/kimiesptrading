@@ -63,6 +63,7 @@ class ConfigUpdate(BaseModel):
     risk_percent: Optional[float] = None
     trade_budget: Optional[float] = None
     max_trades_per_day: Optional[int] = None
+    max_open_positions: Optional[int] = None
     trading_hours: Optional[Dict[str, str]] = None
     kite_access_token: Optional[str] = None
     kite_api_key: Optional[str] = None
@@ -77,6 +78,7 @@ class ConfigUpdate(BaseModel):
     club_positions: Optional[bool] = None
     signal_validation: Optional[Dict[str, Any]] = None
     trading_windows: Optional[List[Dict[str, Any]]] = None
+    turbo_mode: Optional[Dict[str, Any]] = None
 
 
 @router.get("/api/config")
@@ -133,6 +135,12 @@ async def update_config(update: ConfigUpdate):
         if update.max_trades_per_day < 1:
             raise HTTPException(status_code=400, detail="Max trades must be at least 1")
         config["max_trades_per_day"] = update.max_trades_per_day
+    if update.max_open_positions is not None:
+        if update.max_open_positions < 1:
+            raise HTTPException(status_code=400, detail="Max open positions must be at least 1")
+        config["max_open_positions"] = update.max_open_positions
+    if update.turbo_mode is not None:
+        config["turbo_mode"] = update.turbo_mode
     if update.trading_hours is not None:
         config["trading_hours"] = update.trading_hours
     if update.telegram is not None:

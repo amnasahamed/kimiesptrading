@@ -123,6 +123,7 @@ async def get_trades():
                 "date": t.date.isoformat() if t.date else None,
                 "symbol": t.symbol,
                 "action": t.action,
+                "side": t.action,  # BUY=LONG, SELL=SHORT for display
                 "entry_price": t.entry_price,
                 "exit_price": t.exit_price,
                 "stop_loss": t.stop_loss,
@@ -209,8 +210,10 @@ async def get_positions(status: str = "open"):
                 pos_dict.update({
                     "ltp": ltp,
                     "unrealized_pnl": unrealized_pnl,
-                    "pnl_percent": round((unrealized_pnl / (pos.entry_price * pos.quantity)) * 100, 2)
-                    if pos.entry_price and pos.quantity else 0,
+                    "pnl_percent": (
+                        round((unrealized_pnl / (pos.entry_price * pos.quantity)) * 100, 2)
+                        if pos.entry_price and pos.quantity else 0
+                    ),
                 })
             positions_with_pnl.append(pos_dict)
 

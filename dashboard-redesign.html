@@ -1532,7 +1532,15 @@ function updateRiskOverview() {
     if (!appData.stats || !appData.config) return;
     const capital = appData.config.capital || 100000;
     const riskPct = appData.config.risk_percent || 2;
-    const used = appData.stats.capital || 0;
+
+    // Compute deployed capital from open positions (entry_price * quantity per position)
+    const openPositions = (appData.positions || []).filter(p => !p.status || p.status === 'OPEN');
+    const used = openPositions.reduce((sum, p) => {
+        const entry = parseFloat(p.entry_price) || 0;
+        const qty = parseInt(p.quantity) || 0;
+        return sum + (entry * qty);
+    }, 0);
+
     const pct = capital > 0 ? Math.round((used / capital) * 100) : 0;
 
     const capEl = document.getElementById('risk-capital');
@@ -2295,6 +2303,12 @@ async function loadAlerts() {
         if (res.ok) {
             const data = await res.json();
             updateAlertsUI(data);
+            // Populate live feed with recent alerts
+            const recent = data.recent_alerts || [];
+            recent.slice(0, 10).reverse().forEach(alert => {
+                const symbols = (alert.symbols || []).join(', ') || alert.scan_name || 'Alert';
+                addFeedItem('signal', `${symbols} — ${alert.processing_status || 'pending'}`);
+            });
         }
     } catch (err) { console.error('Alerts load error:', err); }
 }
