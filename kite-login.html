@@ -496,43 +496,55 @@
 
     function renderConfig() {
         const kite = config.kite || {};
-        const apiKey = kite.api_key || '';
-        const token  = kite.access_token || '';
 
-        // Fill inputs if empty (skip masked '***' values)
-        if (apiKey && apiKey !== '***' && !document.getElementById('api-key').value) {
-            document.getElementById('api-key').value = apiKey;
-        }
+        // Read credentials from what the user actually typed in the form
+        // (input fields are the source of truth for unmasked values)
+        const formApiKey   = document.getElementById('api-key')?.value.trim() || '';
+        const formApiSecret = document.getElementById('api-secret')?.value.trim() || '';
 
-        // Connection details sidebar
-        document.getElementById('detail-api-key').textContent = apiKey
+        // Config values may be masked — only use them if they look real
+        const configApiKey   = (kite.api_key   && kite.api_key   !== '***') ? kite.api_key   : '';
+        const configToken    = (kite.access_token && kite.access_token !== '***') ? kite.access_token : '';
+
+        // Prefer what the user just typed, fall back to config
+        const apiKey = formApiKey || configApiKey;
+        // token is the access_token from config (formApiSecret is API secret, not access token)
+        const token  = configToken;
+        const hasApiKey = !!apiKey && apiKey !== '***';
+        const hasToken  = !!token  && token  !== '***';
+
+        // Update connection details sidebar
+        document.getElementById('detail-api-key').textContent = hasApiKey
             ? apiKey.slice(0, 6) + '••••••'
             : '— not set —';
 
-        document.getElementById('detail-token').innerHTML = token
+        document.getElementById('detail-token').innerHTML = hasToken
             ? `<span class="badge badge-green"><i class="fas fa-check"></i> Set</span>`
             : `<span class="badge badge-red"><i class="fas fa-times"></i> Missing</span>`;
 
-        document.getElementById('detail-live').innerHTML = (!config.paper_trading && token)
+        document.getElementById('detail-live').innerHTML = (!config.paper_trading && hasToken)
             ? `<span class="badge badge-green">Enabled</span>`
             : `<span class="badge badge-amber">Paper mode</span>`;
 
-        // Status banner
-        if (token && apiKey) {
+        // Status banner — NEVER use '***' values for logic
+        if (hasApiKey && hasToken) {
             setStatus('connected', 'Kite Connected', `API key: ${apiKey.slice(0,6)}••••  |  Token active`);
             showSuccessCard(token);
             updateSteps(3);
-            enableLoginBtn(apiKey);
-        } else if (apiKey) {
+            enableLoginBtn(apiKey);  // Always passes real apiKey from input
+        } else if (hasApiKey) {
             setStatus('needs-auth', 'API Key set — login required', 'Click "Login with Kite" to get a fresh access token');
             updateSteps(2);
-            enableLoginBtn(apiKey);
+            enableLoginBtn(apiKey);   // Always passes real apiKey from input
             document.getElementById('step1-badge').className = 'step-badge done';
             document.getElementById('step1-status').className = 'badge badge-green';
             document.getElementById('step1-status').textContent = 'Done';
         } else {
             setStatus('needs-creds', 'Not configured', 'Enter your Kite API key and secret to get started');
             updateSteps(1);
+            // Disable login button until API key is provided
+            document.getElementById('kite-login-btn').disabled = true;
+            document.getElementById('login-url-box').style.display = 'none';
         }
     }
 
@@ -689,7 +701,12 @@
                 box.className = 'info-box ib-green';
                 box.innerHTML = `<i class="fas fa-check-circle" style="flex-shrink:0; margin-top:1px;"></i>
                     <span><strong>Token exchanged successfully!</strong> Access token saved and ready for live trading.</span>`;
-                await loadConfig();
+                // Update local config with the exchanged token (returned in data) so render uses real values
+                if (data.access_token) {
+                    config.kite = config.kite || {};
+                    config.kite.access_token = data.access_token;
+                }
+                renderConfig();
             } else {
                 const box = document.getElementById('token-exchange-auto');
                 box.className = 'info-box ib-red';

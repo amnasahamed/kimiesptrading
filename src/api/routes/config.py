@@ -176,7 +176,8 @@ async def update_config(update: ConfigUpdate):
             kite_cfg.pop("access_token", None)
         else:
             api_key = kite_cfg.get("api_key")
-            api_secret = kite_cfg.get("api_secret")
+            # Prefer passed api_secret, fall back to stored config secret
+            api_secret = update.kite_api_secret or kite_cfg.get("api_secret")
             # Kite request_tokens are 32 hex chars; access_tokens are longer
             # Try exchange if we have credentials and token looks like a request_token
             if api_key and api_secret and len(update.kite_access_token) <= 64:
@@ -191,7 +192,7 @@ async def update_config(update: ConfigUpdate):
                         save_config(config)
                         from src.services.kite_service import reset_kite_service
                         reset_kite_service()
-                        return {"status": "updated", "message": "Token exchanged successfully", "exchanged": True}
+                        return {"status": "updated", "message": "Token exchanged successfully", "exchanged": True, "access_token": access_token}
                 except Exception as e:
                     logger.warning(f"Token exchange failed, storing raw token: {e}")
             kite_cfg["access_token"] = update.kite_access_token
